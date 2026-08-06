@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestão de usuários — Union Trading (demo)</title>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<a class="demo-badge" href="https://github.com/fcavichiolle/union-trading" title="Demonstração da interface"><span class="dot"></span>Demo</a>
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="sidebar__logo"><img src="assets/union-trading.png" alt="Union Trading" class="logo-union"></div>
+        <nav class="sidebar__nav">
+            <a href="inicio.html" class="sb-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3.5l9 7"></path><path d="M5.5 9.5V20h13V9.5"></path><path d="M9.75 20v-5.5h4.5V20"></path></svg><span>Início</span></a>
+            <div class="sb-group">
+                <div class="sb-group__label">Compras &amp; Classificação</div>
+                <a href="#" class="sb-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"></path></svg><span>Nova compra</span></a>
+                <a href="compras.html" class="sb-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="17" rx="2"></rect><path d="M8.5 8h7M8.5 12h7M8.5 16h4"></path></svg><span>Compras lançadas</span></a>
+                <a href="relatorio.html" class="sb-link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"></path><rect x="6" y="11" width="3.2" height="6"></rect><rect x="11.4" y="7" width="3.2" height="10"></rect><rect x="16.8" y="13.5" width="3.2" height="3.5"></rect></svg><span>Relatório (dashboard)</span></a>
+            </div>
+            <div class="sb-group">
+                <div class="sb-group__label">Administração</div>
+                <a href="usuarios.html" class="sb-link is-active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5.5 19.5c1.3-3.2 3.8-4.8 6.5-4.8s5.2 1.6 6.5 4.8"></path></svg><span>Usuários</span></a>
+            </div>
+        </nav>
+        <div class="sidebar__foot"><span class="dot"></span><span>Sistema operacional</span></div>
+    </aside>
+
+    <div class="main">
+        <header class="appbar">
+            <div class="appbar__crumb"><span>Administração</span><span class="sep">/</span><b>Usuários</b></div>
+            <div class="appbar__user">
+                <div class="avatar">AU</div>
+                <div class="appbar__meta"><span class="nm">Administrador Union Trading</span><span class="rl">Administrador</span></div>
+                <div class="appbar__acts"><a href="#">Trocar senha</a><a href="index.html">Sair</a></div>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <div>
+                    <h1>Gestão de usuários</h1>
+                    <p class="page-sub">Painel restrito. Somente administradores criam e alteram acessos.</p>
+                </div>
+                <div class="page-actions">
+                    <a href="#novo-usuario" class="btn-coffee"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"></path></svg><span>Novo usuário interno</span></a>
+                </div>
+            </div>
+
+            <div class="notice-danger">
+                <span class="notice-danger__icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.5"></rect><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"></path></svg></span>
+                <div>
+                    <b>Cadastro público desativado</b>
+                    <p>Não existe formulário de registro aberto. Todo acesso é criado internamente por um administrador e vinculado a um perfil.</p>
+                </div>
+            </div>
+
+            <div class="admin-grid">
+                <div class="usercard">
+                    <div class="utable__head"><span>Usuário</span><span>Perfil de acesso</span><span>Último acesso</span><span class="r">Status</span></div>
+
+                    <div class="utable__row">
+                        <div class="utable__user"><span class="uavatar">AU</span><span style="min-width:0;"><span class="utable__name">Administrador Union Trading</span><br><span class="utable__email">admin@utrading.com.br</span></span></div>
+                        <span style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;"><span class="rolepill">Administrador</span></span>
+                        <span class="utable__last">Hoje, 08:12</span>
+                        <span class="ustatus"><span class="d d--on"></span>Ativo</span>
+                        <div class="utable__rowacts"><a href="#" class="mini">Editar</a><a href="#" class="mini">Resetar senha</a></div>
+                    </div>
+                    <div class="utable__row">
+                        <div class="utable__user"><span class="uavatar uavatar--brown">MR</span><span style="min-width:0;"><span class="utable__name">Marcos Ribeiro</span><br><span class="utable__email">marcos.r@utrading.com.br</span></span></div>
+                        <span style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;"><span class="rolepill rolepill--brown">Compras</span></span>
+                        <span class="utable__last">Hoje, 07:40</span>
+                        <span class="ustatus"><span class="d d--on"></span>Ativo</span>
+                        <div class="utable__rowacts"><a href="#" class="mini">Editar</a><a href="#" class="mini">Resetar senha</a></div>
+                    </div>
+                    <div class="utable__row">
+                        <div class="utable__user"><span class="uavatar uavatar--brown">CS</span><span style="min-width:0;"><span class="utable__name">Carolina Souza</span><br><span class="utable__email">carolina.s@utrading.com.br</span></span></div>
+                        <span style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;"><span class="rolepill rolepill--brown">Financeiro</span></span>
+                        <span class="utable__last">Ontem, 17:55</span>
+                        <span class="ustatus"><span class="d d--on"></span>Ativo</span>
+                        <div class="utable__rowacts"><a href="#" class="mini">Editar</a><a href="#" class="mini">Resetar senha</a></div>
+                    </div>
+                    <div class="utable__row">
+                        <div class="utable__user"><span class="uavatar uavatar--muted">JT</span><span style="min-width:0;"><span class="utable__name">Júlia Tavares</span><br><span class="utable__email">julia.t@utrading.com.br</span></span></div>
+                        <span style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;"><span class="rolepill rolepill--muted">Diretoria</span><span style="font-size:11px;color:#B08A2E;">senha pendente</span></span>
+                        <span class="utable__last">12/07, 09:03</span>
+                        <span class="ustatus"><span class="d d--off"></span>Suspenso</span>
+                        <div class="utable__rowacts"><a href="#" class="mini">Editar</a><a href="#" class="mini">Resetar senha</a></div>
+                    </div>
+
+                    <div class="usercard__foot"><span>4 usuários · 1 suspenso</span><span class="mono">ACESSO RESTRITO</span></div>
+                </div>
+
+                <form class="userform" id="novo-usuario" onsubmit="return false;">
+                    <div>
+                        <h2>Adicionar usuário interno</h2>
+                        <p class="userform__lead">Uma senha provisória é gerada e o usuário é obrigado a trocá-la no primeiro acesso.</p>
+                    </div>
+                    <div class="fields">
+                        <label><span class="lbl">Nome completo</span><input type="text" placeholder="Nome do colaborador"></label>
+                        <label><span class="lbl">E-mail corporativo</span><input type="email" placeholder="nome@utrading.com.br"></label>
+                        <label><span class="lbl">Perfil de acesso</span>
+                            <select id="role_id">
+                                <option data-desc="Acesso total ao sistema, incluindo gestão de usuários.">Administrador</option>
+                                <option data-desc="Lança compras e edita a classificação dos lotes.">Compras</option>
+                                <option data-desc="Acompanha valores, corretor e comissão das compras.">Financeiro</option>
+                                <option data-desc="Acesso somente leitura ao relatório gerencial.">Diretoria</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="roledesc" id="roledesc"><b>Administrador.</b> Acesso total ao sistema, incluindo gestão de usuários.</div>
+                    <button type="submit" class="btn-coffee" style="margin-top:2px;">
+                        <span>Criar acesso</span>
+                        <span class="bean"><svg viewBox="0 0 24 32" width="15" height="20"><ellipse cx="12" cy="16" rx="10.5" ry="15" fill="#E9E2D1"></ellipse><path d="M12 2.5c3.2 6 3.2 21.5 0 27" stroke="#0A3A22" stroke-width="2.2" fill="none"></path></svg></span>
+                    </button>
+                </form>
+            </div>
+
+            <div style="padding:22px 0 4px; font-size:11.5px; color:rgba(11,61,36,.42);">Union Trading · Controle de compras de café · acesso restrito a usuários internos</div>
+        </div>
+    </div>
+</div>
+<script>
+(function(){var sel=document.getElementById('role_id'),box=document.getElementById('roledesc');
+function up(){var o=sel.options[sel.selectedIndex];box.innerHTML='<b>'+o.text+'.</b> '+(o.getAttribute('data-desc')||'');}
+sel.addEventListener('change',up);up();})();
+</script>
+</body>
+</html>
