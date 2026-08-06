@@ -32,7 +32,7 @@
     </form>
 
     <div class="table-wrap">
-        <table class="data">
+        <table class="data data--cards">
             <thead>
                 <tr>
                     <th>UTS</th>
@@ -50,25 +50,25 @@
             <tbody>
                 @forelse ($compras as $compra)
                     <tr>
-                        <td>{{ $compra->uts }}</td>
-                        <td>{{ $compra->mes_ano->format('m/Y') }}</td>
-                        <td>{{ $compra->fornecedor->nome }}</td>
-                        <td>{{ \App\Models\Compra::armazens()[$compra->armazem] }}</td>
-                        <td>{{ \App\Models\Compra::certificacoes()[$compra->certificacao] ?? $compra->certificacao }}</td>
-                        <td class="num">{{ number_format($compra->volume_sacas, 2, ',', '.') }}</td>
-                        <td class="num">{{ $compra->classificacao ? number_format($compra->classificacao->mercado_interno_sacas, 2, ',', '.') : '—' }}</td>
-                        <td class="num">{{ $compra->classificacao ? number_format($compra->classificacao->grinders_sacas, 2, ',', '.') : '—' }}</td>
-                        <td>
+                        <td data-label="UTS">{{ $compra->uts }}</td>
+                        <td data-label="Mês/Ano">{{ $compra->mes_ano->format('m/Y') }}</td>
+                        <td data-label="Fornecedor">{{ $compra->fornecedor->nome }}</td>
+                        <td data-label="Armazém">{{ \App\Models\Compra::armazens()[$compra->armazem] }}</td>
+                        <td data-label="Certificação">{{ \App\Models\Compra::certificacoes()[$compra->certificacao] ?? $compra->certificacao }}</td>
+                        <td class="num" data-label="Volume (sc)">{{ number_format($compra->volume_sacas, 2, ',', '.') }}</td>
+                        <td class="num" data-label="Merc. interno (sc)">{{ $compra->classificacao ? number_format($compra->classificacao->mercado_interno_sacas, 2, ',', '.') : '—' }}</td>
+                        <td class="num" data-label="Grinders (sc)">{{ $compra->classificacao ? number_format($compra->classificacao->grinders_sacas, 2, ',', '.') : '—' }}</td>
+                        <td data-label="Padrão">
                             @if ($compra->classificacao)
                                 <span class="badge badge--green">{{ $compra->classificacao->padrao_final === 'FINE_CUP' ? 'Fine Cup' : 'Good Cup' }}</span>
                             @else
                                 <span class="badge badge--muted">Não classificada</span>
                             @endif
                         </td>
-                        <td><a href="{{ route('compras.show', $compra) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
+                        <td class="cell-action"><a href="{{ route('compras.show', $compra) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
                     </tr>
                 @empty
-                    <tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px;">Nenhuma compra encontrada.</td></tr>
+                    <tr><td class="cell-empty" colspan="10" style="text-align:center; color:var(--muted); padding:24px;">Nenhuma compra encontrada.</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -49,6 +49,44 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 - Perfis (`roles`): **admin, compras, financeiro, diretoria**; cada rota protegida por
   `middleware('role:...')` no backend.
 - Admin cria os usuários da equipe (sem cadastro público em nenhuma rota).
+- **Tela de login redesenhada** (visual "café"): fundo em gradiente verde→marrom, grãos de
+  café caindo (SVG animado) e vapor desfocado, com **card de vidro fosco** centralizado.
+  `resources/views/auth/login.blade.php` deixou de usar `layouts.guest` e virou **página
+  completa e autossuficiente** (as outras telas de auth — esqueci/redefinir/trocar senha —
+  continuam no `layouts.guest`). O CSS mora em `partials/styles.blade.php` (bloco "Tela de
+  LOGIN — cena café"). Escolhas p/ ficar **leve em qualquer aparelho**: sem fontes externas
+  (usa a stack de sistema e `--font-data` para os rótulos mono), **sem imagem de logo** (marca
+  em texto na plaquinha creme), fallback sólido via `@supports` quando não há `backdrop-filter`,
+  (grãos de café caindo + vapor). **Por decisão do projeto, os grãos/vapor caem sempre**,
+  mesmo com "reduzir movimento" ligado no sistema (a animação é leve — SVG + `transform` na
+  GPU — e é a identidade da tela); há um comentário em `styles.blade.php` explicando como
+  voltar a respeitar `prefers-reduced-motion` se quiser. Os grãos usam **delay negativo** para
+  já aparecerem preenchidos no carregamento. O formulário segue idêntico (POST `route('login')`,
+  `@csrf`, campos email/password/remember, estados de erro).
+- **Logo Union na tela de login**: usa o **logo oficial** em `public/img/union-trading.png`
+  (fundo removido → PNG transparente, gerado com Pillow a partir do JPEG original que ficou em
+  `public/`). O partial `resources/views/partials/logo-union.blade.php` só renderiza o `<img>`.
+  Fica na plaquinha creme do card porque o logo é verde-escuro (some em fundo escuro). Para
+  regenerar o recorte, o script está em scratchpad (`rmbg.py`): abre o JPEG, torna transparente
+  o que é quase-branco (`min(r,g,b) >= 245`, com feathering) e recorta as margens.
+- **Shell redesenhado (sidebar verde + header)**: o `layouts/app.blade.php` foi refeito para o
+  visual do design — **sidebar verde** (272px) com o logo na plaquinha creme, navegação agrupada
+  (Início / Compras & Classificação / Administração) com estado ativo iluminado + barra vermelha,
+  rodapé "Sistema operacional"; **header** com breadcrumb (`@yield('crumb')`) + avatar (iniciais)
+  + nome/perfil + "Trocar senha"/"Sair"; e um **page-head** que renderiza `@yield('title')` como
+  `<h1>` grande, com `@section('subtitle')` e `@section('page_actions')` opcionais. Todas as telas
+  autenticadas (compras, relatório, usuários) herdam esse shell automaticamente. CSS em
+  `partials/styles.blade.php` (blocos "App shell", "Início", "Gestão de usuários").
+- **Início** (`dashboard/home.blade.php`): 4 cards de atalho (Nova compra, Compras lançadas,
+  Relatório de classificação, Gestão de usuários), com visibilidade por perfil. Saudação usa o
+  **nome do usuário logado**: `Bem-vindo, {{ $user->name }}.`
+- **Gestão de usuários** (`admin/users/index.blade.php`): igual ao design — banner vermelho
+  "Cadastro público desativado", **tabela de usuários** (avatar com iniciais, perfil em pill,
+  último acesso, status Ativo/Suspenso; ações Editar/Resetar senha aparecem no hover e ficam
+  fixas no mobile) e **formulário lateral "Adicionar usuário interno"** (nome, e-mail, perfil)
+  que posta no `admin.users.store` já existente. A caixa "permissões do perfil" mostra a
+  `descricao` real do Role selecionado via um JS mínimo (não inventa permissões). O
+  `UserController::index` agora também passa `$roles` para a view.
 
 ### Módulo 1 — Compras e Classificação
 - **Cadastro de compra**: UTS, mês/ano (rotulado "Mês/ano da entrega"), fornecedor + CNPJ
@@ -108,8 +146,11 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 - **Testes automatizados** para os cálculos críticos (lotes, valor total, soma de peneiras).
 - **Deploy**: revisar o checklist do `SECURITY.md` (HTTPS já é forçado em produção pelo
   `AppServiceProvider`).
-- **Layout**: a tabela de "Compras lançadas" está ficando larga; avaliar esconder/reordenar
-  colunas em telas menores.
+- ~~**Layout**: a tabela de "Compras lançadas" está ficando larga em telas menores.~~ **FEITO**:
+  em telas ≤720px a tabela vira **cards empilhados** (cada linha = um card com "rótulo: valor"),
+  sem scroll horizontal. Implementado com a classe `data--cards` + `data-label` em cada `<td>`
+  (ver `partials/styles.blade.php`, seção "Tabela em cards"). No desktop continua tabela normal.
+  Padrão reaproveitável em outras tabelas largas: basta a classe `data--cards` e `data-label`.
 - **Opcional**: acrescentar colunas de peneira na quebra por certificação, se fizer sentido.
 
 ## 7. Mapa dos arquivos-chave
