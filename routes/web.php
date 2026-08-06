@@ -1,0 +1,108 @@
+<?php
+
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\ChangePasswordController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Compras\ClassificacaoController;
+use App\Http\Controllers\Compras\CompraController;
+use App\Http\Controllers\Compras\DashboardController as ComprasDashboardController;
+use App\Http\Controllers\Compras\FinanceiroController;
+use App\Http\Controllers\DashboardController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Rotas convidado (não autenticado)
+|--------------------------------------------------------------------------
+| Propositalmente NÃO existe nenhuma rota de "registrar/cadastrar-se".
+| Contas só são criadas pelo admin em /admin/usuarios.
+*/
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:6,1'); // 6 tentativas/min por IP, além do rate-limit manual no controller
+
+    Route::get('/esqueci-senha', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/esqueci-senha', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
+
+    Route::get('/redefinir-senha/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/redefinir-senha', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.store');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Relatório público (opcional) via link assinado e temporário
+|--------------------------------------------------------------------------
+| Middleware 'signed' recusa a requisição se a assinatura/expiração
+| do link não baterem — não precisa de login, mas também não fica
+| aberto para sempre nem é adivinhável.
+*/
+Route::get('/relatorio-compras/publico', [ComprasDashboardController::class, 'publico'])
+    ->name('relatorio.publico')
+    ->middleware('signed');
+
+/*
+|--------------------------------------------------------------------------
+| Rotas autenticadas
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'conta.ativa'])->group(function () {
+
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
+    // Acessível mesmo com troca de senha pendente (senão o usuário
+    // ficaria travado sem conseguir trocar a própria senha).
+    Route::get('/trocar-senha', [ChangePasswordController::class, 'create'])->name('senha.trocar.form');
+    Route::put('/trocar-senha', [ChangePasswordController::class, 'update'])->name('senha.trocar.update');
+
+    // A partir daqui, se force_password_change=true o usuário é
+    // redirecionado para /trocar-senha antes de ver qualquer outra tela.
+    Route::middleware('senha.pendente')->group(function () {
+
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+        /*
+        |----------------------------------------------------------------
+        | Módulo 0 — Painel Admin (gestão de usuários)
+        |----------------------------------------------------------------
+        */
+        Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+            Route::get('/usuarios', [UserController::class, 'index'])->name('users.index');
+            Route::get('/usuarios/novo', [UserController::class, 'create'])->name('users.create');
+            Route::post('/usuarios', [UserController::class, 'store'])->name('users.store');
+            Route::get('/usuarios/{user}/editar', [UserController::class, 'edit'])->name('users.edit');
+            Route::put('/usuarios/{user}', [UserController::class, 'update'])->name('users.update');
+            Route::patch('/usuarios/{user}/resetar-senha', [UserController::class, 'resetPassword'])->name('users.reset-password');
+        });
+
+        /*
+        |----------------------------------------------------------------
+        | Módulo 1 — Compras e Classificação
+        |----------------------------------------------------------------
+        */
+        Route::middleware('role:admin,compras')->prefix('compras')->name('compras.')->group(function () {
+            Route::get('/', [CompraController::class, 'index'])->name('index');
+            Route::get('/novo', [CompraController::class, 'create'])->name('create');
+            Route::post('/', [CompraController::class, 'store'])->name('store');
+            Route::get('/{compra}', [CompraController::class, 'show'])->name('show');
+
+            Route::get('/{compra}/classificacao', [ClassificacaoController::class, 'edit'])->name('classificacao.edit');
+            Route::put('/{compra}/classificacao', [ClassificacaoController::class, 'update'])->name('classificacao.update');
+
+            Route::get('/{compra}/financeiro', [FinanceiroController::class, 'edit'])->name('financeiro.edit');
+            Route::put('/{compra}/financeiro', [FinanceiroController::class, 'update'])->name('financeiro.update');
+        });
+
+        // Dashboard/relatório (leitura), liberado também para diretoria.
+        Route::middleware('role:admin,compras,diretoria')->group(function () {
+            Route::get('/relatorio-compras', [ComprasDashboardController::class, 'index'])->name('relatorio.index');
+            Route::post('/relatorio-compras/link', [ComprasDashboardController::class, 'linkTemporario'])->name('relatorio.link');
+        });
+    });
+});
