@@ -23,6 +23,9 @@
 
 /bootstrap/cache/*.php
 
+# Imagem-fonte solta do logo (versão processada fica em public/img/union-trading.png)
+/public/WhatsApp Image *.jpeg
+
 Homestead.json
 Homestead.yaml
 .phpunit.result.cache
