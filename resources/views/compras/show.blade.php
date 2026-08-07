@@ -39,7 +39,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td>{{ $c->padrao_final === 'FINE_CUP' ? 'Fine Cup' : 'Good Cup' }}</td>
+                                <td>{{ \App\Models\Classificacao::padroes()[$c->padrao_final] ?? $c->padrao_final }}</td>
                                 <td class="num">{{ number_format($c->peneira_1718_sacas, 2, ',', '.') }} ({{ number_format($c->peneira_1718_pct, 1, ',', '.') }}%)</td>
                                 <td class="num">{{ number_format($c->peneira_1416_sacas, 2, ',', '.') }} ({{ number_format($c->peneira_1416_pct, 1, ',', '.') }}%)</td>
                                 <td class="num">{{ number_format($c->mercado_interno_sacas, 2, ',', '.') }} ({{ number_format($c->mercado_interno_pct, 1, ',', '.') }}%)</td>

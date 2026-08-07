@@ -23,8 +23,9 @@
                     <label for="padrao_final">Padrão final</label>
                     <select id="padrao_final" name="padrao_final" required>
                         <option value="">Selecione...</option>
-                        <option value="FINE_CUP" @selected(old('padrao_final', $classificacao?->padrao_final) === 'FINE_CUP')>Fine Cup</option>
-                        <option value="GOOD_CUP" @selected(old('padrao_final', $classificacao?->padrao_final) === 'GOOD_CUP')>Good Cup</option>
+                        @foreach (\App\Models\Classificacao::padroes() as $cod => $rotulo)
+                            <option value="{{ $cod }}" @selected(old('padrao_final', $classificacao?->padrao_final) === $cod)>{{ $rotulo }}</option>
+                        @endforeach
                     </select>
                     @error('padrao_final') <div class="field-error">{{ $message }}</div> @enderror
                 </div>

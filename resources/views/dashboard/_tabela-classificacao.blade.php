@@ -15,7 +15,7 @@
         <tbody>
             @forelse ($linhas as $linha)
                 <tr>
-                    <td>{{ $linha->padrao_final === 'FINE_CUP' ? 'Fine Cup' : 'Good Cup' }}</td>
+                    <td>{{ \App\Models\Classificacao::padroes()[$linha->padrao_final] ?? $linha->padrao_final }}</td>
                     <td class="num">{{ number_format($linha->scs_1718, 2, ',', '.') }}</td>
                     <td class="num">{{ number_format($linha->scs_1416, 2, ',', '.') }}</td>
                     <td class="num">{{ number_format($linha->mercado_interno, 2, ',', '.') }}</td>

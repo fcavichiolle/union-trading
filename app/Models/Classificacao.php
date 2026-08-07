@@ -75,4 +75,27 @@ class Classificacao extends Model
             + (float) $this->mercado_interno_sacas
             + (float) $this->grinders_sacas;
     }
+
+    /**
+     * Padrões finais de classificação (código => rótulo). Lista central:
+     * alimenta o dropdown, a validação e a exibição em todas as telas.
+     * ATENÇÃO: ao adicionar um código aqui, adicione-o TAMBÉM ao ENUM da
+     * coluna `padrao_final` (migration de ALTER), senão o MySQL trunca.
+     *
+     * @return array<string,string>
+     */
+    public static function padroes(): array
+    {
+        return [
+            'FINE_CUP' => 'Fine Cup',
+            'GOOD_CUP' => 'Good Cup',
+            'GOOD_CUP_2R' => 'Good Cup 2R',
+            'RIO_MINAS' => 'Rio Minas',
+        ];
+    }
+
+    public function padraoLabel(): string
+    {
+        return self::padroes()[$this->padrao_final] ?? $this->padrao_final;
+    }
 }

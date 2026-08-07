@@ -16,8 +16,9 @@
             <label for="padrao">Padrão</label>
             <select id="padrao" name="padrao">
                 <option value="">Todos</option>
-                <option value="FINE_CUP" @selected(request('padrao') === 'FINE_CUP')>Fine Cup</option>
-                <option value="GOOD_CUP" @selected(request('padrao') === 'GOOD_CUP')>Good Cup</option>
+                @foreach (\App\Models\Classificacao::padroes() as $cod => $rotulo)
+                    <option value="{{ $cod }}" @selected(request('padrao') === $cod)>{{ $rotulo }}</option>
+                @endforeach
                 <option value="SEM_CLASSIFICACAO" @selected(request('padrao') === 'SEM_CLASSIFICACAO')>Não classificada</option>
             </select>
         </div>
@@ -60,7 +61,7 @@
                         <td class="num" data-label="Grinders (sc)">{{ $compra->classificacao ? number_format($compra->classificacao->grinders_sacas, 2, ',', '.') : '—' }}</td>
                         <td data-label="Padrão">
                             @if ($compra->classificacao)
-                                <span class="badge badge--green">{{ $compra->classificacao->padrao_final === 'FINE_CUP' ? 'Fine Cup' : 'Good Cup' }}</span>
+                                <span class="badge badge--green">{{ \App\Models\Classificacao::padroes()[$compra->classificacao->padrao_final] ?? $compra->classificacao->padrao_final }}</span>
                             @else
                                 <span class="badge badge--muted">Não classificada</span>
                             @endif
