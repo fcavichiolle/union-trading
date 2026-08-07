@@ -2,18 +2,20 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
     /**
-     * A basic test example.
+     * A raiz "/" não existe de propósito (a entrada do sistema é /login).
+     * Visitante não autenticado é levado para a tela de login.
      */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_a_raiz_nao_existe_e_o_login_responde(): void
     {
-        $response = $this->get('/');
+        // Não há rota em "/": o app não tem página inicial pública.
+        $this->get('/')->assertNotFound();
 
-        $response->assertStatus(200);
+        // A porta de entrada de verdade responde normalmente.
+        $this->get('/login')->assertOk();
     }
 }
