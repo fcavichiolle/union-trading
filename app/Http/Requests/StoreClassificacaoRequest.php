@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Classificacao;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreClassificacaoRequest extends FormRequest
@@ -15,7 +17,7 @@ class StoreClassificacaoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'padrao_final' => ['required', 'in:FINE_CUP,GOOD_CUP'],
+            'padrao_final' => ['required', Rule::in(array_keys(Classificacao::padroes()))],
 
             'peneira_1718_pct' => ['required', 'numeric', 'min:0', 'max:100'],
             'peneira_1718_sacas' => ['required', 'numeric', 'min:0'],

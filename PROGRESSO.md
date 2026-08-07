@@ -146,9 +146,10 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   `quantidade_lotes` (model `Classificacao`) são recalculados no evento `saving` do model,
   nunca aceitos do formulário. Não confiar em conta feita no navegador.
 - **Fornecedor reaproveitado por CNPJ** via `firstOrCreate` (evita duplicar).
-- **Listas centralizadas** em métodos estáticos do model `Compra`: `armazens()` e
-  `certificacoes()` (código curto => rótulo bonito). Essas listas alimentam formulário,
-  validação e a exibição (tradução do código).
+- **Listas centralizadas** em métodos estáticos dos models: `Compra::armazens()` /
+  `Compra::certificacoes()`, `Classificacao::padroes()` (padrão final da classificação) e
+  as listas do `Contrato` (certificados, embalagens, incoterms, portos, meses). Código curto
+  => rótulo bonito; alimentam formulário, validação e exibição.
 - **AuditLog** registra ações sensíveis (ex.: geração de link compartilhável).
 - Auth/roles à mão para reduzir dependências de terceiros e facilitar auditoria.
 
@@ -168,7 +169,10 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
    lista do ENUM na migration `..._create_compras_table.php`. Se só o model mudar, o MySQL
    trunca o valor. Já adicionamos o código `SEM_CERT` ("Sem certificação").
    **Em produção** (com dados reais) isso deve ser feito com uma migration de `ALTER`, não com
-   `migrate:fresh`.
+   `migrate:fresh`. **O mesmo vale para `classificacoes.padrao_final`**: para adicionar um padrão
+   é preciso mexer em `Classificacao::padroes()` **e** ampliar o ENUM via migration de `ALTER`
+   (ver `..._add_padroes_to_classificacoes.php`, que só roda no MySQL — no SQLite dos testes a
+   coluna é texto). Já adicionados `GOOD_CUP_2R` e `RIO_MINAS`.
 4. **"35 problemas" no VS Code** são falsos-positivos do Intelephense (ex.: *Undefined type
    'Illuminate\...\Model'*) quando ele não indexou a pasta `vendor/`. **Não afetam a execução**.
    Resolver com Ctrl+Shift+P → "Developer: Reload Window" e aguardar a indexação. Erros de
