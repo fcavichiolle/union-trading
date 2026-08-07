@@ -546,4 +546,130 @@
     .utable__rowacts { position: absolute; left: 22px; right: auto; bottom: 12px; top: auto; transform: none;
       opacity: 1; pointer-events: auto; padding-left: 0; background: none; }
   }
+  /* ============================================================
+     Botão de tema (header) + MODO ESCURO
+     A sidebar já é verde-escura nos dois modos; o tema escuro age
+     principalmente sobre o "main" (fundo creme -> escuro), cards,
+     tabelas, formulários e textos verde-escuros -> claros.
+     ============================================================ */
+  .theme-toggle {
+    width: 38px; height: 38px; flex: none; border: 0; border-radius: 9px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(11,61,36,.06); color: var(--primary);
+  }
+  .theme-toggle:hover { background: rgba(11,61,36,.12); }
+  .theme-toggle .i-moon { display: none; }
+
+  :root[data-theme="dark"] {
+    --bg: #0F1417;
+    --surface: #1B2226;
+    --ink: #E7EFE9;
+    --muted: #93A29A;
+    --border: #2A3438;
+    --primary-soft: #1E3A2C;
+    --danger-bg: #3A1D1A;
+    --danger-text: #F0B4AC;
+    --success-bg: #17301F;
+    --success-text: #9BD8B3;
+    --shadow: 0 1px 2px rgba(0,0,0,.45), 0 6px 20px rgba(0,0,0,.45);
+  }
+  :root[data-theme="dark"] body { background: var(--bg); }
+  :root[data-theme="dark"] .theme-toggle { background: rgba(255,255,255,.08); color: #E7EFE9; }
+  :root[data-theme="dark"] .theme-toggle:hover { background: rgba(255,255,255,.15); }
+  :root[data-theme="dark"] .theme-toggle .i-sun { display: none; }
+  :root[data-theme="dark"] .theme-toggle .i-moon { display: inline; }
+
+  /* Shell / header */
+  :root[data-theme="dark"] .main {
+    background: radial-gradient(120% 80% at 20% 0%, #151C20 0%, #0F1417 60%, #0B0F12 100%);
+  }
+  :root[data-theme="dark"] .appbar { box-shadow: inset 0 -1px 0 rgba(255,255,255,.08); }
+  :root[data-theme="dark"] .appbar__crumb, :root[data-theme="dark"] .appbar__crumb .sep { color: rgba(231,239,233,.5); }
+  :root[data-theme="dark"] .appbar__crumb b, :root[data-theme="dark"] .appbar__meta .nm { color: #E7EFE9; }
+  :root[data-theme="dark"] .appbar__meta .rl { color: rgba(231,239,233,.5); }
+  :root[data-theme="dark"] .appbar__acts { box-shadow: inset 1px 0 0 rgba(255,255,255,.12); }
+  :root[data-theme="dark"] .appbar__acts a, :root[data-theme="dark"] .appbar__acts button { color: rgba(231,239,233,.66); }
+  :root[data-theme="dark"] .appbar__acts a:hover, :root[data-theme="dark"] .appbar__acts button:hover { background: rgba(255,255,255,.08); color: #fff; }
+
+  /* Títulos e textos da página */
+  :root[data-theme="dark"] .page-head h1 { color: #E7EFE9; }
+  :root[data-theme="dark"] .page-sub { color: rgba(231,239,233,.6); }
+  :root[data-theme="dark"] h1, :root[data-theme="dark"] h2, :root[data-theme="dark"] h3 { color: #E7EFE9; }
+
+  /* Início: cards */
+  :root[data-theme="dark"] .home-card {
+    background: linear-gradient(180deg, #1D252A 0%, #171E22 100%);
+    box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -12px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.07);
+  }
+  :root[data-theme="dark"] .home-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 22px 44px -16px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.12); }
+  :root[data-theme="dark"] .home-card h2 { color: #E7EFE9; }
+  :root[data-theme="dark"] .home-card p { color: rgba(231,239,233,.55); }
+  :root[data-theme="dark"] .home-foot { color: rgba(231,239,233,.4); }
+
+  /* Cards genéricos e relatório */
+  :root[data-theme="dark"] .card { background: var(--surface); border-color: var(--border); }
+  :root[data-theme="dark"] .card__header { border-bottom-color: rgba(255,255,255,.08); }
+
+  /* Tabelas */
+  :root[data-theme="dark"] .table-wrap { border-color: var(--border); }
+  :root[data-theme="dark"] table.data { background: var(--surface); color: var(--ink); }
+  :root[data-theme="dark"] table.data tbody td { border-bottom-color: rgba(255,255,255,.07); }
+  :root[data-theme="dark"] table.data tbody tr:nth-child(even) { background: rgba(255,255,255,.03); }
+  :root[data-theme="dark"] table.data tbody tr:hover { background: rgba(255,255,255,.06); }
+  :root[data-theme="dark"] table.data--cards tbody tr { background: var(--surface); }
+  :root[data-theme="dark"] table.data--cards tbody tr:nth-child(even) { background: var(--surface); }
+
+  /* Formulários / inputs */
+  :root[data-theme="dark"] input[type=text], :root[data-theme="dark"] input[type=email],
+  :root[data-theme="dark"] input[type=password], :root[data-theme="dark"] input[type=number],
+  :root[data-theme="dark"] input[type=month], :root[data-theme="dark"] input[type=date],
+  :root[data-theme="dark"] input[type=search], :root[data-theme="dark"] select, :root[data-theme="dark"] textarea {
+    background: #12181B; color: var(--ink); border-color: rgba(255,255,255,.14);
+  }
+  :root[data-theme="dark"] .field label { color: var(--ink); }
+  :root[data-theme="dark"] .btn-ghost { color: #CFE6D8; border-color: var(--border); }
+  :root[data-theme="dark"] .btn-ghost:hover { background: rgba(255,255,255,.06); }
+
+  /* Gestão de usuários */
+  :root[data-theme="dark"] .usercard { background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.07); }
+  :root[data-theme="dark"] .utable__head { color: rgba(231,239,233,.5); box-shadow: inset 0 -1px 0 rgba(255,255,255,.08); }
+  :root[data-theme="dark"] .utable__row { box-shadow: inset 0 -1px 0 rgba(255,255,255,.06); }
+  :root[data-theme="dark"] .utable__row:hover { background: rgba(255,255,255,.04); }
+  :root[data-theme="dark"] .utable__name { color: #E7EFE9; }
+  :root[data-theme="dark"] .utable__email, :root[data-theme="dark"] .utable__last, :root[data-theme="dark"] .ustatus { color: rgba(231,239,233,.6); }
+  :root[data-theme="dark"] .rolepill { background: rgba(122,214,163,.16); color: #BFE6CE; }
+  :root[data-theme="dark"] .rolepill--brown { background: rgba(196,138,84,.2); color: #E4C09A; }
+  :root[data-theme="dark"] .rolepill--muted { background: rgba(255,255,255,.08); color: rgba(231,239,233,.7); }
+  :root[data-theme="dark"] .utable__rowacts { background: linear-gradient(90deg, transparent, #1B2226 30%); }
+  :root[data-theme="dark"] .utable__rowacts .mini { color: #CFE6D8; background: rgba(255,255,255,.08); }
+  :root[data-theme="dark"] .utable__rowacts .mini:hover { background: rgba(255,255,255,.16); }
+  :root[data-theme="dark"] .usercard__foot { color: rgba(231,239,233,.5); box-shadow: inset 0 1px 0 rgba(255,255,255,.07); }
+  :root[data-theme="dark"] .userform { background: linear-gradient(180deg, #1D252A 0%, #171E22 100%); box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 34px -16px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.08); }
+  :root[data-theme="dark"] .userform .lbl, :root[data-theme="dark"] .userform__lead { color: rgba(231,239,233,.6); }
+  :root[data-theme="dark"] .userform .roledesc { background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); color: rgba(231,239,233,.7); }
+  :root[data-theme="dark"] .userform .roledesc b { color: #E7EFE9; }
+  :root[data-theme="dark"] .notice-danger { background: rgba(232,50,44,.14); box-shadow: inset 0 0 0 1px rgba(232,50,44,.35); }
+  :root[data-theme="dark"] .notice-danger b { color: #F3A79F; }
+  :root[data-theme="dark"] .notice-danger p { color: rgba(231,239,233,.62); }
+
+  /* Alerts / badges */
+  :root[data-theme="dark"] .alert-success { background: var(--success-bg); color: var(--success-text); border-color: #2C5B3E; }
+  :root[data-theme="dark"] .alert-error { background: var(--danger-bg); color: var(--danger-text); border-color: #6B3230; }
+  :root[data-theme="dark"] .alert code { background: rgba(255,255,255,.12); }
+  :root[data-theme="dark"] .badge--green { background: rgba(122,214,163,.16); color: #BFE6CE; }
+  :root[data-theme="dark"] .badge--muted { background: rgba(255,255,255,.08); color: rgba(231,239,233,.7); }
+
+  /* ---------- Contratos: formulário e resumo do cálculo ---------- */
+  .contract-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .contract-grid .card { margin-bottom: 0; }
+  .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .calc-item { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 10px; background: var(--primary-soft); }
+  .calc-lbl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .calc-val { font-size: 20px; font-weight: 700; color: var(--primary); font-family: var(--font-data); }
+  .calc-note { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+  :root[data-theme="dark"] .calc-val { color: #BFE6CE; }
+  :root[data-theme="dark"] .calc-lbl, :root[data-theme="dark"] .calc-note { color: rgba(231,239,233,.6); }
+
+  @media (max-width: 1024px) { .contract-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

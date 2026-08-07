@@ -105,6 +105,41 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   busca por UTS/fornecedor; colunas de resumo (Volume, Mercado interno, Grinders) e
   coluna de **Certificação**, para ver tudo sem abrir compra por compra.
 
+### Módulo 2 — Contratos de exportação
+- **Cadastros** (admin): **Clientes** (nome + endereço multilinha + **ref. padrão** opcional do
+  comprador) e **Qualidades** (descrição do café). Rotas `admin.clientes.*` / `admin.qualidades.*`.
+  Se o cliente tem ref. padrão, o formulário de contrato preenche o "Ref. Comprador" ao selecioná-lo
+  (ex.: cliente **MIORI CF LLC** → `CONTRACT NO. 26-003 DD. 17.02.2026`).
+- **Novo contrato** (`contratos.create`, perfis admin/compras): formulário em 4 blocos (igual ao
+  app-modelo) com **preview ao vivo** de sacas/lotes/containers. Container rotulado **TEUS (20')** /
+  **FEUS (40')**.
+- **Cálculos (servidor, `Contrato::saving`)**: sacas = kg÷**60** (÷**59** quando a embalagem é
+  "Jute Bags 59kg"); lotes = round(sacas ÷ 283,49 arábica | ÷ 166,66 conilon) — arredondamento
+  normal (1,51→2); containers = ceil(kg ÷ capacidade), capacidade **20'=22.000 / 40'=25.000 kg**;
+  peso/container = kg÷containers. **Arábica/Conilon é escolhido por contrato.**
+- **PRICE muda conforme o porto**: **Santos** → `... cents/pounds under N lot(s) <cod> NY ICE ...`
+  (meses NY ICE tipo `Z6`); **Vitória** → `... USD/MT of ICE ROBUSTA CF LONDON, N lot(s) x <mês> ...`
+  (meses de Londres tipo `Sep_2026`). O formulário troca as opções de mês e a unidade do diferencial
+  conforme o porto (JS). **Incoterms: só FOB.**
+- **PDF** via `barryvdh/laravel-dompdf` (`resources/views/contratos/pdf.blade.php`), fiel ao modelo —
+  cláusulas fixas (SELLER, SHIPPER, PAYMENT, ARBITRATION, OTHER CONDITIONS, APPLICABLE LAW,
+  DESTINATION=T.B.I) no template; assinatura com espaço amplo para **carimbo**. Arquivo:
+  `UT_<num>_<CLIENTE>_<dd-mm-aaaa>.pdf`.
+- **Snapshot**: grava nome/endereço do cliente e descrição da qualidade na criação → editar o
+  cadastro depois **não altera** contratos antigos.
+- **Lista** de contratos gerados (`contratos.index`) com re-download do PDF. **Nº UT** manual e único.
+- **Listas fixas** em `Contrato::`: certificados (Sem cert., 4C, EUDR, RFA, 4C+EUDR, RFA+EUDR),
+  embalagens (**Bulk Liner, Jute Bags, Jute Bags 59kg, Big Bag, Jute + Grainpro**), incoterms (FOB),
+  portos (Santos/Vitória), meses (Santos NY / Vitória Londres).
+- Testes: `tests/Feature/ContratoTest.php` — cálculos, arredondamento, saca 59kg, containers 20'/40',
+  preço por porto (NY/Londres), unicidade do UT, snapshot e geração do PDF (25 testes no total, verdes).
+
+### Interface — modo escuro
+- Botão sol/lua no header alterna o tema; escolha persiste em `localStorage` (`ut-theme`) e é
+  aplicada antes da pintura (sem "flash"). CSS do tema escuro em `partials/styles.blade.php`
+  (bloco "MODO ESCURO"), cobrindo shell, cards, tabelas e formulários. Sidebar já é verde nos dois
+  modos; a tela de login permanece na cena "café".
+
 ## 4. Decisões técnicas importantes
 
 - **Cálculos críticos sempre no servidor**: `valor_total` (model `FinanceiroCompra`) e
@@ -141,11 +176,34 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 
 ## 6. O que falta / próximos passos
 
-- **E-mail de produção**: configurar `MAIL_*` e criar uma `Notification` para enviar a senha
-  temporária ao criar usuário (hoje ela só aparece na tela para o admin repassar).
-- **Testes automatizados** para os cálculos críticos (lotes, valor total, soma de peneiras).
-- **Deploy**: revisar o checklist do `SECURITY.md` (HTTPS já é forçado em produção pelo
-  `AppServiceProvider`).
+- ~~**E-mail de produção**: configurar `MAIL_*` e criar uma `Notification` para enviar a senha
+  temporária ao criar usuário.~~ **FEITO**: Notification `App\Notifications\CredenciaisDeAcesso`
+  (e-mail em PT com e-mail, senha temporária e botão de acesso) disparada no `UserController::store`
+  e `::resetPassword`. Robustez: o envio é **síncrono** (sem fila/worker) e envolto em try/catch —
+  se o e-mail falhar, a ação NÃO é revertida e a senha aparece na tela como fallback; em ambiente
+  sem e-mail real (`MAIL_MAILER=log`) a senha também é mostrada. Senha temporária agora é
+  **alfanumérica** (`Str::password(16, symbols: false)`) para não quebrar a formatação do e-mail.
+  Rodapé do template traduzido em `lang/pt_BR.json`. `.env.example` traz exemplo de SMTP de
+  produção. Testado com `Notification::fake()` (`tests/Feature/CredenciaisEmailTest.php`).
+  **Falta em produção**: apenas preencher os `MAIL_*` reais no `.env` do servidor.
+- ~~**Testes automatizados** para os cálculos críticos (lotes, valor total, soma de peneiras).~~
+  **FEITO**: `tests/Feature/CalculosCriticosTest.php` (lotes = soma das sacas ÷ 283,49 e
+  valor_total = valor_saca × volume, ambos recalculados no servidor e **ignorando** valor
+  forjado no atributo) e `tests/Feature/ClassificacaoHttpTest.php` (via rota: porcentagens
+  devem fechar 100%, sacas não podem passar do volume, caminho feliz salva + calcula lotes,
+  e usuário sem permissão recebe 403). Também corrigido o `ExampleTest` de scaffold (que
+  esperava `GET /` = 200; a raiz não existe de propósito → agora testa `/` 404 e `/login` 200).
+  Rodar com `php artisan test` (SQLite em memória; 11 testes verdes).
+- ~~**Deploy**: revisar o checklist do `SECURITY.md`.~~ **REVISADO** (07/ago/2026): todas as
+  afirmações do SECURITY.md conferidas contra o código atual — auth com throttle duplo +
+  sessão regenerada + sem enumeração de usuário; 3 middlewares de autorização (role 403,
+  conta.ativa, senha.pendente); `SecurityHeaders` global; `selectRaw` sem dado do usuário;
+  zero `{!! !!}` nas views. `composer audit` **limpo** (nenhuma vulnerabilidade). Hardening
+  aplicado: a descrição do perfil na tela de usuários passou a montar o texto com `textContent`
+  (nunca `innerHTML`). SECURITY.md atualizado (credenciais por e-mail; nota de CSP inclui o
+  `<script>` inline). **Só falta no servidor de produção** (não dá para fazer daqui): preencher
+  o `.env` (APP_ENV=production, APP_DEBUG=false, APP_KEY, SESSION_SECURE_COOKIE=true, MAIL_*),
+  redirect HTTP→HTTPS no servidor web, backups do banco e `composer install --no-dev`.
 - ~~**Layout**: a tabela de "Compras lançadas" está ficando larga em telas menores.~~ **FEITO**:
   em telas ≤720px a tabela vira **cards empilhados** (cada linha = um card com "rótulo: valor"),
   sem scroll horizontal. Implementado com a classe `data--cards` + `data-label` em cada `<td>`
