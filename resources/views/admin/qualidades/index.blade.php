@@ -24,7 +24,7 @@
                     </form>
                     <form method="POST" action="{{ route('admin.qualidades.destroy', $q) }}" onsubmit="return confirm('Remover esta qualidade?');" style="margin:0; justify-self:end;">
                         @csrf @method('DELETE')
-                        <button type="submit" class="mini">Excluir</button>
+                        <button type="submit" class="mini mini--danger">Excluir</button>
                     </form>
                 </div>
             @empty

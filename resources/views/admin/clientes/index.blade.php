@@ -22,7 +22,7 @@
                         <a href="{{ route('admin.clientes.edit', $cliente) }}" class="mini">Editar</a>
                         <form method="POST" action="{{ route('admin.clientes.destroy', $cliente) }}" onsubmit="return confirm('Remover o cliente {{ $cliente->nome }}?');" style="margin:0;">
                             @csrf @method('DELETE')
-                            <button type="submit" class="mini">Excluir</button>
+                            <button type="submit" class="mini mini--danger">Excluir</button>
                         </form>
                     </span>
                 </div>
