@@ -195,12 +195,16 @@
   }
   .utable__row:hover .utable__rowacts { opacity: 1; pointer-events: auto; }
   .utable__rowacts form { margin: 0; }
-  .utable__rowacts .mini {
-    display: inline-flex; align-items: center; height: 30px; padding: 0 11px; border-radius: 7px;
-    font: inherit; font-size: 12.5px; cursor: pointer; text-decoration: none; border: 0;
+  .mini {
+    display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border-radius: 8px;
+    font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; border: 0; white-space: nowrap;
     color: var(--primary); background: rgba(12,64,40,.08);
   }
-  .utable__rowacts .mini:hover { background: rgba(12,64,40,.16); }
+  .mini:hover { background: rgba(12,64,40,.16); }
+  .mini--danger { color: var(--accent); background: rgba(176,58,46,.10); }
+  .mini--danger:hover { background: rgba(176,58,46,.18); }
+  /* dentro das ações da tabela de usuários os botões são um pouco menores */
+  .utable__rowacts .mini { height: 30px; padding: 0 11px; border-radius: 7px; font-size: 12.5px; }
   .utable__user { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .uavatar { width: 34px; height: 34px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600; background: #0C4028; color: #FAF6EC; }
   .uavatar--brown { background: #4A2C1A; color: #F7F3EA; }
@@ -641,8 +645,10 @@
   :root[data-theme="dark"] .rolepill--brown { background: rgba(196,138,84,.2); color: #E4C09A; }
   :root[data-theme="dark"] .rolepill--muted { background: rgba(255,255,255,.08); color: rgba(231,239,233,.7); }
   :root[data-theme="dark"] .utable__rowacts { background: linear-gradient(90deg, transparent, #1B2226 30%); }
-  :root[data-theme="dark"] .utable__rowacts .mini { color: #CFE6D8; background: rgba(255,255,255,.08); }
-  :root[data-theme="dark"] .utable__rowacts .mini:hover { background: rgba(255,255,255,.16); }
+  :root[data-theme="dark"] .mini { color: #CFE6D8; background: rgba(255,255,255,.08); }
+  :root[data-theme="dark"] .mini:hover { background: rgba(255,255,255,.16); }
+  :root[data-theme="dark"] .mini--danger { color: #F0B4AC; background: rgba(176,58,46,.20); }
+  :root[data-theme="dark"] .mini--danger:hover { background: rgba(176,58,46,.30); }
   :root[data-theme="dark"] .usercard__foot { color: rgba(231,239,233,.5); box-shadow: inset 0 1px 0 rgba(255,255,255,.07); }
   :root[data-theme="dark"] .userform { background: linear-gradient(180deg, #1D252A 0%, #171E22 100%); box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 34px -16px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.08); }
   :root[data-theme="dark"] .userform .lbl, :root[data-theme="dark"] .userform__lead { color: rgba(231,239,233,.6); }
@@ -660,8 +666,9 @@
   :root[data-theme="dark"] .badge--muted { background: rgba(255,255,255,.08); color: rgba(231,239,233,.7); }
 
   /* ---------- Contratos: formulário e resumo do cálculo ---------- */
-  .contract-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
-  .contract-grid .card { margin-bottom: 0; }
+  .contract-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .contract-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .contract-col .card { margin-bottom: 0; }
   .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .calc-item { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 10px; background: var(--primary-soft); }
   .calc-lbl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
@@ -670,6 +677,6 @@
   :root[data-theme="dark"] .calc-val { color: #BFE6CE; }
   :root[data-theme="dark"] .calc-lbl, :root[data-theme="dark"] .calc-note { color: rgba(231,239,233,.6); }
 
-  @media (max-width: 1024px) { .contract-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

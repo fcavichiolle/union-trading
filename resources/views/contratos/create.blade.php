@@ -15,140 +15,144 @@
 <form method="POST" action="{{ route('contratos.store') }}" id="contratoForm" novalidate>
     @csrf
 
-    <div class="contract-grid">
-        {{-- 1. Informações Gerais --}}
-        <div class="card">
-            <div class="card__header"><h2>1. Informações Gerais</h2></div>
-            <div class="card__body">
-                <div class="field {{ $errors->has('data_contrato') ? 'has-error' : '' }}" style="margin-bottom:14px;">
-                    <label for="data_contrato">Data do contrato</label>
-                    <input type="date" id="data_contrato" name="data_contrato" value="{{ old('data_contrato', date('Y-m-d')) }}" required>
-                    @error('data_contrato') <div class="field-error">{{ $message }}</div> @enderror
+    <div class="contract-cols">
+        <div class="contract-col">
+            {{-- 1. Informações Gerais --}}
+            <div class="card">
+                <div class="card__header"><h2>1. Informações Gerais</h2></div>
+                <div class="card__body">
+                    <div class="field {{ $errors->has('data_contrato') ? 'has-error' : '' }}" style="margin-bottom:14px;">
+                        <label for="data_contrato">Data do contrato</label>
+                        <input type="date" id="data_contrato" name="data_contrato" value="{{ old('data_contrato', date('Y-m-d')) }}" required>
+                        @error('data_contrato') <div class="field-error">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="field {{ $errors->has('numero_ut') ? 'has-error' : '' }}" style="margin-bottom:14px;">
+                        <label for="numero_ut">Ref. Vendedor UT (número do contrato)</label>
+                        <input type="text" id="numero_ut" name="numero_ut" value="{{ old('numero_ut') }}" placeholder="Ex.: 5940" required>
+                        @error('numero_ut') <div class="field-error">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="field {{ $errors->has('cliente_id') ? 'has-error' : '' }}" style="margin-bottom:14px;">
+                        <label for="cliente_id">Comprador (BUYER)</label>
+                        <select id="cliente_id" name="cliente_id" required>
+                            <option value="">Selecione…</option>
+                            @foreach ($clientes as $c)
+                                <option value="{{ $c->id }}" data-ref="{{ $c->ref_padrao }}" @selected(old('cliente_id') == $c->id)>{{ $c->nome }}</option>
+                            @endforeach
+                        </select>
+                        @error('cliente_id') <div class="field-error">{{ $message }}</div> @enderror
+                        @if ($clientes->isEmpty())
+                            <div class="hint">Nenhum cliente cadastrado — <a href="{{ route('admin.clientes.index') }}" style="text-decoration:underline;">cadastre um cliente</a> primeiro.</div>
+                        @endif
+                    </div>
+                    <div class="field" style="margin-bottom:0;">
+                        <label for="buyer_ref">Ref. Comprador</label>
+                        <input type="text" id="buyer_ref" name="buyer_ref" value="{{ old('buyer_ref') }}" placeholder="Ex.: 31722">
+                    </div>
                 </div>
-                <div class="field {{ $errors->has('numero_ut') ? 'has-error' : '' }}" style="margin-bottom:14px;">
-                    <label for="numero_ut">Ref. Vendedor UT (número do contrato)</label>
-                    <input type="text" id="numero_ut" name="numero_ut" value="{{ old('numero_ut') }}" placeholder="Ex.: 5940" required>
-                    @error('numero_ut') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-                <div class="field {{ $errors->has('cliente_id') ? 'has-error' : '' }}" style="margin-bottom:14px;">
-                    <label for="cliente_id">Comprador (BUYER)</label>
-                    <select id="cliente_id" name="cliente_id" required>
-                        <option value="">Selecione…</option>
-                        @foreach ($clientes as $c)
-                            <option value="{{ $c->id }}" data-ref="{{ $c->ref_padrao }}" @selected(old('cliente_id') == $c->id)>{{ $c->nome }}</option>
-                        @endforeach
-                    </select>
-                    @error('cliente_id') <div class="field-error">{{ $message }}</div> @enderror
-                    @if ($clientes->isEmpty())
-                        <div class="hint">Nenhum cliente cadastrado — <a href="{{ route('admin.clientes.index') }}" style="text-decoration:underline;">cadastre um cliente</a> primeiro.</div>
-                    @endif
-                </div>
-                <div class="field" style="margin-bottom:0;">
-                    <label for="buyer_ref">Ref. Comprador</label>
-                    <input type="text" id="buyer_ref" name="buyer_ref" value="{{ old('buyer_ref') }}" placeholder="Ex.: 31722">
+            </div>
+
+            {{-- 3. Preço e Logística --}}
+            <div class="card">
+                <div class="card__header"><h2>3. Preço e Logística</h2></div>
+                <div class="card__body">
+                    <div class="field" style="margin-bottom:14px;">
+                        <label for="diferencial">Diferencial (<span id="difUnit">cents/pounds</span>)</label>
+                        <input type="text" id="diferencial" name="diferencial" value="{{ old('diferencial') }}" placeholder="Ex.: -16.00">
+                    </div>
+                    <div class="field" style="margin-bottom:14px;">
+                        <label for="mes_fixacao">Mês de fixação (bolsa)</label>
+                        <select id="mes_fixacao" name="mes_fixacao" data-old="{{ old('mes_fixacao') }}">
+                            <option value="">—</option>
+                        </select>
+                        <span class="hint">As opções mudam conforme o porto (Santos = NY ICE · Vitória = Robusta Londres).</span>
+                    </div>
+                    <div class="field" style="margin-bottom:14px;">
+                        <label for="embarque_mes">Embarque (mês)</label>
+                        <input type="month" id="embarque_mes" name="embarque_mes" value="{{ old('embarque_mes') }}">
+                    </div>
+                    <div class="field" style="margin-bottom:14px;">
+                        <label for="incoterms">Incoterms</label>
+                        <select id="incoterms" name="incoterms" required>
+                            @foreach ($cafe::incotermsLista() as $cod => $ext)
+                                <option value="{{ $cod }}" @selected(old('incoterms', 'FOB') === $cod)>{{ $cod }} — {{ $ext }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="field" style="margin-bottom:0;">
+                        <label for="porto">Porto</label>
+                        <select id="porto" name="porto" required>
+                            @foreach ($cafe::portos() as $cod => $rotulo)
+                                <option value="{{ $cod }}" @selected(old('porto') === $cod)>{{ $rotulo }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
 
-        {{-- 2. Detalhes do Produto --}}
-        <div class="card">
-            <div class="card__header"><h2>2. Detalhes do Produto</h2></div>
-            <div class="card__body">
-                <div class="field {{ $errors->has('quantidade_kg') ? 'has-error' : '' }}" style="margin-bottom:14px;">
-                    <label for="quantidade_kg">Quantidade (KG)</label>
-                    <input type="number" step="0.01" min="1" id="quantidade_kg" name="quantidade_kg" value="{{ old('quantidade_kg') }}" placeholder="Ex.: 108000" required>
-                    @error('quantidade_kg') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-                <div class="field {{ $errors->has('qualidade_id') ? 'has-error' : '' }}" style="margin-bottom:14px;">
-                    <label for="qualidade_id">Qualidade</label>
-                    <select id="qualidade_id" name="qualidade_id" required>
-                        <option value="">Selecione…</option>
-                        @foreach ($qualidades as $q)
-                            <option value="{{ $q->id }}" @selected(old('qualidade_id') == $q->id)>{{ $q->descricao }}</option>
-                        @endforeach
-                    </select>
-                    @error('qualidade_id') <div class="field-error">{{ $message }}</div> @enderror
-                    @if ($qualidades->isEmpty())
-                        <div class="hint">Nenhuma qualidade cadastrada — <a href="{{ route('admin.qualidades.index') }}" style="text-decoration:underline;">cadastre uma qualidade</a> primeiro.</div>
-                    @endif
-                </div>
-                <div class="field" style="margin-bottom:14px;">
-                    <label for="tipo_cafe">Tipo de café (define o cálculo de lotes)</label>
-                    <select id="tipo_cafe" name="tipo_cafe" required>
-                        <option value="ARABICA" @selected(old('tipo_cafe', 'ARABICA') === 'ARABICA')>Arábica (÷ 283,49)</option>
-                        <option value="CONILON" @selected(old('tipo_cafe') === 'CONILON')>Conilon (÷ 166,66)</option>
-                    </select>
-                </div>
-                <div class="field" style="margin-bottom:14px;">
-                    <label for="certificado">Certificado</label>
-                    <select id="certificado" name="certificado" required>
-                        @foreach ($cafe::certificados() as $cod => $rotulo)
-                            <option value="{{ $cod }}" @selected(old('certificado') === $cod)>{{ $rotulo }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="field" style="margin-bottom:14px;">
-                    <label for="embalagem">Embalagem</label>
-                    <select id="embalagem" name="embalagem" required>
-                        @foreach ($cafe::embalagens() as $emb)
-                            <option value="{{ $emb }}" @selected(old('embalagem') === $emb)>{{ $emb }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="field" style="margin-bottom:0;">
-                    <label for="tipo_container">Tipo de container</label>
-                    <select id="tipo_container" name="tipo_container" required>
-                        <option value="20" @selected(old('tipo_container') === '20')>TEUS — Container de 20' (máx. 22.000 kg)</option>
-                        <option value="40" @selected(old('tipo_container', '40') === '40')>FEUS — Container de 40' (máx. 25.000 kg)</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        {{-- 3. Preço e Logística --}}
-        <div class="card">
-            <div class="card__header"><h2>3. Preço e Logística</h2></div>
-            <div class="card__body">
-                <div class="field" style="margin-bottom:14px;">
-                    <label for="diferencial">Diferencial (<span id="difUnit">cents/pounds</span>)</label>
-                    <input type="text" id="diferencial" name="diferencial" value="{{ old('diferencial') }}" placeholder="Ex.: -16.00">
-                </div>
-                <div class="field" style="margin-bottom:14px;">
-                    <label for="mes_fixacao">Mês de fixação (bolsa)</label>
-                    <select id="mes_fixacao" name="mes_fixacao" data-old="{{ old('mes_fixacao') }}">
-                        <option value="">—</option>
-                    </select>
-                    <span class="hint">As opções mudam conforme o porto (Santos = NY ICE · Vitória = Robusta Londres).</span>
-                </div>
-                <div class="field" style="margin-bottom:14px;">
-                    <label for="embarque_mes">Embarque (mês)</label>
-                    <input type="month" id="embarque_mes" name="embarque_mes" value="{{ old('embarque_mes') }}">
-                </div>
-                <div class="field" style="margin-bottom:14px;">
-                    <label for="incoterms">Incoterms</label>
-                    <select id="incoterms" name="incoterms" required>
-                        @foreach ($cafe::incotermsLista() as $cod => $ext)
-                            <option value="{{ $cod }}" @selected(old('incoterms', 'FOB') === $cod)>{{ $cod }} — {{ $ext }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="field" style="margin-bottom:0;">
-                    <label for="porto">Porto</label>
-                    <select id="porto" name="porto" required>
-                        @foreach ($cafe::portos() as $cod => $rotulo)
-                            <option value="{{ $cod }}" @selected(old('porto') === $cod)>{{ $rotulo }}</option>
-                        @endforeach
-                    </select>
+        <div class="contract-col">
+            {{-- 2. Detalhes do Produto --}}
+            <div class="card">
+                <div class="card__header"><h2>2. Detalhes do Produto</h2></div>
+                <div class="card__body">
+                    <div class="field {{ $errors->has('quantidade_kg') ? 'has-error' : '' }}" style="margin-bottom:14px;">
+                        <label for="quantidade_kg">Quantidade (KG)</label>
+                        <input type="number" step="0.01" min="1" id="quantidade_kg" name="quantidade_kg" value="{{ old('quantidade_kg') }}" placeholder="Ex.: 108000" required>
+                        @error('quantidade_kg') <div class="field-error">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="field {{ $errors->has('qualidade_id') ? 'has-error' : '' }}" style="margin-bottom:14px;">
+                        <label for="qualidade_id">Qualidade</label>
+                        <select id="qualidade_id" name="qualidade_id" required>
+                            <option value="">Selecione…</option>
+                            @foreach ($qualidades as $q)
+                                <option value="{{ $q->id }}" @selected(old('qualidade_id') == $q->id)>{{ $q->descricao }}</option>
+                            @endforeach
+                        </select>
+                        @error('qualidade_id') <div class="field-error">{{ $message }}</div> @enderror
+                        @if ($qualidades->isEmpty())
+                            <div class="hint">Nenhuma qualidade cadastrada — <a href="{{ route('admin.qualidades.index') }}" style="text-decoration:underline;">cadastre uma qualidade</a> primeiro.</div>
+                        @endif
+                    </div>
+                    <div class="field" style="margin-bottom:14px;">
+                        <label for="tipo_cafe">Tipo de café (define o cálculo de lotes)</label>
+                        <select id="tipo_cafe" name="tipo_cafe" required>
+                            <option value="ARABICA" @selected(old('tipo_cafe', 'ARABICA') === 'ARABICA')>Arábica (÷ 283,49)</option>
+                            <option value="CONILON" @selected(old('tipo_cafe') === 'CONILON')>Conilon (÷ 166,66)</option>
+                        </select>
+                    </div>
+                    <div class="field" style="margin-bottom:14px;">
+                        <label for="certificado">Certificado</label>
+                        <select id="certificado" name="certificado" required>
+                            @foreach ($cafe::certificados() as $cod => $rotulo)
+                                <option value="{{ $cod }}" @selected(old('certificado') === $cod)>{{ $rotulo }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="field" style="margin-bottom:14px;">
+                        <label for="embalagem">Embalagem</label>
+                        <select id="embalagem" name="embalagem" required>
+                            @foreach ($cafe::embalagens() as $emb)
+                                <option value="{{ $emb }}" @selected(old('embalagem') === $emb)>{{ $emb }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="field" style="margin-bottom:0;">
+                        <label for="tipo_container">Tipo de container</label>
+                        <select id="tipo_container" name="tipo_container" required>
+                            <option value="20" @selected(old('tipo_container') === '20')>TEUS — Container de 20' (máx. 22.000 kg)</option>
+                            <option value="40" @selected(old('tipo_container', '40') === '40')>FEUS — Container de 40' (máx. 25.000 kg)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        {{-- 4. Observações --}}
-        <div class="card">
-            <div class="card__header"><h2>4. Observações Adicionais (REMARKS)</h2></div>
-            <div class="card__body">
-                <div class="field" style="margin-bottom:0;">
-                    <textarea name="remarks" rows="8" placeholder="Ex.: SHIPMENT 01/09" style="width:100%; resize:vertical;">{{ old('remarks') }}</textarea>
+            {{-- 4. Observações --}}
+            <div class="card">
+                <div class="card__header"><h2>4. Observações Adicionais (REMARKS)</h2></div>
+                <div class="card__body">
+                    <div class="field" style="margin-bottom:0;">
+                        <textarea name="remarks" rows="8" placeholder="Ex.: SHIPMENT 01/09" style="width:100%; resize:vertical;">{{ old('remarks') }}</textarea>
+                    </div>
                 </div>
             </div>
         </div>
@@ -159,7 +163,7 @@
         <div class="card__header"><h2>Resumo do cálculo (automático)</h2></div>
         <div class="card__body">
             <div class="calc-grid">
-                <div class="calc-item"><span class="calc-lbl">Sacas (kg ÷ 60)</span><span class="calc-val" id="pvSacas">—</span></div>
+                <div class="calc-item"><span class="calc-lbl">Sacas (kg ÷ 60 / 59)</span><span class="calc-val" id="pvSacas">—</span></div>
                 <div class="calc-item"><span class="calc-lbl">Lotes</span><span class="calc-val" id="pvLotes">—</span></div>
                 <div class="calc-item"><span class="calc-lbl">Containers</span><span class="calc-val" id="pvContainers">—</span></div>
                 <div class="calc-item"><span class="calc-lbl">Peso por container</span><span class="calc-val" id="pvPeso">—</span></div>
