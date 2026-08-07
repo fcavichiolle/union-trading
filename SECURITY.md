@@ -30,6 +30,12 @@ tem uma explicação curta.
   admin nasce com `force_password_change = true`; o middleware
   `RedirectIfPasswordChangeRequired` bloqueia qualquer outra tela até a
   troca acontecer.
+- **Entrega das credenciais por e-mail:** ao criar um usuário ou resetar a
+  senha, o sistema envia a senha temporária por e-mail (Notification
+  `CredenciaisDeAcesso`). A senha só aparece na tela do admin como
+  *fallback* quando não há e-mail real configurado (`MAIL_MAILER=log`) ou
+  se o envio falhar. Como ela é obrigatoriamente trocada no 1º login,
+  trafega uma única vez.
 - **Conta desativada = fora na hora:** `EnsureUserIsActive` derruba a
   sessão de quem for desativado, mesmo que já estivesse logado.
 - **Reset de senha:** token de e-mail é armazenado com hash (padrão do
@@ -98,8 +104,10 @@ tem uma explicação curta.
       URLs geradas quando `APP_ENV=production`, mas o **servidor web**
       também precisa redirecionar HTTP → HTTPS).
 - [ ] `SESSION_SECURE_COOKIE=true` no `.env` de produção.
-- [ ] Configurar um provedor de e-mail de verdade (`MAIL_*`) para o
-      "esqueci minha senha" funcionar de fato.
+- [ ] Configurar um provedor de e-mail de verdade (`MAIL_*`) — necessário
+      para o "esqueci minha senha" **e** para o e-mail de credenciais do
+      usuário criado/reset pelo admin. Sem isso, a senha só aparece na
+      tela do admin (fallback). Ver `.env.example` para exemplo de SMTP.
 - [ ] Trocar a senha do primeiro admin (gerada pelo `AdminUserSeeder`)
       assim que possível — o `force_password_change` já obriga isso no
       primeiro login.
@@ -109,7 +117,8 @@ tem uma explicação curta.
 - [ ] Revisar periodicamente `composer audit` (verifica dependências
       com vulnerabilidades conhecidas).
 - [ ] (Opcional, hardening extra) Definir uma Content-Security-Policy
-      explícita — hoje o CSS é servido inline via
-      `resources/views/partials/styles.blade.php`, o que é seguro para
-      o uso atual, mas uma CSP restritiva exigiria mover para um arquivo
-      externo com nonce.
+      explícita — hoje o CSS é servido inline (`partials/styles.blade.php`)
+      e há um pequeno `<script>` inline na tela de usuários (descrição do
+      perfil), que usa apenas `textContent` (nunca `innerHTML`). Seguro
+      para o uso atual, mas uma CSP restritiva exigiria `nonce` ou mover
+      CSS/JS para arquivos externos.

@@ -144,10 +144,16 @@
             if (!sel || !box) return;
             function update() {
                 var opt = sel.options[sel.selectedIndex];
-                var desc = opt ? opt.getAttribute('data-desc') : '';
-                box.innerHTML = desc
-                    ? '<b>' + opt.text + '.</b> ' + desc
-                    : '<b>Permissões do perfil.</b> Selecione um perfil para ver o que ele libera.';
+                var desc = opt ? (opt.getAttribute('data-desc') || '') : '';
+                // Monta com textContent (nunca innerHTML) para não injetar
+                // HTML a partir de dados do banco — defesa contra XSS.
+                box.textContent = '';
+                var b = document.createElement('b');
+                b.textContent = desc ? opt.text + '.' : 'Permissões do perfil.';
+                box.appendChild(b);
+                box.appendChild(document.createTextNode(
+                    ' ' + (desc || 'Selecione um perfil para ver o que ele libera.')
+                ));
             }
             sel.addEventListener('change', update);
             if (sel.value) update();
