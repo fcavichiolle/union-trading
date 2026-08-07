@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy">
+    <meta name="csrf-token" content="vhRvWWL4FZ5QDWReVKoIkjf1brazouERT5rwZov5">
     <title>Qualidades</title>
     <style>
   :root {
@@ -772,7 +772,7 @@
                 <div class="appbar__acts">
                     <a href="#" title="Trocar senha">Trocar senha</a>
                     <form method="POST" action="index.html">
-                        <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off">                        <button type="submit" title="Sair">Sair</button>
+                        <input type="hidden" name="_token" value="vhRvWWL4FZ5QDWReVKoIkjf1brazouERT5rwZov5" autocomplete="off">                        <button type="submit" title="Sair">Sair</button>
                     </form>
                 </div>
             </div>
@@ -787,19 +787,20 @@
 
                             <div class="admin-grid">
         <div class="usercard">
-            <div class="utable__head" style="grid-template-columns: 1fr 92px;">
+            <div class="utable__head" style="grid-template-columns: 1fr 160px;">
                 <span>Descrição</span><span class="r">Ações</span>
             </div>
 
-                            <div class="utable__row" style="grid-template-columns: 1fr 92px; position:static; align-items:center;">
-                    <form method="POST" action="qualidades.html/1" style="margin:0; display:flex; gap:8px; align-items:center;">
-                        <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off"> <input type="hidden" name="_method" value="PUT">                        <input type="text" name="descricao" value="CAFÉ ARÁB NAT BRASIL CRIBA 14/16 SS GC" required
-                               style="height:38px; font-size:13.5px;">
-                        <button type="submit" class="mini" title="Salvar alteração">Salvar</button>
+                            <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="qualidades.html/1" id="q-1" style="margin:0;">
+                        <input type="hidden" name="_token" value="vhRvWWL4FZ5QDWReVKoIkjf1brazouERT5rwZov5" autocomplete="off"> <input type="hidden" name="_method" value="PUT">                        <input type="text" name="descricao" value="CAFÉ ARÁB NAT BRASIL CRIBA 14/16 SS GC" required style="height:38px; font-size:13.5px; width:100%;">
                     </form>
-                    <form method="POST" action="qualidades.html/1" onsubmit="return confirm('Remover esta qualidade?');" style="margin:0; justify-self:end;">
-                        <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                        <button type="submit" class="mini mini--danger">Excluir</button>
-                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="q-1" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="qualidades.html/1" onsubmit="return confirm('Remover esta qualidade?');" style="margin:0;">
+                            <input type="hidden" name="_token" value="vhRvWWL4FZ5QDWReVKoIkjf1brazouERT5rwZov5" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
                 </div>
             
             <div class="usercard__foot">
@@ -808,7 +809,7 @@
         </div>
 
         <form method="POST" action="qualidades.html" class="userform">
-            <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off">            <div>
+            <input type="hidden" name="_token" value="vhRvWWL4FZ5QDWReVKoIkjf1brazouERT5rwZov5" autocomplete="off">            <div>
                 <h2>Adicionar qualidade</h2>
                 <p class="userform__lead">Ex.: CAFÉ ARÁB NAT BRASIL CRIBA 14/16 SS GC</p>
             </div>
