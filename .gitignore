@@ -26,6 +26,9 @@
 # Imagem-fonte solta do logo (versão processada fica em public/img/union-trading.png)
 /public/WhatsApp Image *.jpeg
 
+# Config local do Claude Code (caminhos específicos da máquina)
+/.claude
+
 Homestead.json
 Homestead.yaml
 .phpunit.result.cache

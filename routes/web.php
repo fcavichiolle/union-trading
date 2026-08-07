@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\ClienteController;
+use App\Http\Controllers\Admin\QualidadeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Contratos\ContratoController;
 use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -79,6 +82,31 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::get('/usuarios/{user}/editar', [UserController::class, 'edit'])->name('users.edit');
             Route::put('/usuarios/{user}', [UserController::class, 'update'])->name('users.update');
             Route::patch('/usuarios/{user}/resetar-senha', [UserController::class, 'resetPassword'])->name('users.reset-password');
+
+            // Cadastros usados pelos contratos de exportação
+            Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
+            Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
+            Route::get('/clientes/{cliente}/editar', [ClienteController::class, 'edit'])->name('clientes.edit');
+            Route::put('/clientes/{cliente}', [ClienteController::class, 'update'])->name('clientes.update');
+            Route::delete('/clientes/{cliente}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
+
+            Route::get('/qualidades', [QualidadeController::class, 'index'])->name('qualidades.index');
+            Route::post('/qualidades', [QualidadeController::class, 'store'])->name('qualidades.store');
+            Route::put('/qualidades/{qualidade}', [QualidadeController::class, 'update'])->name('qualidades.update');
+            Route::delete('/qualidades/{qualidade}', [QualidadeController::class, 'destroy'])->name('qualidades.destroy');
+        });
+
+        /*
+        |----------------------------------------------------------------
+        | Módulo 2 — Contratos de exportação
+        |----------------------------------------------------------------
+        */
+        Route::middleware('role:admin,compras')->prefix('contratos')->name('contratos.')->group(function () {
+            Route::get('/', [ContratoController::class, 'index'])->name('index');
+            Route::get('/novo', [ContratoController::class, 'create'])->name('create');
+            Route::post('/', [ContratoController::class, 'store'])->name('store');
+            Route::get('/{contrato}', [ContratoController::class, 'show'])->name('show');
+            Route::get('/{contrato}/pdf', [ContratoController::class, 'pdf'])->name('pdf');
         });
 
         /*
