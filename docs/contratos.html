@@ -684,6 +684,11 @@
   :root[data-theme="dark"] .calc-val { color: #BFE6CE; }
   :root[data-theme="dark"] .calc-lbl, :root[data-theme="dark"] .calc-note { color: rgba(231,239,233,.6); }
 
+  /* checkbox simples com rotulo (ex.: "Contrato ja fixado") */
+  .check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; }
+  .check-row input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; margin: 0; }
+  .check-row span { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
@@ -800,6 +805,7 @@
                     <th>Qualidade</th>
                     <th class="num">Qtde (kg)</th>
                     <th class="num">Lotes</th>
+                    <th>Preço</th>
                     <th></th>
                 </tr>
             </thead>
@@ -811,6 +817,9 @@
                         <td data-label="Qualidade">CAFÉ ARÁB NAT BRASIL CRIBA 14/16 SS GC</td>
                         <td class="num" data-label="Qtde (kg)">75.000</td>
                         <td class="num" data-label="Lotes">4</td>
+                        <td data-label="Preço">
+                                                            <span class="badge badge--green">FIXED</span>
+                                                    </td>
                         <td class="cell-action" style="display:flex; gap:6px; justify-content:flex-end;">
                             <a href="contratos.html/1" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Ver</a>
                             <a href="contratos.html/1/pdf" class="btn btn-primary" data-filename="UT_5941_MIORICFLLC_07-08-2026.pdf" style="padding:6px 12px; font-size:13px;">PDF</a>
@@ -823,6 +832,9 @@
                         <td data-label="Qualidade">CAFÉ ARÁB NAT BRASIL CRIBA 14/16 SS GC</td>
                         <td class="num" data-label="Qtde (kg)">108.000</td>
                         <td class="num" data-label="Lotes">6</td>
+                        <td data-label="Preço">
+                                                            <span class="badge badge--muted">A FIXAR</span>
+                                                    </td>
                         <td class="cell-action" style="display:flex; gap:6px; justify-content:flex-end;">
                             <a href="contratos.html/2" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Ver</a>
                             <a href="contratos.html/2/pdf" class="btn btn-primary" data-filename="UT_5940_ICONA_05-08-2026.pdf" style="padding:6px 12px; font-size:13px;">PDF</a>

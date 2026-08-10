@@ -684,6 +684,11 @@
   :root[data-theme="dark"] .calc-val { color: #BFE6CE; }
   :root[data-theme="dark"] .calc-lbl, :root[data-theme="dark"] .calc-note { color: rgba(231,239,233,.6); }
 
+  /* checkbox simples com rotulo (ex.: "Contrato ja fixado") */
+  .check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; }
+  .check-row input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; margin: 0; }
+  .check-row span { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
@@ -799,6 +804,8 @@
                 <option value="">Todos</option>
                 <option value="FINE_CUP" >Fine Cup</option>
                 <option value="GOOD_CUP" >Good Cup</option>
+                <option value="GOOD_CUP_2R" >Good Cup 2R</option>
+                <option value="RIO_MINAS" >Rio Minas</option>
                 <option value="SEM_CLASSIFICACAO" >Não classificada</option>
             </select>
         </div>
@@ -822,6 +829,7 @@
                     <th class="num">Merc. interno (sc)</th>
                     <th class="num">Grinders (sc)</th>
                     <th>Padrão</th>
+                    <th>Lote</th>
                     <th></th>
                 </tr>
             </thead>
@@ -838,6 +846,9 @@
                         <td data-label="Padrão">
                                                             <span class="badge badge--green">Fine Cup</span>
                                                     </td>
+                        <td data-label="Lote">
+                                                            <span class="badge badge--red" title="Esta compra ainda não pode ser considerada definitivamente em estoque.">⚠ Falta nº do lote</span>
+                                                    </td>
                         <td class="cell-action"><a href="compras.html/5" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
                     </tr>
                                     <tr>
@@ -851,6 +862,9 @@
                         <td class="num" data-label="Grinders (sc)">120,00</td>
                         <td data-label="Padrão">
                                                             <span class="badge badge--green">Fine Cup</span>
+                                                    </td>
+                        <td data-label="Lote">
+                                                            <span class="badge badge--green">L-2026-0042</span>
                                                     </td>
                         <td class="cell-action"><a href="compras.html/4" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
                     </tr>
@@ -866,6 +880,9 @@
                         <td data-label="Padrão">
                                                             <span class="badge badge--green">Good Cup</span>
                                                     </td>
+                        <td data-label="Lote">
+                                                            <span class="badge badge--green">L-2026-0038</span>
+                                                    </td>
                         <td class="cell-action"><a href="compras.html/3" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
                     </tr>
                                     <tr>
@@ -880,6 +897,9 @@
                         <td data-label="Padrão">
                                                             <span class="badge badge--green">Good Cup</span>
                                                     </td>
+                        <td data-label="Lote">
+                                                            <span class="badge badge--red" title="Esta compra ainda não pode ser considerada definitivamente em estoque.">⚠ Falta nº do lote</span>
+                                                    </td>
                         <td class="cell-action"><a href="compras.html/2" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
                     </tr>
                                     <tr>
@@ -893,6 +913,9 @@
                         <td class="num" data-label="Grinders (sc)">40,00</td>
                         <td data-label="Padrão">
                                                             <span class="badge badge--green">Fine Cup</span>
+                                                    </td>
+                        <td data-label="Lote">
+                                                            <span class="badge badge--green">L-2026-0011</span>
                                                     </td>
                         <td class="cell-action"><a href="compras.html/1" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
                     </tr>

@@ -821,16 +821,42 @@
                 <div class="card__header"><h2>3. Preço e Logística</h2></div>
                 <div class="card__body">
                     <div class="field" style="margin-bottom:14px;">
-                        <label for="diferencial">Diferencial (<span id="difUnit">cents/pounds</span>)</label>
-                        <input type="text" id="diferencial" name="diferencial" value="" placeholder="Ex.: -16.00">
+                        <label class="check-row">
+                            <input type="checkbox" id="fixado" name="fixado" value="1">
+                            <span>Contrato já fixado (FIXED)</span>
+                        </label>
                     </div>
-                    <div class="field" style="margin-bottom:14px;">
-                        <label for="mes_fixacao">Mês de fixação (bolsa)</label>
-                        <select id="mes_fixacao" name="mes_fixacao" data-old="">
-                            <option value="">—</option>
-                        </select>
-                        <span class="hint">As opções mudam conforme o porto (Santos = NY ICE · Vitória = Robusta Londres).</span>
+
+                    <div id="grupoAFixar">
+                        <div class="field" style="margin-bottom:14px;">
+                            <label for="diferencial">Diferencial (<span id="difUnit">cents/pounds</span>)</label>
+                            <input type="text" id="diferencial" name="diferencial" value="" placeholder="Ex.: -16.00">
+                        </div>
+                        <div class="field" style="margin-bottom:14px;">
+                            <label for="mes_fixacao">Mês de fixação (bolsa)</label>
+                            <select id="mes_fixacao" name="mes_fixacao" data-old="">
+                                <option value="">—</option>
+                            </select>
+                            <span class="hint">As opções mudam conforme o porto (Santos = NY ICE · Vitória = Robusta Londres).</span>
+                        </div>
                     </div>
+
+                    <div id="grupoFixado" style="display:none;">
+                        <div style="display:flex; gap:10px; margin-bottom:14px;">
+                            <div class="field" style="flex:1; margin-bottom:0;">
+                                <label for="preco_fixado">Preço fixado</label>
+                                <input type="text" id="preco_fixado" name="preco_fixado" value="" placeholder="Ex.: 353.40">
+                            </div>
+                            <div class="field" style="width:130px; margin-bottom:0;">
+                                <label for="preco_fixado_unidade">Unidade</label>
+                                <select id="preco_fixado_unidade" name="preco_fixado_unidade" data-old="">
+                                    <option value="CTS_LB">cts/lb</option>
+                                    <option value="USD_MT">USD/MT</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="field" style="margin-bottom:14px;">
                         <label for="embarque_mes">Embarque (mês)</label>
                         <input type="month" id="embarque_mes" name="embarque_mes" value="">
@@ -954,7 +980,19 @@
             clienteEl = document.getElementById('cliente_id'),
             buyerRefEl = document.getElementById('buyer_ref'),
             mesEl = document.getElementById('mes_fixacao'),
-            difUnit = document.getElementById('difUnit');
+            difUnit = document.getElementById('difUnit'),
+            fixadoEl = document.getElementById('fixado'),
+            grupoAFixar = document.getElementById('grupoAFixar'),
+            grupoFixado = document.getElementById('grupoFixado'),
+            precoFixadoEl = document.getElementById('preco_fixado'),
+            precoFixadoUnidadeEl = document.getElementById('preco_fixado_unidade');
+
+        function toggleFixado() {
+            var fixado = fixadoEl.checked;
+            grupoAFixar.style.display = fixado ? 'none' : '';
+            grupoFixado.style.display = fixado ? '' : 'none';
+            precoFixadoEl.required = fixado;
+        }
 
         function fmt(n, dec) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: dec }); }
         function kgPorSaca() { return embEl.value === 'Jute Bags 59kg' ? 59 : 60; }
@@ -970,6 +1008,12 @@
                 mesEl.appendChild(o);
             });
             if (difUnit) difUnit.textContent = portoEl.value === 'VITORIA' ? 'USD/MT' : 'cents/pounds';
+            // Sugere a unidade "de costume" do porto, mas só se o usuário
+            // ainda não escolheu a unidade do preço fixado manualmente —
+            // é uma escolha livre, não amarrada ao porto.
+            if (precoFixadoUnidadeEl && !precoFixadoUnidadeEl.dataset.tocado) {
+                precoFixadoUnidadeEl.value = portoEl.value === 'VITORIA' ? 'USD_MT' : 'CTS_LB';
+            }
         }
 
         function preview() {
@@ -1000,9 +1044,17 @@
             var ref = opt ? (opt.getAttribute('data-ref') || '') : '';
             if (ref) buyerRefEl.value = ref;
         });
+        fixadoEl.addEventListener('change', toggleFixado);
+        if (precoFixadoUnidadeEl) {
+            // Se já veio um valor (reenvio após erro de validação), respeita
+            // a escolha do usuário em vez de sobrescrever com a sugestão.
+            if (precoFixadoUnidadeEl.getAttribute('data-old')) precoFixadoUnidadeEl.dataset.tocado = '1';
+            precoFixadoUnidadeEl.addEventListener('change', function () { precoFixadoUnidadeEl.dataset.tocado = '1'; });
+        }
 
         buildMeses();
         preview();
+        toggleFixado();
     })();
 </script>
         </div>
