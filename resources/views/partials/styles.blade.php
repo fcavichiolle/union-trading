@@ -682,6 +682,64 @@
   .check-row input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; margin: 0; }
   .check-row span { font-size: 13.5px; font-weight: 600; color: var(--ink); }
 
+  /* ---------- Mercado (Tela NY + Cotações) ---------- */
+  .badge--amber { background: #FCF3DC; color: #8A6116; }
+  :root[data-theme="dark"] .badge--amber { background: rgba(240,196,102,.16); color: #F0D9A8; }
+
+  /* régua de cotações no topo da Tela NY */
+  .mkt-strip {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 18px; padding: 10px 16px;
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    font-family: var(--font-data); font-size: 12.5px;
+  }
+  .mkt-chip { display: inline-flex; align-items: baseline; gap: 7px; }
+  .mkt-lbl { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .mkt-val { font-weight: 700; color: var(--ink); }
+  .mkt-more { margin-left: auto; font-family: var(--font-body); font-size: 12.5px; color: var(--primary); }
+  .mkt-up { color: var(--success-text); }
+  .mkt-down { color: var(--danger-text); }
+
+  /* lista de contratos com checkbox no form da Tela NY */
+  .fix-list {
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: 260px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px; background: #fff;
+  }
+  .fix-item { display: flex; align-items: center; gap: 8px; padding: 3px 2px; }
+  .fix-item label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer; font-size: 12.5px; font-weight: 500; }
+  .fix-item label span:first-of-type { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fix-item input[type=checkbox] { width: 15px; height: 15px; flex: none; accent-color: var(--primary); margin: 0; }
+  .fix-item input[type=checkbox]:disabled + span { opacity: .45; }
+  .fix-item__meta { color: var(--muted); font-size: 11px; flex: none; margin-left: auto; }
+  .fix-item .fix-dif { width: 78px; flex: none; padding: 5px 8px; font-size: 12.5px; text-align: right; }
+  .fix-item .fix-dif:disabled { opacity: .4; background: transparent; }
+  :root[data-theme="dark"] .fix-list { background: var(--surface); }
+
+  /* página de cotações */
+  .mkt-meta { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+  .mkt-status { font-size: 12.5px; font-weight: 600; }
+  .mkt-status--ok { color: var(--success-text); }
+  .mkt-status--off { color: var(--danger-text); }
+  .mkt-cambio { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 20px; margin-bottom: 20px; }
+  .mkt-tile { padding: 16px 20px; }
+  .mkt-tile__lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .mkt-tile__val { font-family: var(--font-data); font-size: 24px; font-weight: 700; color: var(--ink); }
+  .mkt-tile__dif { font-family: var(--font-data); font-size: 13px; margin-top: 3px; }
+  .mkt-table td.num { font-family: var(--font-data); font-size: 13px; }
+  .mkt-table .mkt-flag { font-size: 11px; color: var(--muted); margin-left: 6px; }
+  tr.mkt-indisp td { color: var(--muted); }
+  tr.mkt-indisp .mkt-flag { font-style: italic; }
+
+  :root[data-theme="dark"] .mkt-strip { background: var(--surface); }
+  :root[data-theme="dark"] .mkt-up { color: #8FD9AC; }
+  :root[data-theme="dark"] .mkt-down { color: #F0A099; }
+  :root[data-theme="dark"] .mkt-status--ok { color: #8FD9AC; }
+  :root[data-theme="dark"] .mkt-status--off { color: #F0A099; }
+
+  @media (max-width: 720px) { .mkt-cambio { grid-template-columns: 1fr 1fr; } .mkt-more { margin-left: 0; width: 100%; } }
+
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

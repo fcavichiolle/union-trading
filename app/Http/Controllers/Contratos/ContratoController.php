@@ -18,7 +18,9 @@ class ContratoController extends Controller
 {
     public function index(): View
     {
-        $contratos = Contrato::with('cliente')->orderByDesc('data_contrato')->orderByDesc('id')->paginate(20);
+        $contratos = Contrato::with('cliente')
+            ->withSum('fixacoes as lotes_fixados', 'lotes') // p/ badge PARCIAL sem N+1
+            ->orderByDesc('data_contrato')->orderByDesc('id')->paginate(20);
 
         return view('contratos.index', compact('contratos'));
     }
@@ -69,6 +71,8 @@ class ContratoController extends Controller
 
     public function show(Contrato $contrato): View
     {
+        $contrato->load('fixacoes.criadoPor');
+
         return view('contratos.show', compact('contrato'));
     }
 

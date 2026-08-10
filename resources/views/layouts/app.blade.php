@@ -66,6 +66,20 @@
                 </div>
             @endif
 
+            <div class="sb-group">
+                <div class="sb-group__label">Mercado</div>
+                @if ($u->hasRole('admin', 'compras'))
+                    <a href="{{ route('ny.index') }}" class="sb-link {{ request()->routeIs('ny.index') ? 'is-active' : '' }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v4M7 14v6M7 8h0a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2Z"></path><path d="M17 4v2M17 16v4M17 6h0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path></svg>
+                        <span>Tela NY (fixações)</span>
+                    </a>
+                @endif
+                <a href="{{ route('mercado.index') }}" class="sb-link {{ request()->routeIs('mercado.index') ? 'is-active' : '' }}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"></path><path d="m5 14 4-4 3.5 3L18 7"></path><path d="M14.5 7H18v3.5"></path></svg>
+                    <span>Cotações</span>
+                </a>
+            </div>
+
             @if ($u->hasRole('admin'))
                 <div class="sb-group">
                     <div class="sb-group__label">Administração</div>

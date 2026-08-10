@@ -167,6 +167,50 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 - Testes: `tests/Feature/ContratoTest.php` — cálculos, arredondamento, saca 59kg, containers 20'/40',
   preço por porto (NY/Londres), unicidade do UT, snapshot e geração do PDF (25 testes no total, verdes).
 
+### Módulo 3 — Mercado (Tela NY + Cotações)
+- **Tela NY** (`/tela-ny`, perfis admin/compras): fixação de preço dos contratos A FIXAR,
+  **por lotes (tranches)**. Cada fixação registra corretora, broker do cliente (opcional),
+  **tela** (posição da bolsa contra a qual se fixa — códigos de
+  `Contrato::mesesFixacaoSantos()/Vitoria()`, validada contra a bolsa do contrato), nº de
+  lotes, level e diferencial; o **preço da tranche (level + diferencial)** é calculado no
+  servidor (`Fixacao::booted()`). **Fixação em grupo**: o formulário usa checkboxes — 
+  marcando vários contratos (obrigatoriamente da mesma bolsa; o JS trava os de bolsa
+  diferente), fixa **todos os lotes restantes de todos de uma vez**, com o mesmo
+  level/corretora/tela e o **diferencial de cada contrato** (editável por linha); tudo numa
+  transação (ou grava tudo, ou nada). Fixação **parcial** só no modo de 1 contrato. Quando a soma dos lotes fixados atinge os lotes do contrato, o
+  contrato **vira FIXED automaticamente** com preço = **média ponderada** das tranches
+  (`Contrato::recalcularFixacao()`), na unidade da bolsa do porto (Santos → cts/lb,
+  Vitória → USD/MT). Excluir uma tranche recalcula e pode **reverter FIXED → A FIXAR**.
+  Contratos criados manualmente como FIXED não têm tranches e não passam por esse fluxo.
+  Fixações aparecem na tela do contrato; badge **PARCIAL n/m** (âmbar) nas listas
+  (`withSum('fixacoes as lotes_fixados', 'lotes')` para evitar N+1). AuditLog registra
+  fixação criada/excluída. **Corretoras (nossas)**: lista fixa em `Fixacao::corretoras()` —
+  StoneX East Coast, ICAP Corporates LLC (Hedgepoint) e Marex Financial Limited AGS Coffee.
+  **Broker do cliente**: campo opcional da fixação (`fixacoes.broker_cliente`), dropdown com
+  lista fixa em `Fixacao::brokersCliente()` (Stonex Miami, Adm Investor Services Inc,
+  Macquarie USA, Stonex London, Sucden London, Macquarie futures broker LLC, Stonex East
+  Coast, Marex London). Para adicionar/renomear em qualquer uma: editar o array.
+- **Cotações** (`/mercado`, todos os perfis): arábica NY (7 posições), robusta Londres e
+  câmbio (dólar/euro) via **Yahoo Finance** (endpoint público `v8/finance/chart`, delay
+  ~15 min, sem chave de API). Backend em `app/Services/MercadoCafe.php`: busca os símbolos
+  em paralelo (`Http::pool`), **cache de 30s** do snapshot + cache de longa duração por
+  símbolo ("último valor conhecido", devolvido com `stale=true` se o Yahoo falhar);
+  posição sem dado algum sai `price=null` e o front mostra "indisponível".
+  JSON em `GET /api/market` (autenticado); a página re-busca a cada 30s e, se a conexão
+  cair, mantém os últimos valores com aviso. A Tela NY tem uma régua de cotações no topo
+  (melhor esforço — some se a API falhar).
+- **Validado contra o Yahoo real** (10/ago/2026): câmbio OK (`BRL=X`, `EURBRL=X`) e as 7
+  posições do arábica OK (`KCU26.NYB` ... `KCZ27.NYB`). **Robusta Londres NÃO existe no
+  Yahoo Finance** (nenhum ticker; a busca retorna zero) — as 4 posições ficam
+  "indisponível" até trocarmos a fonte (as listas de símbolos ficam em
+  `MercadoCafe::ARABICA/ROBUSTA/CAMBIO`, fáceis de editar). Obs.: Londres não tem contrato
+  de dezembro — meses do robusta são F/H/K/N/U/X (X = novembro).
+- Testes: `tests/Feature/FixacaoTest.php` (preço no servidor, parcial → FIXED com média
+  ponderada, limite de lotes, exclusão reverte, 403) e `tests/Feature/MercadoTest.php`
+  (formato do JSON, fallback stale, indisponível, auth) — com `Http::fake`. Cuidado:
+  chamadas sucessivas de `Http::fake` NÃO substituem a anterior (stubs se acumulam e o
+  primeiro match vence) — para simular queda use um fake único com closure + flag.
+
 ### Interface — modo escuro
 - Botão sol/lua no header alterna o tema; escolha persiste em `localStorage` (`ut-theme`) e é
   aplicada antes da pintura (sem "flash"). CSS do tema escuro em `partials/styles.blade.php`
@@ -252,6 +296,11 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   (ver `partials/styles.blade.php`, seção "Tabela em cards"). No desktop continua tabela normal.
   Padrão reaproveitável em outras tabelas largas: basta a classe `data--cards` e `data-label`.
 - **Opcional**: acrescentar colunas de peneira na quebra por certificação, se fizer sentido.
+- **Cotações do robusta (Londres)**: Yahoo Finance não cobre — encontrar outra fonte
+  (Barchart, Investing, ou dados oficiais ICE, que são pagos) e trocar os símbolos em
+  `MercadoCafe::ROBUSTA`.
+- **Demo (GitHub Pages)**: criar as páginas estáticas da Tela NY e de Cotações, se o
+  cliente quiser ver essas telas na demo.
 
 ## 7. Mapa dos arquivos-chave
 

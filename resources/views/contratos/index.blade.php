@@ -41,6 +41,8 @@
                         <td data-label="Preço">
                             @if ($contrato->fixado)
                                 <span class="badge badge--green">FIXED</span>
+                            @elseif ($contrato->parcialmenteFixado())
+                                <span class="badge badge--amber">PARCIAL {{ $contrato->lotesFixados() }}/{{ $contrato->lotes }}</span>
                             @else
                                 <span class="badge badge--muted">A FIXAR</span>
                             @endif
