@@ -190,6 +190,12 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   lista fixa em `Fixacao::brokersCliente()` (Stonex Miami, Adm Investor Services Inc,
   Macquarie USA, Stonex London, Sucden London, Macquarie futures broker LLC, Stonex East
   Coast, Marex London). Para adicionar/renomear em qualquer uma: editar o array.
+- **Posição de fixações por tela** (card no topo da Tela NY): para cada tela, os lotes/
+  sacas **a fixar** (contratos pendentes agrupados pelo `mes_fixacao` previsto; sacas =
+  lotes restantes × divisor do tipo de café) e os lotes **fixados** naquela tela com o
+  **level médio ponderado**. Formato espelhado da aba "Resumo FOB → VENDAS À FIXAR POR
+  REFERÊNCIA" da planilha de posição da mesa. Contrato sem `mes_fixacao` entra como
+  "Sem tela definida". Cálculo em `FixacaoController::posicaoPorTela()`.
 - **Cotações** (`/mercado`, todos os perfis): arábica NY (7 posições), robusta Londres e
   câmbio (dólar/euro) via **Yahoo Finance** (endpoint público `v8/finance/chart`, delay
   ~15 min, sem chave de API). Backend em `app/Services/MercadoCafe.php`: busca os símbolos
@@ -299,8 +305,26 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 - **Cotações do robusta (Londres)**: Yahoo Finance não cobre — encontrar outra fonte
   (Barchart, Investing, ou dados oficiais ICE, que são pagos) e trocar os símbolos em
   `MercadoCafe::ROBUSTA`.
-- **Demo (GitHub Pages)**: criar as páginas estáticas da Tela NY e de Cotações, se o
-  cliente quiser ver essas telas na demo.
+- ~~**Demo (GitHub Pages)**: criar as páginas estáticas da Tela NY e de Cotações.~~
+  **FEITO**: `docs/tela-ny.html` (posição por tela + formulário interativo com fixação em
+  grupo funcionando em JS) e `docs/cotacoes.html` (dados de exemplo reais de 10/ago);
+  grupo "Mercado" adicionado ao menu de todas as páginas da demo. Gerado por script
+  Python a partir de `contratos.html` (o CSS novo é copiado do bloco "Mercado" de
+  `styles.blade.php` automaticamente).
+- **Ideias da planilha de posição da mesa** (analisada em 10/ago/2026 —
+  `Z:\1-1_PLANILHAS NOVO SERVIDOR\3-2026-POSIÇAO\...\01-AGOSTO_10.08.2026.xlsx`), em
+  ordem de aderência ao sistema:
+  1. **Livro de hedge** (aba "POSIÇAO HEDGE"): operações de futuros LONG/SHORT por
+     corretora e tela (nível, lotes, sacas, nº operação, vencimento) com **NET por tela**
+     e **MtM** contra o mercado (o /api/market já dá o preço). Seria um módulo irmão da
+     Tela NY. Obs.: lá aparecem corretoras a mais (Bradesco, Itaú BBA, BV, Marex) — se o
+     módulo sair, a lista de corretoras precisa separar "corretoras de bolsa" × "bancos".
+  2. **Logística de embarque nos contratos** (aba "VENDAS-FOB"): navio, booking, destino,
+     EDT, armazém, mês de faturamento, status (A FATURAR/FATURADO) — campos que hoje só
+     existem na planilha.
+  3. **Long & Short / estoque** (abas RESUMO, ESTOQUE, SAAG, QUALITE): posição
+     compras+estoque × vendas por mês e por "standard" (17/18 FC/GC, 14/16 FC/GC,
+     grinders). Exigiria ligar classificação (peneiras) a saídas por contrato.
 
 ## 7. Mapa dos arquivos-chave
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy">
-    <title>Relatório de classificação</title>
+    <title>Cotações</title>
     <style>
   :root {
     --bg: #F6F2EA;
@@ -691,6 +691,63 @@
 
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
+  /* ---------- Mercado (Tela NY + Cotações) ---------- */
+  .badge--amber { background: #FCF3DC; color: #8A6116; }
+  :root[data-theme="dark"] .badge--amber { background: rgba(240,196,102,.16); color: #F0D9A8; }
+
+  /* régua de cotações no topo da Tela NY */
+  .mkt-strip {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 18px; padding: 10px 16px;
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    font-family: var(--font-data); font-size: 12.5px;
+  }
+  .mkt-chip { display: inline-flex; align-items: baseline; gap: 7px; }
+  .mkt-lbl { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .mkt-val { font-weight: 700; color: var(--ink); }
+  .mkt-more { margin-left: auto; font-family: var(--font-body); font-size: 12.5px; color: var(--primary); }
+  .mkt-up { color: var(--success-text); }
+  .mkt-down { color: var(--danger-text); }
+
+  /* lista de contratos com checkbox no form da Tela NY */
+  .fix-list {
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: 260px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px; background: #fff;
+  }
+  .fix-item { display: flex; align-items: center; gap: 8px; padding: 3px 2px; }
+  .fix-item label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer; font-size: 12.5px; font-weight: 500; }
+  .fix-item label span:first-of-type { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fix-item input[type=checkbox] { width: 15px; height: 15px; flex: none; accent-color: var(--primary); margin: 0; }
+  .fix-item input[type=checkbox]:disabled + span { opacity: .45; }
+  .fix-item__meta { color: var(--muted); font-size: 11px; flex: none; margin-left: auto; }
+  .fix-item .fix-dif { width: 78px; flex: none; padding: 5px 8px; font-size: 12.5px; text-align: right; }
+  .fix-item .fix-dif:disabled { opacity: .4; background: transparent; }
+  :root[data-theme="dark"] .fix-list { background: var(--surface); }
+
+  /* página de cotações */
+  .mkt-meta { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+  .mkt-status { font-size: 12.5px; font-weight: 600; }
+  .mkt-status--ok { color: var(--success-text); }
+  .mkt-status--off { color: var(--danger-text); }
+  .mkt-cambio { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 20px; margin-bottom: 20px; }
+  .mkt-tile { padding: 16px 20px; }
+  .mkt-tile__lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .mkt-tile__val { font-family: var(--font-data); font-size: 24px; font-weight: 700; color: var(--ink); }
+  .mkt-tile__dif { font-family: var(--font-data); font-size: 13px; margin-top: 3px; }
+  .mkt-table td.num { font-family: var(--font-data); font-size: 13px; }
+  .mkt-table .mkt-flag { font-size: 11px; color: var(--muted); margin-left: 6px; }
+  tr.mkt-indisp td { color: var(--muted); }
+  tr.mkt-indisp .mkt-flag { font-style: italic; }
+
+  :root[data-theme="dark"] .mkt-strip { background: var(--surface); }
+  :root[data-theme="dark"] .mkt-up { color: #8FD9AC; }
+  :root[data-theme="dark"] .mkt-down { color: #F0A099; }
+  :root[data-theme="dark"] .mkt-status--ok { color: #8FD9AC; }
+  :root[data-theme="dark"] .mkt-status--off { color: #F0A099; }
+
+  @media (max-width: 720px) { .mkt-cambio { grid-template-columns: 1fr 1fr; } .mkt-more { margin-left: 0; width: 100%; } }
 </style>
     
     <script>(function(){try{if(localStorage.getItem('ut-theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}})();</script>
@@ -718,7 +775,7 @@
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="17" rx="2"></rect><path d="M8.5 8h7M8.5 12h7M8.5 16h4"></path></svg>
                             <span>Compras lançadas</span>
                         </a>
-                                        <a href="relatorio.html" class="sb-link is-active">
+                                        <a href="relatorio.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"></path><rect x="6" y="11" width="3.2" height="6"></rect><rect x="11.4" y="7" width="3.2" height="10"></rect><rect x="16.8" y="13.5" width="3.2" height="3.5"></rect></svg>
                         <span>Relatório (dashboard)</span>
                     </a>
@@ -742,7 +799,7 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v4M7 14v6M7 8h0a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2Z"></path><path d="M17 4v2M17 16v4M17 6h0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path></svg>
                         <span>Tela NY (fixações)</span>
                     </a>
-                    <a href="cotacoes.html" class="sb-link ">
+                    <a href="cotacoes.html" class="sb-link is-active">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"></path><path d="m5 14 4-4 3.5 3L18 7"></path><path d="M14.5 7H18v3.5"></path></svg>
                         <span>Cotações</span>
                     </a>
@@ -774,6 +831,7 @@
     <div class="main">
         <header class="appbar">
             <div class="appbar__crumb">
+                                        <span>Mercado</span><span class="sep">/</span><b>Cotações</b>
                             </div>
             <div class="appbar__user">
                 <button type="button" class="theme-toggle" id="themeToggle" aria-label="Alternar modo escuro" title="Alternar modo escuro">
@@ -797,115 +855,164 @@
         <div class="content">
             <div class="page-head">
                 <div>
-                    <h1>Relatório de classificação</h1>
-                                    </div>
-                            </div>
+                    <h1>Cotações</h1>
+                    <p class="page-sub">Café arábica (ICE NY), robusta (ICE Londres) e câmbio — via Yahoo Finance, com atraso de ~15 minutos. No sistema real a página atualiza sozinha a cada 30 segundos.</p>
+                </div>
+            </div>
 
-                            <form method="GET" action="relatorio.html" class="filter-bar">
-        <div class="field">
-            <label for="mes_de">Mês inicial</label>
-            <input type="month" id="mes_de" name="mes_de" value="">
-        </div>
-        <div class="field">
-            <label for="mes_ate">Mês final</label>
-            <input type="month" id="mes_ate" name="mes_ate" value="">
-        </div>
-        <div class="field">
-            <label for="padrao">Padrão</label>
-            <select id="padrao" name="padrao">
-                <option value="">Todos</option>
-                <option value="FINE_CUP">Fine Cup</option>
-                <option value="GOOD_CUP">Good Cup</option>
-                <option value="GOOD_CUP_2R">Good Cup 2R</option>
-                <option value="RIO_MINAS">Rio Minas</option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="certificado">Certificado</label>
-            <select id="certificado" name="certificado">
-                <option value="">Todos</option>
-                <option value="SEM_CERT">Sem certificação</option>
-                <option value="4C">4C</option>
-                <option value="RFA">RFA</option>
-                <option value="EUDR">EUDR</option>
-                <option value="4C_EUDR">4C + EUDR</option>
-                <option value="RFA_EUDR">RFA + EUDR</option>
-                <option value="4C_RFA">4C + RFA</option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="busca">Buscar (UTS ou fornecedor)</label>
-            <input type="search" id="busca" name="busca" value="" placeholder="Ex: UTS-2026-001">
-        </div>
-        <button type="submit" class="btn btn-primary">Filtrar</button>
-        
-                                    <button type="submit" formaction="relatorio.html/link" formmethod="POST" class="btn btn-ghost" style="margin-left:auto;">
-                    Gerar link compartilhável (7 dias)
-                </button>
-                        </form>
+            <div class="mkt-meta">
+                <span class="mkt-status mkt-status--ok">● demonstração — dados de exemplo</span>
+                <span style="color:var(--muted); font-size:12.5px;">Atualizado às 14:57 de 10/08/2026</span>
+            </div>
 
-    <div class="card">
-        <div class="card__header card__header--dark mesh-texture">
-            <h2>Distribuição por padrão e peneira — somente leitura</h2>
-        </div>
-        <div class="card__body" style="padding:0;">
-            <div class="table-wrap" style="border:0; border-radius:0;">
-    <table class="data">
-        <thead>
-            <tr>
-                <th>Padrão</th>
-                <th class="num">SCS 17/18</th>
-                <th class="num">SCS 14/16</th>
-                <th class="num">Mercado interno</th>
-                <th class="num">Grinders</th>
-                <th class="num">Moka</th>
-                <th class="num">Total de SCS</th>
-                <th class="num">% do total</th>
-            </tr>
-        </thead>
-        <tbody>
-                            <tr>
-                    <td>Fine Cup</td>
-                    <td class="num">690,00</td>
-                    <td class="num">600,00</td>
-                    <td class="num">220,00</td>
-                    <td class="num">190,00</td>
-                    <td class="num">100,00</td>
-                    <td class="num"><strong>1.800,00</strong></td>
-                    <td class="num">65,2%</td>
-                </tr>
-                            <tr>
-                    <td>Good Cup</td>
-                    <td class="num">540,00</td>
-                    <td class="num">210,00</td>
-                    <td class="num">60,00</td>
-                    <td class="num">90,00</td>
-                    <td class="num">60,00</td>
-                    <td class="num"><strong>960,00</strong></td>
-                    <td class="num">34,8%</td>
-                </tr>
-                    </tbody>
-                    <tfoot>
-                <tr>
-                    <td>Total geral</td>
-                    <td class="num">1.230,00</td>
-                    <td class="num">810,00</td>
-                    <td class="num">280,00</td>
-                    <td class="num">280,00</td>
-                    <td class="num">160,00</td>
-                    <td class="num">2.760,00</td>
-                    <td class="num">100,0%</td>
-                </tr>
-            </tfoot>
-            </table>
-</div>
-        </div>
-    </div>
+            <div class="mkt-cambio">
+                <div class="card mkt-tile">
+                    <div class="mkt-tile__lbl">Dólar comercial</div>
+                    <div class="mkt-tile__val">R$ 5,1098</div>
+                    <div class="mkt-tile__dif mkt-up">+0,0256</div>
+                </div>
+                <div class="card mkt-tile">
+                    <div class="mkt-tile__lbl">Euro comercial</div>
+                    <div class="mkt-tile__val">R$ 5,8979</div>
+                    <div class="mkt-tile__dif mkt-up">+0,0245</div>
+                </div>
+            </div>
 
-    <p style="color:var(--muted); font-size:12.5px;">
-        Esta tela é somente leitura — não existe nenhum formulário de edição aqui.
-        Para alterar uma classificação, acesse a compra correspondente em "Compras lançadas".
-    </p>
+            <div class="contract-cols">
+                <div class="card">
+                    <div class="card__header card__header--dark mesh-texture">
+                        <h2>Arábica — ICE New York (cts/lb)</h2>
+                    </div>
+                    <div class="card__body" style="padding:0;">
+                        <div class="table-wrap" style="border:0; border-radius:0;">
+                            <table class="data mkt-table">
+                                <thead>
+                                    <tr>
+                                        <th>Posição</th>
+                                        <th class="num">Último</th>
+                                        <th class="num">Dif.</th>
+                                        <th class="num">Máx.</th>
+                                        <th class="num">Mín.</th>
+                                        <th class="num">Abert.</th>
+                                        <th class="num">Fech. ant.</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td><strong>KCU6</strong> <span style="color:var(--muted); font-size:12px;">Set 2026</span> <span class="mkt-flag"></span></td>
+                                    <td class="num">335,20</td>
+                                    <td class="num mkt-down">-0,35</td>
+                                    <td class="num">338,40</td>
+                                    <td class="num">333,10</td>
+                                    <td class="num">335,60</td>
+                                    <td class="num">335,55</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>KCZ6</strong> <span style="color:var(--muted); font-size:12px;">Dez 2026</span> <span class="mkt-flag"></span></td>
+                                    <td class="num">315,20</td>
+                                    <td class="num mkt-down">-0,70</td>
+                                    <td class="num">317,90</td>
+                                    <td class="num">313,55</td>
+                                    <td class="num">315,90</td>
+                                    <td class="num">315,90</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>KCH7</strong> <span style="color:var(--muted); font-size:12px;">Mar 2027</span> <span class="mkt-flag"></span></td>
+                                    <td class="num">305,70</td>
+                                    <td class="num mkt-down">-0,15</td>
+                                    <td class="num">307,80</td>
+                                    <td class="num">304,20</td>
+                                    <td class="num">305,85</td>
+                                    <td class="num">305,85</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>KCK7</strong> <span style="color:var(--muted); font-size:12px;">Mai 2027</span> <span class="mkt-flag"></span></td>
+                                    <td class="num">302,85</td>
+                                    <td class="num mkt-up">+0,25</td>
+                                    <td class="num">304,10</td>
+                                    <td class="num">301,50</td>
+                                    <td class="num">302,60</td>
+                                    <td class="num">302,60</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>KCN7</strong> <span style="color:var(--muted); font-size:12px;">Jul 2027</span> <span class="mkt-flag"></span></td>
+                                    <td class="num">300,90</td>
+                                    <td class="num mkt-up">+0,15</td>
+                                    <td class="num">302,00</td>
+                                    <td class="num">299,70</td>
+                                    <td class="num">300,75</td>
+                                    <td class="num">300,75</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>KCU7</strong> <span style="color:var(--muted); font-size:12px;">Set 2027</span> <span class="mkt-flag"></span></td>
+                                    <td class="num">300,00</td>
+                                    <td class="num mkt-up">+0,85</td>
+                                    <td class="num">300,90</td>
+                                    <td class="num">298,60</td>
+                                    <td class="num">299,15</td>
+                                    <td class="num">299,15</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>KCZ7</strong> <span style="color:var(--muted); font-size:12px;">Dez 2027</span> <span class="mkt-flag"></span></td>
+                                    <td class="num">298,00</td>
+                                    <td class="num mkt-up">+0,60</td>
+                                    <td class="num">298,80</td>
+                                    <td class="num">296,90</td>
+                                    <td class="num">297,40</td>
+                                    <td class="num">297,40</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card__header card__header--dark mesh-texture">
+                        <h2>Robusta — ICE Londres (USD/ton)</h2>
+                    </div>
+                    <div class="card__body" style="padding:0;">
+                        <div class="table-wrap" style="border:0; border-radius:0;">
+                            <table class="data mkt-table">
+                                <thead>
+                                    <tr>
+                                        <th>Posição</th>
+                                        <th class="num">Último</th>
+                                        <th class="num">Dif.</th>
+                                        <th class="num">Máx.</th>
+                                        <th class="num">Mín.</th>
+                                        <th class="num">Abert.</th>
+                                        <th class="num">Fech. ant.</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <tr class="mkt-indisp">
+                                    <td><strong>RCU26</strong> <span style="color:var(--muted); font-size:12px;">Set 2026</span> <span class="mkt-flag" style="font-style:italic;">indisponível</span></td>
+                                    <td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+                                </tr>
+                                <tr class="mkt-indisp">
+                                    <td><strong>RCX26</strong> <span style="color:var(--muted); font-size:12px;">Nov 2026</span> <span class="mkt-flag" style="font-style:italic;">indisponível</span></td>
+                                    <td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+                                </tr>
+                                <tr class="mkt-indisp">
+                                    <td><strong>RCF27</strong> <span style="color:var(--muted); font-size:12px;">Jan 2027</span> <span class="mkt-flag" style="font-style:italic;">indisponível</span></td>
+                                    <td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+                                </tr>
+                                <tr class="mkt-indisp">
+                                    <td><strong>RCH27</strong> <span style="color:var(--muted); font-size:12px;">Mar 2027</span> <span class="mkt-flag" style="font-style:italic;">indisponível</span></td>
+                                    <td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p style="color:var(--muted); font-size:12.5px; margin-top:14px;">
+                Posições sem cobertura no Yahoo Finance aparecem como <em>indisponível</em>; valores marcados
+                com ⏱ são o último valor conhecido (a fonte não respondeu na atualização mais recente).
+            </p>
         </div>
     </div>
 </div>

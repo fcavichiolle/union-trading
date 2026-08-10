@@ -36,7 +36,78 @@ class FixacaoController extends Controller
             ->limit(15)
             ->get();
 
-        return view('ny.index', compact('contratos', 'fixacoes'));
+        return view('ny.index', [
+            'contratos' => $contratos,
+            'fixacoes' => $fixacoes,
+            'posicao' => $this->posicaoPorTela($contratos),
+        ]);
+    }
+
+    /**
+     * Posição de fixações por tela — mesmo formato do "VENDAS À FIXAR POR
+     * REFERÊNCIA" da planilha de posição da mesa: para cada tela, os lotes/
+     * sacas ainda a fixar (contratos pendentes, agrupados pelo mês de
+     * fixação previsto) e, do lado fixado, os lotes já feitos naquela tela
+     * com o level médio ponderado.
+     *
+     * @param \Illuminate\Support\Collection<int, Contrato> $pendentes
+     * @return array<int, array<string, mixed>>
+     */
+    private function posicaoPorTela($pendentes): array
+    {
+        $linhas = [];
+
+        // Lado "a fixar": lotes restantes por tela prevista (mes_fixacao).
+        foreach ($pendentes as $c) {
+            $tela = $c->mes_fixacao ?: 'SEM_TELA';
+            $divisor = $c->tipo_cafe === 'CONILON' ? Contrato::DIVISOR_CONILON : Contrato::DIVISOR_ARABICA;
+
+            $linhas[$tela] ??= $this->linhaVazia($tela, $c->porto);
+            $linhas[$tela]['a_fixar_lotes'] += $c->lotesRestantes();
+            $linhas[$tela]['a_fixar_sacas'] += $c->lotesRestantes() * $divisor;
+        }
+
+        // Lado "fixado": tranches agrupadas pela tela em que foram feitas.
+        $fixadas = Fixacao::selectRaw('tela, SUM(lotes) AS lotes, SUM(level * lotes) AS soma_level')
+            ->whereNotNull('tela')
+            ->groupBy('tela')
+            ->get();
+
+        foreach ($fixadas as $f) {
+            $porto = array_key_exists($f->tela, Contrato::mesesFixacaoVitoria()) ? 'VITORIA' : 'SANTOS';
+            $linhas[$f->tela] ??= $this->linhaVazia($f->tela, $porto);
+            $linhas[$f->tela]['fixado_lotes'] = (int) $f->lotes;
+            $linhas[$f->tela]['level_medio'] = $f->lotes > 0 ? round($f->soma_level / $f->lotes, 2) : null;
+        }
+
+        // Ordena na sequência dos vencimentos (NY primeiro, depois Londres);
+        // "sem tela definida" por último.
+        $ordem = array_merge(array_keys(Contrato::mesesFixacaoSantos()), array_keys(Contrato::mesesFixacaoVitoria()));
+        $posicaoNaOrdem = function (string $tela) use ($ordem): int {
+            if ($tela === 'SEM_TELA') {
+                return PHP_INT_MAX;
+            }
+            $i = array_search($tela, $ordem, true);
+
+            return $i === false ? PHP_INT_MAX - 1 : $i;
+        };
+        uksort($linhas, fn ($a, $b) => $posicaoNaOrdem($a) <=> $posicaoNaOrdem($b));
+
+        return array_values($linhas);
+    }
+
+    /** @return array<string, mixed> */
+    private function linhaVazia(string $tela, string $porto): array
+    {
+        return [
+            'tela' => $tela,
+            'bolsa' => $porto === 'VITORIA' ? 'Londres' : 'NY ICE',
+            'unidade' => $porto === 'VITORIA' ? 'USD/MT' : 'cts/lb',
+            'a_fixar_lotes' => 0,
+            'a_fixar_sacas' => 0.0,
+            'fixado_lotes' => 0,
+            'level_medio' => null,
+        ];
     }
 
     public function store(StoreFixacaoRequest $request): RedirectResponse

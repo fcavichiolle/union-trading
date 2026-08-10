@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy">
-    <title>Relatório de classificação</title>
+    <title>Tela NY — fixações</title>
     <style>
   :root {
     --bg: #F6F2EA;
@@ -691,6 +691,63 @@
 
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
+  /* ---------- Mercado (Tela NY + Cotações) ---------- */
+  .badge--amber { background: #FCF3DC; color: #8A6116; }
+  :root[data-theme="dark"] .badge--amber { background: rgba(240,196,102,.16); color: #F0D9A8; }
+
+  /* régua de cotações no topo da Tela NY */
+  .mkt-strip {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 18px; padding: 10px 16px;
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    font-family: var(--font-data); font-size: 12.5px;
+  }
+  .mkt-chip { display: inline-flex; align-items: baseline; gap: 7px; }
+  .mkt-lbl { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .mkt-val { font-weight: 700; color: var(--ink); }
+  .mkt-more { margin-left: auto; font-family: var(--font-body); font-size: 12.5px; color: var(--primary); }
+  .mkt-up { color: var(--success-text); }
+  .mkt-down { color: var(--danger-text); }
+
+  /* lista de contratos com checkbox no form da Tela NY */
+  .fix-list {
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: 260px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px; background: #fff;
+  }
+  .fix-item { display: flex; align-items: center; gap: 8px; padding: 3px 2px; }
+  .fix-item label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer; font-size: 12.5px; font-weight: 500; }
+  .fix-item label span:first-of-type { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fix-item input[type=checkbox] { width: 15px; height: 15px; flex: none; accent-color: var(--primary); margin: 0; }
+  .fix-item input[type=checkbox]:disabled + span { opacity: .45; }
+  .fix-item__meta { color: var(--muted); font-size: 11px; flex: none; margin-left: auto; }
+  .fix-item .fix-dif { width: 78px; flex: none; padding: 5px 8px; font-size: 12.5px; text-align: right; }
+  .fix-item .fix-dif:disabled { opacity: .4; background: transparent; }
+  :root[data-theme="dark"] .fix-list { background: var(--surface); }
+
+  /* página de cotações */
+  .mkt-meta { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+  .mkt-status { font-size: 12.5px; font-weight: 600; }
+  .mkt-status--ok { color: var(--success-text); }
+  .mkt-status--off { color: var(--danger-text); }
+  .mkt-cambio { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 20px; margin-bottom: 20px; }
+  .mkt-tile { padding: 16px 20px; }
+  .mkt-tile__lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .mkt-tile__val { font-family: var(--font-data); font-size: 24px; font-weight: 700; color: var(--ink); }
+  .mkt-tile__dif { font-family: var(--font-data); font-size: 13px; margin-top: 3px; }
+  .mkt-table td.num { font-family: var(--font-data); font-size: 13px; }
+  .mkt-table .mkt-flag { font-size: 11px; color: var(--muted); margin-left: 6px; }
+  tr.mkt-indisp td { color: var(--muted); }
+  tr.mkt-indisp .mkt-flag { font-style: italic; }
+
+  :root[data-theme="dark"] .mkt-strip { background: var(--surface); }
+  :root[data-theme="dark"] .mkt-up { color: #8FD9AC; }
+  :root[data-theme="dark"] .mkt-down { color: #F0A099; }
+  :root[data-theme="dark"] .mkt-status--ok { color: #8FD9AC; }
+  :root[data-theme="dark"] .mkt-status--off { color: #F0A099; }
+
+  @media (max-width: 720px) { .mkt-cambio { grid-template-columns: 1fr 1fr; } .mkt-more { margin-left: 0; width: 100%; } }
 </style>
     
     <script>(function(){try{if(localStorage.getItem('ut-theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}})();</script>
@@ -718,7 +775,7 @@
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="17" rx="2"></rect><path d="M8.5 8h7M8.5 12h7M8.5 16h4"></path></svg>
                             <span>Compras lançadas</span>
                         </a>
-                                        <a href="relatorio.html" class="sb-link is-active">
+                                        <a href="relatorio.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"></path><rect x="6" y="11" width="3.2" height="6"></rect><rect x="11.4" y="7" width="3.2" height="10"></rect><rect x="16.8" y="13.5" width="3.2" height="3.5"></rect></svg>
                         <span>Relatório (dashboard)</span>
                     </a>
@@ -738,7 +795,7 @@
             
                             <div class="sb-group">
                     <div class="sb-group__label">Mercado</div>
-                    <a href="tela-ny.html" class="sb-link ">
+                    <a href="tela-ny.html" class="sb-link is-active">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v4M7 14v6M7 8h0a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2Z"></path><path d="M17 4v2M17 16v4M17 6h0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path></svg>
                         <span>Tela NY (fixações)</span>
                     </a>
@@ -774,6 +831,7 @@
     <div class="main">
         <header class="appbar">
             <div class="appbar__crumb">
+                                        <span>Mercado</span><span class="sep">/</span><b>Tela NY</b>
                             </div>
             <div class="appbar__user">
                 <button type="button" class="theme-toggle" id="themeToggle" aria-label="Alternar modo escuro" title="Alternar modo escuro">
@@ -797,115 +855,369 @@
         <div class="content">
             <div class="page-head">
                 <div>
-                    <h1>Relatório de classificação</h1>
+                    <h1>Tela NY — fixações</h1>
+                    <p class="page-sub">Fixação de preço dos contratos de exportação, por lotes. Marque vários contratos da mesma bolsa para fixar todos de uma vez contra a mesma tela.</p>
+                </div>
+            </div>
+
+            <div class="mkt-strip">
+                <span class="mkt-chip"><span class="mkt-lbl">KCU6</span> <span class="mkt-val">335,20</span> <span class="mkt-dif mkt-down">-0,35</span></span>
+                <span class="mkt-chip"><span class="mkt-lbl">Dólar</span> <span class="mkt-val">R$ 5,1098</span> <span class="mkt-dif mkt-up">+0,0256</span></span>
+                <a href="cotacoes.html" class="mkt-more">Ver todas as cotações →</a>
+            </div>
+
+            <div class="card" style="margin-bottom:22px;">
+                <div class="card__header card__header--dark mesh-texture">
+                    <h2>Posição de fixações por tela</h2>
+                </div>
+                <div class="card__body" style="padding:0;">
+                    <div class="table-wrap" style="border:0; border-radius:0;">
+                        <table class="data">
+                            <thead>
+                                <tr>
+                                    <th>Tela</th>
+                                    <th>Bolsa</th>
+                                    <th class="num">A fixar (lotes)</th>
+                                    <th class="num">A fixar (sacas)</th>
+                                    <th class="num">Fixado (lotes)</th>
+                                    <th class="num">Level médio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>U6</strong></td>
+                                    <td>NY ICE</td>
+                                    <td class="num"><span class="badge badge--amber">3</span></td>
+                                    <td class="num">850</td>
+                                    <td class="num">—</td>
+                                    <td class="num">—</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Z6</strong></td>
+                                    <td>NY ICE</td>
+                                    <td class="num"><span class="badge badge--amber">4</span></td>
+                                    <td class="num">1.134</td>
+                                    <td class="num">8</td>
+                                    <td class="num">333,74 cts/lb</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>H7</strong></td>
+                                    <td>NY ICE</td>
+                                    <td class="num"><span style="color:var(--muted);">0</span></td>
+                                    <td class="num">0</td>
+                                    <td class="num">3</td>
+                                    <td class="num">305,70 cts/lb</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2">Total</td>
+                                    <td class="num"><strong>7</strong></td>
+                                    <td class="num"><strong>1.984</strong></td>
+                                    <td class="num"><strong>11</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-grid">
+                <div>
+                    <div class="card" style="margin-bottom:22px;">
+                        <div class="card__header card__header--dark mesh-texture">
+                            <h2>Contratos a fixar</h2>
+                        </div>
+                        <div class="card__body" style="padding:0;">
+                            <div class="table-wrap" style="border:0; border-radius:0;">
+                                <table class="data">
+                                    <thead>
+                                        <tr>
+                                            <th>UT</th>
+                                            <th>Comprador</th>
+                                            <th>Bolsa</th>
+                                            <th class="num">Diferencial</th>
+                                            <th class="num">Lotes fixados</th>
+                                            <th>Status</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>UT 5941</strong></td>
+                                            <td>ICONA</td>
+                                            <td>NY ICE</td>
+                                            <td class="num">-16.00 cts/lb</td>
+                                            <td class="num">2 / 6</td>
+                                            <td><span class="badge badge--amber">PARCIAL 2/6</span></td>
+                                            <td class="cell-action"><button type="button" class="btn btn-ghost js-escolher" data-contrato="1" style="padding:6px 12px; font-size:13px;">Fixar</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>UT 5943</strong></td>
+                                            <td>MIORI CF LLC</td>
+                                            <td>NY ICE</td>
+                                            <td class="num">-3.00 cts/lb</td>
+                                            <td class="num">0 / 3</td>
+                                            <td><span class="badge badge--muted">A FIXAR</span></td>
+                                            <td class="cell-action"><button type="button" class="btn btn-ghost js-escolher" data-contrato="2" style="padding:6px 12px; font-size:13px;">Fixar</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card__header"><h2>Fixações registradas</h2></div>
+                        <div class="card__body" style="padding:0;">
+                            <div class="table-wrap" style="border:0; border-radius:0;">
+                                <table class="data">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Contrato</th>
+                                            <th>Corretora</th>
+                                            <th>Tela</th>
+                                            <th class="num">Lotes</th>
+                                            <th class="num">Level</th>
+                                            <th class="num">Dif.</th>
+                                            <th class="num">Preço</th>
+                                            <th>Por</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>10/08/2026 11:42</td>
+                                            <td><strong>UT 5941</strong></td>
+                                            <td>StoneX East Coast<br><span style="color:var(--muted); font-size:11.5px;">cliente: Macquarie USA</span></td>
+                                            <td>Z6</td>
+                                            <td class="num">2</td>
+                                            <td class="num">335,00</td>
+                                            <td class="num">-16,00</td>
+                                            <td class="num"><strong>319,00</strong> cts/lb</td>
+                                            <td>QA Teste Union</td>
+                                            <td class="cell-action"><button type="button" class="btn btn-ghost" style="padding:6px 12px; font-size:13px; color:var(--danger-text);">Excluir</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>07/08/2026 15:10</td>
+                                            <td><strong>UT 5902</strong></td>
+                                            <td>ICAP Corporates LLC (Hedgepoint)</td>
+                                            <td>H7</td>
+                                            <td class="num">3</td>
+                                            <td class="num">305,70</td>
+                                            <td class="num">-10,00</td>
+                                            <td class="num"><strong>295,70</strong> cts/lb</td>
+                                            <td>QA Teste Union</td>
+                                            <td class="cell-action"><button type="button" class="btn btn-ghost" style="padding:6px 12px; font-size:13px; color:var(--danger-text);">Excluir</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card__header"><h2>Registrar fixação</h2></div>
+                    <div class="card__body">
+                        <form method="POST" action="tela-ny.html">
+                            <div class="field" style="margin-bottom:14px;">
+                                <label>Contratos <span class="hint">(vários = fixa tudo de uma vez, na mesma tela)</span></label>
+                                <div class="fix-list" id="fixList">
+                                    <div class="fix-item">
+                                        <label>
+                                            <input type="checkbox" name="contratos[]" value="1" data-restantes="4" data-porto="SANTOS" data-mes="Z6" data-unidade="cts/lb" data-ut="5941">
+                                            <span>UT 5941 — ICONA</span>
+                                            <span class="fix-item__meta">4 lt · NY</span>
+                                        </label>
+                                        <input type="text" class="fix-dif" value="-16.00" placeholder="dif." inputmode="decimal" disabled>
                                     </div>
+                                    <div class="fix-item">
+                                        <label>
+                                            <input type="checkbox" name="contratos[]" value="2" data-restantes="3" data-porto="SANTOS" data-mes="Z6" data-unidade="cts/lb" data-ut="5943">
+                                            <span>UT 5943 — MIORI CF LLC</span>
+                                            <span class="fix-item__meta">3 lt · NY</span>
+                                        </label>
+                                        <input type="text" class="fix-dif" value="-3.00" placeholder="dif." inputmode="decimal" disabled>
+                                    </div>
+                                </div>
                             </div>
 
-                            <form method="GET" action="relatorio.html" class="filter-bar">
-        <div class="field">
-            <label for="mes_de">Mês inicial</label>
-            <input type="month" id="mes_de" name="mes_de" value="">
-        </div>
-        <div class="field">
-            <label for="mes_ate">Mês final</label>
-            <input type="month" id="mes_ate" name="mes_ate" value="">
-        </div>
-        <div class="field">
-            <label for="padrao">Padrão</label>
-            <select id="padrao" name="padrao">
-                <option value="">Todos</option>
-                <option value="FINE_CUP">Fine Cup</option>
-                <option value="GOOD_CUP">Good Cup</option>
-                <option value="GOOD_CUP_2R">Good Cup 2R</option>
-                <option value="RIO_MINAS">Rio Minas</option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="certificado">Certificado</label>
-            <select id="certificado" name="certificado">
-                <option value="">Todos</option>
-                <option value="SEM_CERT">Sem certificação</option>
-                <option value="4C">4C</option>
-                <option value="RFA">RFA</option>
-                <option value="EUDR">EUDR</option>
-                <option value="4C_EUDR">4C + EUDR</option>
-                <option value="RFA_EUDR">RFA + EUDR</option>
-                <option value="4C_RFA">4C + RFA</option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="busca">Buscar (UTS ou fornecedor)</label>
-            <input type="search" id="busca" name="busca" value="" placeholder="Ex: UTS-2026-001">
-        </div>
-        <button type="submit" class="btn btn-primary">Filtrar</button>
-        
-                                    <button type="submit" formaction="relatorio.html/link" formmethod="POST" class="btn btn-ghost" style="margin-left:auto;">
-                    Gerar link compartilhável (7 dias)
-                </button>
+                            <div class="field" style="margin-bottom:14px;">
+                                <label for="corretora">Corretora</label>
+                                <select id="corretora" name="corretora">
+                                    <option value="STONEX">StoneX East Coast</option>
+                                    <option value="ICAP">ICAP Corporates LLC (Hedgepoint)</option>
+                                    <option value="MAREX_AGS">Marex Financial Limited AGS Coffee</option>
+                                </select>
+                            </div>
+
+                            <div class="field" style="margin-bottom:14px;">
+                                <label for="broker_cliente">Broker do cliente <span class="hint">(opcional)</span></label>
+                                <select id="broker_cliente" name="broker_cliente">
+                                    <option value="">—</option>
+                                    <option value="STONEX_MIAMI">Stonex Miami</option>
+                                    <option value="ADMIS">Adm Investor Services Inc</option>
+                                    <option value="MACQUARIE_USA">Macquarie USA</option>
+                                    <option value="STONEX_LONDON">Stonex London</option>
+                                    <option value="SUCDEN_LONDON">Sucden London</option>
+                                    <option value="MACQUARIE_FUTURES">Macquarie futures broker LLC</option>
+                                    <option value="STONEX_EAST_COAST">Stonex East Coast</option>
+                                    <option value="MAREX_LONDON">Marex London</option>
+                                </select>
+                            </div>
+
+                            <div class="field" style="margin-bottom:14px;">
+                                <label for="tela">Tela (mês da bolsa)</label>
+                                <select id="tela" name="tela">
+                                    <option value="">— marque um contrato —</option>
+                                </select>
+                                <span class="hint">Opções conforme a bolsa dos contratos marcados (NY ou Londres).</span>
+                            </div>
+
+                            <div class="field" style="margin-bottom:14px;" id="campoLotes">
+                                <label for="lotes">Lotes a fixar <span class="hint" id="lotesHint"></span></label>
+                                <input type="number" id="lotes" name="lotes" min="1" step="1">
+                            </div>
+                            <div class="calc-note" id="grupoResumo" style="display:none; margin-bottom:14px;"></div>
+
+                            <div class="field" style="margin-bottom:14px;">
+                                <label for="level">Level (<span id="levelUnit">cts/lb</span>)</label>
+                                <input type="text" id="level" name="level" placeholder="Ex.: 335.00" inputmode="decimal">
+                            </div>
+
+                            <div class="calc-note" style="margin-bottom:16px;">
+                                <span id="pvPreco">—</span>
+                                <span style="color:var(--muted);">(level + diferencial de cada contrato · conferido no servidor ao salvar)</span>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width:100%;">Registrar fixação</button>
                         </form>
+                    </div>
+                </div>
+            </div>
 
-    <div class="card">
-        <div class="card__header card__header--dark mesh-texture">
-            <h2>Distribuição por padrão e peneira — somente leitura</h2>
-        </div>
-        <div class="card__body" style="padding:0;">
-            <div class="table-wrap" style="border:0; border-radius:0;">
-    <table class="data">
-        <thead>
-            <tr>
-                <th>Padrão</th>
-                <th class="num">SCS 17/18</th>
-                <th class="num">SCS 14/16</th>
-                <th class="num">Mercado interno</th>
-                <th class="num">Grinders</th>
-                <th class="num">Moka</th>
-                <th class="num">Total de SCS</th>
-                <th class="num">% do total</th>
-            </tr>
-        </thead>
-        <tbody>
-                            <tr>
-                    <td>Fine Cup</td>
-                    <td class="num">690,00</td>
-                    <td class="num">600,00</td>
-                    <td class="num">220,00</td>
-                    <td class="num">190,00</td>
-                    <td class="num">100,00</td>
-                    <td class="num"><strong>1.800,00</strong></td>
-                    <td class="num">65,2%</td>
-                </tr>
-                            <tr>
-                    <td>Good Cup</td>
-                    <td class="num">540,00</td>
-                    <td class="num">210,00</td>
-                    <td class="num">60,00</td>
-                    <td class="num">90,00</td>
-                    <td class="num">60,00</td>
-                    <td class="num"><strong>960,00</strong></td>
-                    <td class="num">34,8%</td>
-                </tr>
-                    </tbody>
-                    <tfoot>
-                <tr>
-                    <td>Total geral</td>
-                    <td class="num">1.230,00</td>
-                    <td class="num">810,00</td>
-                    <td class="num">280,00</td>
-                    <td class="num">280,00</td>
-                    <td class="num">160,00</td>
-                    <td class="num">2.760,00</td>
-                    <td class="num">100,0%</td>
-                </tr>
-            </tfoot>
-            </table>
-</div>
-        </div>
-    </div>
+<script>
+    (function () {
+        var MESES = { SANTOS: {}, VITORIA: {} };
+        ['6','7','8'].forEach(function (ano) {
+            [['H','Março'],['K','Maio'],['N','Julho'],['U','Setembro'],['Z','Dezembro']].forEach(function (m) {
+                MESES.SANTOS[m[0]+ano] = m[0]+ano+' ('+m[1]+'/202'+ano+') · NY ICE';
+            });
+        });
+        ['2026','2027','2028'].forEach(function (ano) {
+            ['Jan','Mar','May','Jul','Sep','Nov'].forEach(function (m) {
+                MESES.VITORIA[m+'_'+ano] = m+'/'+ano+' · Londres';
+            });
+        });
 
-    <p style="color:var(--muted); font-size:12.5px;">
-        Esta tela é somente leitura — não existe nenhum formulário de edição aqui.
-        Para alterar uma classificação, acesse a compra correspondente em "Compras lançadas".
-    </p>
+        var lista = document.getElementById('fixList'),
+            checks = Array.prototype.slice.call(lista.querySelectorAll('input[type=checkbox]')),
+            telaEl = document.getElementById('tela'),
+            lotesEl = document.getElementById('lotes'),
+            lotesHint = document.getElementById('lotesHint'),
+            campoLotes = document.getElementById('campoLotes'),
+            grupoResumo = document.getElementById('grupoResumo'),
+            levelEl = document.getElementById('level'),
+            levelUnit = document.getElementById('levelUnit'),
+            pvPreco = document.getElementById('pvPreco');
+
+        function marcados() { return checks.filter(function (c) { return c.checked; }); }
+        function difInput(cb) { return cb.closest('.fix-item').querySelector('.fix-dif'); }
+
+        function montarTela(porto, preferido) {
+            var atual = telaEl.value || preferido || '';
+            telaEl.innerHTML = '<option value="">—</option>';
+            var meses = MESES[porto] || {};
+            Object.keys(meses).forEach(function (k) {
+                var o = document.createElement('option');
+                o.value = k; o.textContent = meses[k];
+                if (k === atual) o.selected = true;
+                telaEl.appendChild(o);
+            });
+        }
+
+        function aoMudarSelecao() {
+            var sel = marcados();
+            checks.forEach(function (cb) { difInput(cb).disabled = !cb.checked; });
+
+            if (!sel.length) {
+                checks.forEach(function (cb) { cb.disabled = false; });
+                telaEl.innerHTML = '<option value="">— marque um contrato —</option>';
+                campoLotes.style.display = '';
+                grupoResumo.style.display = 'none';
+                lotesEl.disabled = false;
+                lotesHint.textContent = '';
+                preview();
+                return;
+            }
+
+            var porto = sel[0].getAttribute('data-porto');
+            checks.forEach(function (cb) {
+                cb.disabled = !cb.checked && cb.getAttribute('data-porto') !== porto;
+            });
+
+            montarTela(porto, sel[0].getAttribute('data-mes'));
+            levelUnit.textContent = sel[0].getAttribute('data-unidade') || 'cts/lb';
+
+            if (sel.length === 1) {
+                var restantes = parseInt(sel[0].getAttribute('data-restantes') || '0', 10);
+                campoLotes.style.display = '';
+                grupoResumo.style.display = 'none';
+                lotesEl.disabled = false;
+                lotesEl.max = restantes;
+                if (!lotesEl.value || parseInt(lotesEl.value, 10) > restantes) lotesEl.value = restantes;
+                lotesHint.textContent = '(máx. ' + restantes + ')';
+            } else {
+                var total = sel.reduce(function (s, cb) { return s + parseInt(cb.getAttribute('data-restantes') || '0', 10); }, 0);
+                campoLotes.style.display = 'none';
+                lotesEl.disabled = true;
+                grupoResumo.style.display = '';
+                grupoResumo.innerHTML = 'Fixação em grupo: <strong>' + total + ' lote(s)</strong> — todos os restantes dos ' + sel.length + ' contratos marcados.';
+            }
+            preview();
+        }
+
+        function num(txt) { return parseFloat((txt || '').replace(',', '.')); }
+
+        function preview() {
+            var sel = marcados(), lv = num(levelEl.value);
+            if (!sel.length || isNaN(lv)) { pvPreco.textContent = '—'; return; }
+            var unidade = levelUnit.textContent, partes = [], somaPeso = 0, somaLotes = 0;
+            sel.forEach(function (cb) {
+                var df = num(difInput(cb).value);
+                var preco = lv + (isNaN(df) ? 0 : df);
+                var lotes = sel.length === 1 ? (parseInt(lotesEl.value, 10) || 0) : parseInt(cb.getAttribute('data-restantes') || '0', 10);
+                somaPeso += preco * lotes; somaLotes += lotes;
+                partes.push('UT ' + cb.getAttribute('data-ut') + ': ' + preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            });
+            var texto = partes.join(' · ');
+            if (sel.length > 1 && somaLotes > 0) {
+                texto += ' — média ' + (somaPeso / somaLotes).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            pvPreco.innerHTML = '<strong>' + texto + ' ' + unidade + '</strong>';
+        }
+
+        checks.forEach(function (cb) { cb.addEventListener('change', aoMudarSelecao); });
+        lista.addEventListener('input', function (e) { if (e.target.classList.contains('fix-dif')) preview(); });
+        [levelEl, lotesEl].forEach(function (el) { el.addEventListener('input', preview); });
+
+        document.querySelectorAll('.js-escolher').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var cb = lista.querySelector('input[value="' + btn.getAttribute('data-contrato') + '"]');
+                if (cb && !cb.disabled) {
+                    cb.checked = true;
+                    aoMudarSelecao();
+                    cb.closest('.fix-item').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+
+        aoMudarSelecao();
+    })();
+</script>
         </div>
     </div>
 </div>
