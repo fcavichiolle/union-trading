@@ -26,6 +26,8 @@ class Classificacao extends Model
         'mercado_interno_sacas',
         'grinders_pct',
         'grinders_sacas',
+        'moka_pct',
+        'moka_sacas',
         'created_by',
     ];
 
@@ -40,6 +42,8 @@ class Classificacao extends Model
             'mercado_interno_sacas' => 'decimal:2',
             'grinders_pct' => 'decimal:2',
             'grinders_sacas' => 'decimal:2',
+            'moka_pct' => 'decimal:2',
+            'moka_sacas' => 'decimal:2',
             'quantidade_lotes' => 'decimal:4',
         ];
     }
@@ -52,7 +56,8 @@ class Classificacao extends Model
             $totalSacas = (float) $classificacao->peneira_1718_sacas
                 + (float) $classificacao->peneira_1416_sacas
                 + (float) $classificacao->mercado_interno_sacas
-                + (float) $classificacao->grinders_sacas;
+                + (float) $classificacao->grinders_sacas
+                + (float) $classificacao->moka_sacas;
 
             $classificacao->quantidade_lotes = round($totalSacas / self::SACAS_POR_LOTE, 4);
         });
@@ -73,7 +78,8 @@ class Classificacao extends Model
         return (float) $this->peneira_1718_sacas
             + (float) $this->peneira_1416_sacas
             + (float) $this->mercado_interno_sacas
-            + (float) $this->grinders_sacas;
+            + (float) $this->grinders_sacas
+            + (float) $this->moka_sacas;
     }
 
     /**

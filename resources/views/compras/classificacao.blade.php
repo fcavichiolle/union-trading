@@ -42,6 +42,7 @@
                                     ['peneira_1416', 'SCS 14/16'],
                                     ['mercado_interno', 'Mercado interno'],
                                     ['grinders', 'Grinders'],
+                                    ['moka', 'Moka'],
                                 ];
                             @endphp
                             @foreach ($linhas as [$prefixo, $label])

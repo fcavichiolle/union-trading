@@ -91,16 +91,36 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 ### Módulo 1 — Compras e Classificação
 - **Cadastro de compra**: UTS, mês/ano (rotulado "Mês/ano da entrega"), fornecedor + CNPJ
   validado, armazém, certificação, tipo de entrada (padrão "BICA"), volume em sacas.
+- **Número do lote** (`compras.numero_lote`, coluna nova): preenchido **depois** do lançamento
+  (não faz parte do formulário de criação — é adicionado quando o armazém/controle de estoque
+  informa o número). Enquanto estiver em branco (`Compra::precisaDeNumeroLote()`), a compra
+  **não é considerada definitivamente em estoque**: aparece um badge de alerta vermelho
+  "⚠ Falta nº do lote" na coluna "Lote" de "Compras lançadas" e um banner de alerta no topo da
+  tela da compra, com um formulário simples (`compras/{compra}/lote`, `PUT`) para preenchê-lo.
+  Rota/controller (`CompraController::atualizarLote`) restrita a admin/compras, igual ao resto
+  do módulo.
 - **Classificação**: Fine Cup / Good Cup, distribuição nas peneiras 17/18, 14/16, mercado
-  interno e grinders (% e sacas). **Cálculo de lotes** (total de sacas ÷ 283,49) feito
-  sempre no servidor.
+  interno, grinders e **moka** (% e sacas). **Cálculo de lotes** (total de sacas ÷ 283,49) feito
+  sempre no servidor. A linha "Moka" foi adicionada depois das demais (colunas `moka_pct`/
+  `moka_sacas` em `classificacoes`, via migration de `ALTER` — mesma lógica do ENUM de
+  certificação: nunca editar a migration de criação já rodada). A view do formulário
+  (`compras/classificacao.blade.php`) é **data-driven** (array de `[campo, rótulo]`), então
+  novas faixas de peneira bastam entrar nesse array, sem tocar no JS de cálculo automático.
+  Toda faixa nova precisa ser somada em 4 lugares: `Classificacao::booted()` (lotes),
+  `StoreClassificacaoRequest` (soma % e soma sacas), `DashboardController::distribuicao()`
+  (SQL do relatório) e as tabelas que exibem a distribuição (`compras/show`,
+  `dashboard/_tabela-classificacao`).
 - **Financeiro**: valor da saca, valor total (= saca × volume, calculado no servidor),
   corretor e comissão. Tem **preview do total em tempo real** no formulário (só visual;
   o valor oficial continua vindo do servidor ao salvar).
-- **Relatório (dashboard)** somente leitura, com filtro por mês e **link temporário
-  assinado (7 dias)** para compartilhar sem login. Contém duas tabelas:
-  - Distribuição por **padrão** × peneira.
-  - Distribuição por **certificação** (adicionada recentemente).
+- **Relatório (dashboard)** somente leitura, com **link temporário assinado (7 dias)** para
+  compartilhar sem login. Tem uma única tabela — **Distribuição por padrão × peneira**
+  (a tabela de "Distribuição por certificação" foi **removida**: tinha o mesmo "Total geral"
+  da tabela de padrão, então era informação duplicada na tela; "certificado" virou filtro).
+  Filtros: **intervalo de meses** (mes_de/mes_ate), **padrão**, **certificado** e **busca**
+  (UTS ou fornecedor) — mesmo padrão de filtro da tela "Compras lançadas". Os filtros ativos
+  são **carregados no link compartilhável** (assim quem recebe o link vê a mesma visão
+  filtrada). Lista de filtros centralizada em `DashboardController::FILTROS`.
 - **Tela "Compras lançadas"** com filtros por **intervalo de meses**, por **padrão** e
   busca por UTS/fornecedor; colunas de resumo (Volume, Mercado interno, Grinders) e
   coluna de **Certificação**, para ver tudo sem abrir compra por compra.
@@ -121,6 +141,19 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   (meses NY ICE tipo `Z6`); **Vitória** → `... USD/MT of ICE ROBUSTA CF LONDON, N lot(s) x <mês> ...`
   (meses de Londres tipo `Sep_2026`). O formulário troca as opções de mês e a unidade do diferencial
   conforme o porto (JS). **Incoterms: só FOB.**
+- **Contrato FIXED**: checkbox "Contrato já fixado (FIXED)" no formulário — quando marcado, mostra
+  os campos **Preço fixado** + **Unidade** (em vez de Diferencial/Mês de fixação) e o PRICE do
+  contrato passa a mostrar o **valor absoluto** em vez da fórmula "to be fixed": ex. `353,40 cts/lb`
+  ou `3.725,00 USD/MT`. **A unidade (cts/lb ou USD/MT) é escolha livre do usuário, independente do
+  porto** — é um valor negociado, não a unidade "oficial" da bolsa (essa (`Contrato::unidadePreco()`)
+  continua fixa por porto, mas só é usada na fórmula "a fixar"). O formulário sugere a unidade
+  "de costume" do porto ao trocar o porto, mas **só enquanto o usuário não tiver escolhido
+  manualmente** (rastreado via `data-tocado` no JS) — depois disso a escolha do usuário nunca é
+  sobrescrita. Campos novos: `fixado` (bool), `preco_fixado` (decimal) e `preco_fixado_unidade`
+  (`Contrato::unidadesPreco()`). O controller **limpa os campos do modo não usado** ao salvar
+  (fixado → zera diferencial/mes_fixacao; não fixado → zera preco_fixado/preco_fixado_unidade),
+  pra não deixar dado morto de um modo vazando no outro. A lista "Contratos gerados" e a tela do
+  contrato mostram um badge **FIXED** (verde) ou **A FIXAR** (cinza).
 - **PDF** via `barryvdh/laravel-dompdf` (`resources/views/contratos/pdf.blade.php`), fiel ao modelo —
   cláusulas fixas (SELLER, SHIPPER, PAYMENT, ARBITRATION, OTHER CONDITIONS, APPLICABLE LAW,
   DESTINATION=T.B.I) no template; assinatura com espaço amplo para **carimbo**. Arquivo:
@@ -177,6 +210,11 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
    'Illuminate\...\Model'*) quando ele não indexou a pasta `vendor/`. **Não afetam a execução**.
    Resolver com Ctrl+Shift+P → "Developer: Reload Window" e aguardar a indexação. Erros de
    *Undefined property* de atributos do Eloquent são inerentes e podem ser ignorados.
+5. **Página do relatório renderizava tudo duas vezes.** O arquivo
+   `dashboard/compras.blade.php` tinha o conteúdo inteiro **colado duas vezes dentro do próprio
+   arquivo** (resíduo de uma edição anterior), então o form/tabela apareciam repetidos na tela.
+   Corrigido reescrevendo o arquivo do zero. Fica como lembrete: depois de editar uma view,
+   reabrir o arquivo (ou `git diff`) para confirmar que não sobrou conteúdo duplicado.
 
 ## 6. O que falta / próximos passos
 
@@ -224,7 +262,7 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 - **Views de compras** (`resources/views/compras/`): `create`, `show`, `index`,
   `financeiro`, `classificacao`.
 - **Views do relatório** (`resources/views/dashboard/`): `compras`, `compras-publico`,
-  `_tabela-classificacao`, `_tabela-certificacao`.
+  `_tabela-classificacao`.
 - **Migrations** (`database/migrations/`): série `2026_01_01_0000xx_*` (roles, users,
   password/sessions, fornecedores, compras, classificacoes, financeiro_compras, audit_logs).
 - **Seeders** (`database/seeders/`): `RoleSeeder`, `AdminUserSeeder`, `DatabaseSeeder`.

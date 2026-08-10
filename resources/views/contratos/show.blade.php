@@ -34,6 +34,13 @@
                     <tr><td style="color:var(--muted);">CERTIFIED</td><td>{{ $contrato->certificadoLabel() }}</td></tr>
                     <tr><td style="color:var(--muted);">QUANTITY</td><td>{{ $contrato->quantidadeLinha() }}</td></tr>
                     <tr><td style="color:var(--muted);">PACKAGING</td><td>{{ $contrato->embalagem }}</td></tr>
+                    <tr><td style="color:var(--muted);">STATUS</td><td>
+                        @if ($contrato->fixado)
+                            <span class="badge badge--green">FIXED</span>
+                        @else
+                            <span class="badge badge--muted">A FIXAR</span>
+                        @endif
+                    </td></tr>
                     <tr><td style="color:var(--muted);">PRICE</td><td>{{ $contrato->precoLinha() }}</td></tr>
                     <tr><td style="color:var(--muted);">SHIPMENT</td><td>{{ $contrato->embarqueLinha() ?: '—' }}</td></tr>
                     <tr><td style="color:var(--muted);">INCOTERMS</td><td>{{ $contrato->incotermsLinha() }}</td></tr>

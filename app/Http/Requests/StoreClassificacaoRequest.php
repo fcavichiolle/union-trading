@@ -30,6 +30,9 @@ class StoreClassificacaoRequest extends FormRequest
 
             'grinders_pct' => ['required', 'numeric', 'min:0', 'max:100'],
             'grinders_sacas' => ['required', 'numeric', 'min:0'],
+
+            'moka_pct' => ['required', 'numeric', 'min:0', 'max:100'],
+            'moka_sacas' => ['required', 'numeric', 'min:0'],
         ];
     }
 
@@ -47,7 +50,8 @@ class StoreClassificacaoRequest extends FormRequest
             $somaPct = (float) ($data['peneira_1718_pct'] ?? 0)
                 + (float) ($data['peneira_1416_pct'] ?? 0)
                 + (float) ($data['mercado_interno_pct'] ?? 0)
-                + (float) ($data['grinders_pct'] ?? 0);
+                + (float) ($data['grinders_pct'] ?? 0)
+                + (float) ($data['moka_pct'] ?? 0);
 
             if (abs($somaPct - 100) > 0.5) {
                 $validator->errors()->add('peneira_1718_pct', 'A soma das porcentagens das peneiras deve totalizar 100% (atual: ' . number_format($somaPct, 2) . '%).');
@@ -58,7 +62,8 @@ class StoreClassificacaoRequest extends FormRequest
                 $somaSacas = (float) ($data['peneira_1718_sacas'] ?? 0)
                     + (float) ($data['peneira_1416_sacas'] ?? 0)
                     + (float) ($data['mercado_interno_sacas'] ?? 0)
-                    + (float) ($data['grinders_sacas'] ?? 0);
+                    + (float) ($data['grinders_sacas'] ?? 0)
+                    + (float) ($data['moka_sacas'] ?? 0);
 
                 if ($somaSacas - (float) $compra->volume_sacas > 0.01) {
                     $validator->errors()->add('peneira_1718_sacas', 'A soma das sacas classificadas (' . number_format($somaSacas, 2) . ') não pode ultrapassar o volume entregue (' . number_format((float) $compra->volume_sacas, 2) . ').');

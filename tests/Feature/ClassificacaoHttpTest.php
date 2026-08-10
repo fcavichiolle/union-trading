@@ -56,6 +56,7 @@ class ClassificacaoHttpTest extends TestCase
             'peneira_1416_pct' => 30, 'peneira_1416_sacas' => 100,
             'mercado_interno_pct' => 10, 'mercado_interno_sacas' => 30,
             'grinders_pct' => 10, 'grinders_sacas' => 20,
+            'moka_pct' => 0, 'moka_sacas' => 0,
         ], $overrides);
     }
 
@@ -103,6 +104,47 @@ class ClassificacaoHttpTest extends TestCase
 
         $resposta->assertSessionHasErrors('peneira_1718_sacas');
         $this->assertDatabaseCount('classificacoes', 0);
+    }
+
+    public function test_moka_pct_conta_na_soma_das_porcentagens(): void
+    {
+        // Payload base já soma 100%; some +10% de moka sem tirar de outra
+        // faixa deve estourar para 110% e falhar.
+        $resposta = $this->actingAs($this->admin)->put(
+            route('compras.classificacao.update', $this->compra),
+            $this->payload(['moka_pct' => 10])
+        );
+
+        $resposta->assertSessionHasErrors('peneira_1718_pct');
+        $this->assertDatabaseCount('classificacoes', 0);
+    }
+
+    public function test_moka_sacas_conta_no_limite_do_volume_da_compra(): void
+    {
+        // pct continua somando 100% (moka_pct fica 0), mas moka_sacas=50
+        // sozinho já ultrapassa o volume de 300 (150+100+30+20+50=350).
+        $resposta = $this->actingAs($this->admin)->put(
+            route('compras.classificacao.update', $this->compra),
+            $this->payload(['moka_sacas' => 50])
+        );
+
+        $resposta->assertSessionHasErrors('peneira_1718_sacas');
+        $this->assertDatabaseCount('classificacoes', 0);
+    }
+
+    public function test_moka_pode_substituir_parte_de_outra_faixa(): void
+    {
+        // Zera grinders e move seu valor para moka: soma continua 100% e 300 sacas.
+        $resposta = $this->actingAs($this->admin)->put(
+            route('compras.classificacao.update', $this->compra),
+            $this->payload([
+                'grinders_pct' => 0, 'grinders_sacas' => 0,
+                'moka_pct' => 10, 'moka_sacas' => 20,
+            ])
+        );
+
+        $resposta->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('classificacoes', ['compra_id' => $this->compra->id, 'moka_sacas' => 20]);
     }
 
     public function test_usuario_sem_permissao_nao_acessa(): void

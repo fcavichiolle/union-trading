@@ -8,6 +8,7 @@
                 <th class="num">SCS 14/16</th>
                 <th class="num">Mercado interno</th>
                 <th class="num">Grinders</th>
+                <th class="num">Moka</th>
                 <th class="num">Total de SCS</th>
                 <th class="num">% do total</th>
             </tr>
@@ -20,11 +21,12 @@
                     <td class="num">{{ number_format($linha->scs_1416, 2, ',', '.') }}</td>
                     <td class="num">{{ number_format($linha->mercado_interno, 2, ',', '.') }}</td>
                     <td class="num">{{ number_format($linha->grinders, 2, ',', '.') }}</td>
+                    <td class="num">{{ number_format($linha->moka, 2, ',', '.') }}</td>
                     <td class="num"><strong>{{ number_format($linha->total, 2, ',', '.') }}</strong></td>
                     <td class="num">{{ $totalGeral > 0 ? number_format(($linha->total / $totalGeral) * 100, 1, ',', '.') : '0,0' }}%</td>
                 </tr>
             @empty
-                <tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Nenhuma compra classificada neste período.</td></tr>
+                <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Nenhuma compra classificada neste período.</td></tr>
             @endforelse
         </tbody>
         @if ($linhas->isNotEmpty())
@@ -35,6 +37,7 @@
                     <td class="num">{{ number_format($linhas->sum('scs_1416'), 2, ',', '.') }}</td>
                     <td class="num">{{ number_format($linhas->sum('mercado_interno'), 2, ',', '.') }}</td>
                     <td class="num">{{ number_format($linhas->sum('grinders'), 2, ',', '.') }}</td>
+                    <td class="num">{{ number_format($linhas->sum('moka'), 2, ',', '.') }}</td>
                     <td class="num">{{ number_format($totalGeral, 2, ',', '.') }}</td>
                     <td class="num">100,0%</td>
                 </tr>

@@ -19,6 +19,7 @@ class Compra extends Model
         'certificacao',
         'tipo_entrada',
         'volume_sacas',
+        'numero_lote',
         'created_by',
     ];
 
@@ -71,5 +72,15 @@ class Compra extends Model
             'RFA_EUDR' => 'RFA + EUDR',
             '4C_RFA' => '4C + RFA',
         ];
+    }
+
+    /**
+     * Sem o número do lote (dado pelo armazém/controle de estoque), a
+     * compra não pode ser considerada definitivamente em estoque — usado
+     * para exibir o alerta em "Compras lançadas" e na tela da compra.
+     */
+    public function precisaDeNumeroLote(): bool
+    {
+        return blank($this->numero_lote);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Compras;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCompraRequest;
+use App\Http\Requests\UpdateLoteRequest;
 use App\Models\Compra;
 use App\Models\Fornecedor;
 use Illuminate\Contracts\View\View;
@@ -90,5 +91,17 @@ class CompraController extends Controller
         $compra->load(['fornecedor', 'classificacao', 'financeiro', 'criadoPor']);
 
         return view('compras.show', compact('compra'));
+    }
+
+    /**
+     * Grava o número do lote (dado pelo armazém/controle de estoque).
+     * Enquanto essa compra não tiver o número do lote, ela não pode ser
+     * considerada definitivamente em estoque (ver Compra::precisaDeNumeroLote()).
+     */
+    public function atualizarLote(UpdateLoteRequest $request, Compra $compra): RedirectResponse
+    {
+        $compra->update($request->validated());
+
+        return redirect()->route('compras.show', $compra)->with('status', 'Número do lote salvo com sucesso.');
     }
 }

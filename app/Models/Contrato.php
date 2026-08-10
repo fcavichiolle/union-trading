@@ -26,7 +26,8 @@ class Contrato extends Model
         'cliente_id', 'cliente_nome', 'cliente_endereco', 'buyer_ref',
         'qualidade_id', 'qualidade_descricao', 'tipo_cafe', 'certificado',
         'quantidade_kg', 'tipo_container', 'embalagem',
-        'diferencial', 'mes_fixacao', 'embarque_mes', 'incoterms', 'porto', 'remarks',
+        'diferencial', 'mes_fixacao', 'fixado', 'preco_fixado', 'preco_fixado_unidade',
+        'embarque_mes', 'incoterms', 'porto', 'remarks',
         'created_by',
     ];
 
@@ -38,6 +39,8 @@ class Contrato extends Model
             'quantidade_kg' => 'decimal:2',
             'kg_por_container' => 'decimal:2',
             'sacas' => 'decimal:2',
+            'fixado' => 'boolean',
+            'preco_fixado' => 'decimal:2',
         ];
     }
 
@@ -154,6 +157,19 @@ class Contrato extends Model
         return self::mesesFixacaoSantos() + self::mesesFixacaoVitoria();
     }
 
+    /**
+     * Unidades disponíveis para o preço FIXED. É uma escolha livre (valor
+     * negociado entre as partes) — não depende do porto do contrato, ao
+     * contrário da unidade "oficial" da bolsa usada na fórmula "a fixar"
+     * (ver unidadePreco()).
+     *
+     * @return array<string,string>
+     */
+    public static function unidadesPreco(): array
+    {
+        return ['CTS_LB' => 'cts/lb', 'USD_MT' => 'USD/MT'];
+    }
+
     /* ---------- Strings formatadas para o PDF ---------- */
 
     public function certificadoLabel(): string
@@ -171,12 +187,32 @@ class Contrato extends Model
     }
 
     /**
-     * Linha de preço com o nº de lotes calculado. O texto muda conforme o
-     * porto: Santos usa NY ICE (arábica, cents/pounds); Vitória usa
-     * ICE Robusta de Londres (USD/MT).
+     * Unidade da bolsa de referência, conforme o porto: Santos usa
+     * cents/pounds (arábica NY ICE), Vitória usa USD/MT (Robusta de
+     * Londres). Usada só na fórmula "a fixar" — o preço FIXED tem unidade
+     * própria, escolhida livremente (ver preco_fixado_unidade).
+     */
+    public function unidadePreco(): string
+    {
+        return $this->porto === 'VITORIA' ? 'USD/MT' : 'cts/lb';
+    }
+
+    /**
+     * Linha de preço. Se o contrato já está FIXED, mostra o valor
+     * absoluto acordado na unidade escolhida (ex.: "353,40 cts/lb" ou
+     * "3.725,00 USD/MT" — independente do porto). Se ainda é a fixar,
+     * mostra a fórmula com o nº de lotes calculado — o texto muda
+     * conforme o porto: Santos usa NY ICE (arábica, cents/pounds);
+     * Vitória usa ICE Robusta de Londres (USD/MT).
      */
     public function precoLinha(): string
     {
+        if ($this->fixado) {
+            $unidade = self::unidadesPreco()[$this->preco_fixado_unidade] ?? $this->unidadePreco();
+
+            return number_format((float) $this->preco_fixado, 2, ',', '.') . ' ' . $unidade;
+        }
+
         $sufixo = 'Fixation to be done prior to invoicing or to first notice day, whichever is earlier.';
 
         if ($this->porto === 'VITORIA') {

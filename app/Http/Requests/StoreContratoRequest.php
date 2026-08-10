@@ -26,6 +26,9 @@ class StoreContratoRequest extends FormRequest
             'quantidade_kg' => ['required', 'numeric', 'min:1', 'max:99999999'],
             'tipo_container' => ['required', Rule::in(['20', '40'])],
             'embalagem' => ['required', Rule::in(Contrato::embalagens())],
+            'fixado' => ['nullable', 'boolean'],
+            'preco_fixado' => ['required_if:fixado,1', 'nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'preco_fixado_unidade' => ['required_if:fixado,1', 'nullable', Rule::in(array_keys(Contrato::unidadesPreco()))],
             'diferencial' => ['nullable', 'string', 'max:40'],
             'mes_fixacao' => ['nullable', Rule::in(array_keys(Contrato::mesesFixacao()))],
             'embarque_mes' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
@@ -39,6 +42,8 @@ class StoreContratoRequest extends FormRequest
     {
         return [
             'numero_ut.unique' => 'Já existe um contrato com este número UT.',
+            'preco_fixado.required_if' => 'Informe o preço fixado (contrato marcado como FIXED).',
+            'preco_fixado_unidade.required_if' => 'Informe a unidade do preço fixado (cts/lb ou USD/MT).',
         ];
     }
 }
