@@ -97,6 +97,17 @@ class CalculosCriticosTest extends TestCase
         $this->assertEqualsWithDelta(round(200 / Classificacao::SACAS_POR_LOTE, 4), (float) $classificacao->quantidade_lotes, 0.00001);
     }
 
+    public function test_moka_soma_no_calculo_de_lotes(): void
+    {
+        // Transfere parte do grinders para moka, mantendo a soma de sacas em 300.
+        $classificacao = $this->novaClassificacao([
+            'grinders_pct' => 5, 'grinders_sacas' => 10,
+            'moka_pct' => 5, 'moka_sacas' => 10,
+        ]);
+
+        $this->assertEqualsWithDelta(round(300 / Classificacao::SACAS_POR_LOTE, 4), (float) $classificacao->quantidade_lotes, 0.00001);
+    }
+
     public function test_valor_total_e_valor_da_saca_vezes_o_volume_da_compra(): void
     {
         $financeiro = FinanceiroCompra::create([

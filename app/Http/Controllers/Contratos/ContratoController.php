@@ -45,6 +45,18 @@ class ContratoController extends Controller
         $dados['qualidade_descricao'] = $qualidade->descricao;
         $dados['created_by'] = Auth::id();
 
+        // Checkbox HTML: só vem no request quando marcado. Normaliza para
+        // bool e limpa os campos do modo que NÃO foi usado, para não deixar
+        // dado morto de um modo "vazando" no outro.
+        $dados['fixado'] = $request->boolean('fixado');
+        if ($dados['fixado']) {
+            $dados['diferencial'] = null;
+            $dados['mes_fixacao'] = null;
+        } else {
+            $dados['preco_fixado'] = null;
+            $dados['preco_fixado_unidade'] = null;
+        }
+
         if (! empty($dados['embarque_mes'])) {
             $dados['embarque_mes'] = Carbon::createFromFormat('Y-m', $dados['embarque_mes'])->startOfMonth();
         }

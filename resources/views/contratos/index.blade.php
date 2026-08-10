@@ -25,6 +25,7 @@
                     <th>Qualidade</th>
                     <th class="num">Qtde (kg)</th>
                     <th class="num">Lotes</th>
+                    <th>Preço</th>
                     <th></th>
                 </tr>
             </thead>
@@ -37,13 +38,20 @@
                         <td data-label="Qualidade">{{ \Illuminate\Support\Str::limit($contrato->qualidade_descricao, 40) }}</td>
                         <td class="num" data-label="Qtde (kg)">{{ number_format((float) $contrato->quantidade_kg, 0, ',', '.') }}</td>
                         <td class="num" data-label="Lotes">{{ $contrato->lotes }}</td>
+                        <td data-label="Preço">
+                            @if ($contrato->fixado)
+                                <span class="badge badge--green">FIXED</span>
+                            @else
+                                <span class="badge badge--muted">A FIXAR</span>
+                            @endif
+                        </td>
                         <td class="cell-action" style="display:flex; gap:6px; justify-content:flex-end;">
                             <a href="{{ route('contratos.show', $contrato) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Ver</a>
                             <a href="{{ route('contratos.pdf', $contrato) }}" class="btn btn-primary js-save-pdf" data-filename="{{ $contrato->nomeArquivoPdf() }}" style="padding:6px 12px; font-size:13px;">PDF</a>
                         </td>
                     </tr>
                 @empty
-                    <tr><td class="cell-empty" colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Nenhum contrato gerado ainda.</td></tr>
+                    <tr><td class="cell-empty" colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Nenhum contrato gerado ainda.</td></tr>
                 @endforelse
             </tbody>
         </table>

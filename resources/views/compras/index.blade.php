@@ -45,6 +45,7 @@
                     <th class="num">Merc. interno (sc)</th>
                     <th class="num">Grinders (sc)</th>
                     <th>Padrão</th>
+                    <th>Lote</th>
                     <th></th>
                 </tr>
             </thead>
@@ -66,10 +67,17 @@
                                 <span class="badge badge--muted">Não classificada</span>
                             @endif
                         </td>
+                        <td data-label="Lote">
+                            @if ($compra->precisaDeNumeroLote())
+                                <span class="badge badge--red" title="Esta compra ainda não pode ser considerada definitivamente em estoque.">⚠ Falta nº do lote</span>
+                            @else
+                                <span class="badge badge--green">{{ $compra->numero_lote }}</span>
+                            @endif
+                        </td>
                         <td class="cell-action"><a href="{{ route('compras.show', $compra) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
                     </tr>
                 @empty
-                    <tr><td class="cell-empty" colspan="10" style="text-align:center; color:var(--muted); padding:24px;">Nenhuma compra encontrada.</td></tr>
+                    <tr><td class="cell-empty" colspan="11" style="text-align:center; color:var(--muted); padding:24px;">Nenhuma compra encontrada.</td></tr>
                 @endforelse
             </tbody>
         </table>

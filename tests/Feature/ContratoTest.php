@@ -130,6 +130,91 @@ class ContratoTest extends TestCase
         );
     }
 
+    public function test_preco_fixado_mostra_valor_absoluto_na_unidade_escolhida(): void
+    {
+        $c = $this->novoContrato([
+            'porto' => 'SANTOS', 'fixado' => true, 'preco_fixado' => 353.40, 'preco_fixado_unidade' => 'CTS_LB',
+        ]);
+
+        $this->assertSame('353,40 cts/lb', $c->precoLinha());
+    }
+
+    public function test_preco_fixado_aceita_usd_mt(): void
+    {
+        $c = $this->novoContrato([
+            'porto' => 'SANTOS', 'fixado' => true, 'preco_fixado' => 3725, 'preco_fixado_unidade' => 'USD_MT',
+        ]);
+
+        $this->assertSame('3.725,00 USD/MT', $c->precoLinha());
+    }
+
+    public function test_unidade_do_preco_fixado_e_independente_do_porto(): void
+    {
+        // Porto Vitória (cuja fórmula "a fixar" usaria USD/MT), mas o preço
+        // FIXED foi negociado em cts/lb — a unidade é escolha livre.
+        $c = $this->novoContrato([
+            'porto' => 'VITORIA', 'fixado' => true, 'preco_fixado' => 353.40, 'preco_fixado_unidade' => 'CTS_LB',
+        ]);
+
+        $this->assertSame('353,40 cts/lb', $c->precoLinha());
+    }
+
+    public function test_store_com_fixado_marca_e_salva_o_preco_fixado(): void
+    {
+        $resposta = $this->actingAs($this->admin)->post(route('contratos.store'), [
+            'numero_ut' => '5941', 'data_contrato' => '2026-08-05',
+            'cliente_id' => $this->cliente->id, 'buyer_ref' => '31722',
+            'qualidade_id' => $this->qualidade->id, 'tipo_cafe' => 'ARABICA',
+            'certificado' => 'RFA_EUDR', 'quantidade_kg' => 108000,
+            'tipo_container' => '40', 'embalagem' => 'Bulk Liner',
+            'fixado' => '1', 'preco_fixado' => '353.40', 'preco_fixado_unidade' => 'CTS_LB', 'embarque_mes' => '2026-09',
+            'incoterms' => 'FOB', 'porto' => 'SANTOS', 'remarks' => 'SHIPMENT 01/09',
+        ]);
+
+        $contrato = Contrato::where('numero_ut', '5941')->firstOrFail();
+        $resposta->assertRedirect(route('contratos.show', $contrato));
+        $this->assertTrue($contrato->fixado);
+        $this->assertEqualsWithDelta(353.40, (float) $contrato->preco_fixado, 0.001);
+        $this->assertSame('CTS_LB', $contrato->preco_fixado_unidade);
+        $this->assertSame('353,40 cts/lb', $contrato->precoLinha());
+        // Diferencial/mês de fixação não fazem sentido para um contrato FIXED.
+        $this->assertNull($contrato->diferencial);
+        $this->assertNull($contrato->mes_fixacao);
+    }
+
+    public function test_store_fixado_sem_preco_fixado_falha_na_validacao(): void
+    {
+        $resposta = $this->actingAs($this->admin)->post(route('contratos.store'), [
+            'numero_ut' => '5942', 'data_contrato' => '2026-08-05',
+            'cliente_id' => $this->cliente->id, 'qualidade_id' => $this->qualidade->id,
+            'tipo_cafe' => 'ARABICA', 'certificado' => 'RFA_EUDR', 'quantidade_kg' => 108000,
+            'tipo_container' => '40', 'embalagem' => 'Bulk Liner', 'incoterms' => 'FOB', 'porto' => 'SANTOS',
+            'fixado' => '1',
+        ]);
+
+        $resposta->assertSessionHasErrors(['preco_fixado', 'preco_fixado_unidade']);
+        $this->assertDatabaseMissing('contratos', ['numero_ut' => '5942']);
+    }
+
+    public function test_store_sem_fixado_ignora_preco_fixado_enviado(): void
+    {
+        // Se o checkbox não está marcado, mesmo que preco_fixado venha no
+        // request, o contrato salva como "a fixar" e sem preco_fixado.
+        $resposta = $this->actingAs($this->admin)->post(route('contratos.store'), [
+            'numero_ut' => '5943', 'data_contrato' => '2026-08-05',
+            'cliente_id' => $this->cliente->id, 'qualidade_id' => $this->qualidade->id,
+            'tipo_cafe' => 'ARABICA', 'certificado' => 'RFA_EUDR', 'quantidade_kg' => 108000,
+            'tipo_container' => '40', 'embalagem' => 'Bulk Liner', 'incoterms' => 'FOB', 'porto' => 'SANTOS',
+            'preco_fixado' => '353.40', 'preco_fixado_unidade' => 'CTS_LB', 'diferencial' => '-16.00', 'mes_fixacao' => 'Z6',
+        ]);
+
+        $contrato = Contrato::where('numero_ut', '5943')->firstOrFail();
+        $resposta->assertRedirect(route('contratos.show', $contrato));
+        $this->assertFalse($contrato->fixado);
+        $this->assertNull($contrato->preco_fixado);
+        $this->assertNull($contrato->preco_fixado_unidade);
+    }
+
     public function test_store_cria_contrato_e_calcula_lotes(): void
     {
         $resposta = $this->actingAs($this->admin)->post(route('contratos.store'), [

@@ -20,6 +20,9 @@ use Illuminate\Support\Facades\URL;
  */
 class DashboardController extends Controller
 {
+    /** Nomes dos filtros aceitos pelo relatório (GET e no link compartilhável). */
+    private const FILTROS = ['mes_de', 'mes_ate', 'padrao', 'certificado', 'busca'];
+
     public function index(Request $request): View
     {
         return view('dashboard.compras', $this->dadosRelatorio($request));
@@ -33,59 +36,73 @@ class DashboardController extends Controller
 
     private function dadosRelatorio(Request $request): array
     {
-        $mes = $request->string('mes')->toString(); // "YYYY-MM" vindo de <input type="month">
+        $filtros = [];
+        foreach (self::FILTROS as $nome) {
+            $filtros[$nome] = $request->string($nome)->toString();
+        }
 
-        $linhas = $this->distribuicao($mes, 'padrao_final', 'padrao_final');
-        $linhasCertificacao = $this->distribuicao($mes, 'compras.certificacao', 'certificacao');
-
-        // O total geral é o mesmo nas duas tabelas (mesma soma de sacas).
+        $linhas = $this->distribuicao($filtros);
         $totalGeral = (float) $linhas->sum('total');
 
         return [
             'linhas' => $linhas,
-            'linhasCertificacao' => $linhasCertificacao,
             'totalGeral' => $totalGeral,
-            'mesFiltro' => $mes,
+            'filtros' => $filtros,
         ];
     }
 
-    /**
-     * Soma as sacas por peneira, agrupando pela coluna informada.
-     * $coluna/$alias são strings FIXAS definidas aqui no código (nunca
-     * vêm do usuário), então não há risco de injeção no selectRaw.
-     */
-    private function distribuicao(string $mes, string $coluna, string $alias)
+    /** Soma as sacas por peneira, agrupadas por padrão final, aplicando os filtros informados. */
+    private function distribuicao(array $filtros)
     {
         return Classificacao::query()
             ->join('compras', 'compras.id', '=', 'classificacoes.compra_id')
-            ->when($mes !== '', function ($q) use ($mes) {
-                [$ano, $mesNum] = explode('-', $mes);
-                $q->whereYear('compras.mes_ano', $ano)->whereMonth('compras.mes_ano', $mesNum);
+            ->when($filtros['mes_de'] !== '', function ($q) use ($filtros) {
+                $q->whereDate('compras.mes_ano', '>=', $filtros['mes_de'] . '-01');
             })
-            ->selectRaw("
-                {$coluna} as {$alias},
+            ->when($filtros['mes_ate'] !== '', function ($q) use ($filtros) {
+                $q->whereDate('compras.mes_ano', '<=', $filtros['mes_ate'] . '-01');
+            })
+            ->when($filtros['padrao'] !== '', function ($q) use ($filtros) {
+                $q->where('classificacoes.padrao_final', $filtros['padrao']);
+            })
+            ->when($filtros['certificado'] !== '', function ($q) use ($filtros) {
+                $q->where('compras.certificacao', $filtros['certificado']);
+            })
+            ->when($filtros['busca'] !== '', function ($q) use ($filtros) {
+                $busca = $filtros['busca'];
+                $q->join('fornecedores', 'fornecedores.id', '=', 'compras.fornecedor_id')
+                    ->where(function ($sub) use ($busca) {
+                        $sub->where('compras.uts', 'like', "%{$busca}%")
+                            ->orWhere('fornecedores.nome', 'like', "%{$busca}%");
+                    });
+            })
+            ->selectRaw('
+                padrao_final,
                 SUM(peneira_1718_sacas) as scs_1718,
                 SUM(peneira_1416_sacas) as scs_1416,
                 SUM(grinders_sacas) as grinders,
-                SUM(mercado_interno_sacas) as mercado_interno
-            ")
-            ->groupBy($coluna)
+                SUM(mercado_interno_sacas) as mercado_interno,
+                SUM(moka_sacas) as moka
+            ')
+            ->groupBy('padrao_final')
             ->get()
             ->map(function ($linha) {
                 $linha->total = (float) $linha->scs_1718 + (float) $linha->scs_1416
-                    + (float) $linha->grinders + (float) $linha->mercado_interno;
+                    + (float) $linha->grinders + (float) $linha->mercado_interno
+                    + (float) $linha->moka;
                 return $linha;
             });
     }
 
-    /** Gera link assinado temporário (7 dias) para compartilhar sem exigir login. */
+    /** Gera link assinado temporário (7 dias) para compartilhar sem exigir login, preservando os filtros aplicados. */
     public function linkTemporario(Request $request): RedirectResponse
     {
-        $url = URL::temporarySignedRoute(
-            'relatorio.publico',
-            now()->addDays(7),
-            ['mes' => $request->string('mes')->toString()]
-        );
+        $params = [];
+        foreach (self::FILTROS as $nome) {
+            $params[$nome] = $request->string($nome)->toString();
+        }
+
+        $url = URL::temporarySignedRoute('relatorio.publico', now()->addDays(7), $params);
 
         AuditLog::registrar('link_compartilhavel_gerado', $url, Auth::id());
 

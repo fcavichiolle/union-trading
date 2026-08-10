@@ -677,6 +677,11 @@
   :root[data-theme="dark"] .calc-val { color: #BFE6CE; }
   :root[data-theme="dark"] .calc-lbl, :root[data-theme="dark"] .calc-note { color: rgba(231,239,233,.6); }
 
+  /* checkbox simples com rótulo (ex.: "Contrato já fixado") */
+  .check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; }
+  .check-row input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; margin: 0; }
+  .check-row span { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

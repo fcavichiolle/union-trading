@@ -119,6 +119,7 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::get('/novo', [CompraController::class, 'create'])->name('create');
             Route::post('/', [CompraController::class, 'store'])->name('store');
             Route::get('/{compra}', [CompraController::class, 'show'])->name('show');
+            Route::put('/{compra}/lote', [CompraController::class, 'atualizarLote'])->name('lote.update');
 
             Route::get('/{compra}/classificacao', [ClassificacaoController::class, 'edit'])->name('classificacao.edit');
             Route::put('/{compra}/classificacao', [ClassificacaoController::class, 'update'])->name('classificacao.update');

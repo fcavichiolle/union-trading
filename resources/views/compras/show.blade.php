@@ -3,6 +3,18 @@
 @section('title', 'Compra ' . $compra->uts)
 
 @section('content')
+    @if ($compra->precisaDeNumeroLote())
+        <div class="notice-danger">
+            <span class="notice-danger__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"></path><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path></svg>
+            </span>
+            <div>
+                <b>Falta o número do lote</b>
+                <p>Esta compra ainda não pode ser considerada definitivamente em estoque. Preencha o número do lote abaixo.</p>
+            </div>
+        </div>
+    @endif
+
     <div class="card">
         <div class="card__header"><h2>Dados da compra</h2></div>
         <div class="card__body">
@@ -23,6 +35,22 @@
     </div>
 
     <div class="card">
+        <div class="card__header"><h2>Número do lote</h2></div>
+        <div class="card__body">
+            <form method="POST" action="{{ route('compras.lote.update', $compra) }}" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                @csrf
+                @method('PUT')
+                <div class="field {{ $errors->has('numero_lote') ? 'has-error' : '' }}" style="max-width:280px; margin-bottom:0;">
+                    <label for="numero_lote">Número do lote</label>
+                    <input type="text" id="numero_lote" name="numero_lote" value="{{ old('numero_lote', $compra->numero_lote) }}" placeholder="Ex.: L-2026-0451">
+                    @error('numero_lote') <div class="field-error">{{ $message }}</div> @enderror
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
         <div class="card__header">
             <h2>Seleção e classificação</h2>
             <a href="{{ route('compras.classificacao.edit', $compra) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">
@@ -35,7 +63,7 @@
                 <div class="table-wrap">
                     <table class="data">
                         <thead>
-                            <tr><th>Padrão final</th><th class="num">SCS 17/18</th><th class="num">SCS 14/16</th><th class="num">Mercado interno</th><th class="num">Grinders</th><th class="num">Qtd. lotes</th></tr>
+                            <tr><th>Padrão final</th><th class="num">SCS 17/18</th><th class="num">SCS 14/16</th><th class="num">Mercado interno</th><th class="num">Grinders</th><th class="num">Moka</th><th class="num">Qtd. lotes</th></tr>
                         </thead>
                         <tbody>
                             <tr>
@@ -44,6 +72,7 @@
                                 <td class="num">{{ number_format($c->peneira_1416_sacas, 2, ',', '.') }} ({{ number_format($c->peneira_1416_pct, 1, ',', '.') }}%)</td>
                                 <td class="num">{{ number_format($c->mercado_interno_sacas, 2, ',', '.') }} ({{ number_format($c->mercado_interno_pct, 1, ',', '.') }}%)</td>
                                 <td class="num">{{ number_format($c->grinders_sacas, 2, ',', '.') }} ({{ number_format($c->grinders_pct, 1, ',', '.') }}%)</td>
+                                <td class="num">{{ number_format($c->moka_sacas, 2, ',', '.') }} ({{ number_format($c->moka_pct, 1, ',', '.') }}%)</td>
                                 <td class="num">{{ number_format($c->quantidade_lotes, 4, ',', '.') }}</td>
                             </tr>
                         </tbody>
