@@ -248,4 +248,24 @@ class FixacaoTest extends TestCase
             ->assertSee('UT 5940')
             ->assertSee('A FIXAR');
     }
+
+    public function test_posicao_por_tela_soma_a_fixar_e_fixado(): void
+    {
+        // Contrato pendente com tela prevista Z6 (6 lotes) + outro sem tela (3 lotes).
+        $this->contrato->update(['mes_fixacao' => 'Z6']);
+        $this->novoContrato('5941', 54000, ['mes_fixacao' => null]);
+
+        // Fixa 2 lotes do 5940 na tela Z6 @ 335 → restam 4 na Z6.
+        $this->fixar(['lotes' => 2, 'tela' => 'Z6', 'level' => '335.00']);
+
+        $resp = $this->actingAs($this->admin)->get(route('ny.index'))->assertOk();
+
+        $resp->assertSee('Posição de fixações por tela');
+        $resp->assertSeeInOrder(['Z6', 'Sem tela definida']);
+        // Z6: 4 lotes a fixar (~1.134 sacas), 2 fixados, level médio 335,00.
+        $resp->assertSee('335,00 cts/lb');
+        $resp->assertSee(number_format(4 * 283.49, 0, ',', '.')); // 1.134 sacas a fixar na Z6
+        // Sem tela: 3 lotes do contrato 5941.
+        $resp->assertSee(number_format(3 * 283.49, 0, ',', '.')); // 850 sacas
+    }
 }

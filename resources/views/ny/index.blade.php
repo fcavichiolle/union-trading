@@ -19,6 +19,57 @@
         <a href="{{ route('mercado.index') }}" class="mkt-more">Ver todas as cotações →</a>
     </div>
 
+    @if (count($posicao))
+        <div class="card" style="margin-bottom:22px;">
+            <div class="card__header card__header--dark mesh-texture">
+                <h2>Posição de fixações por tela</h2>
+            </div>
+            <div class="card__body" style="padding:0;">
+                <div class="table-wrap" style="border:0; border-radius:0;">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th>Tela</th>
+                                <th>Bolsa</th>
+                                <th class="num">A fixar (lotes)</th>
+                                <th class="num">A fixar (sacas)</th>
+                                <th class="num">Fixado (lotes)</th>
+                                <th class="num">Level médio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($posicao as $p)
+                                <tr>
+                                    <td><strong>{{ $p['tela'] === 'SEM_TELA' ? 'Sem tela definida' : $p['tela'] }}</strong></td>
+                                    <td>{{ $p['bolsa'] }}</td>
+                                    <td class="num">
+                                        @if ($p['a_fixar_lotes'] > 0)
+                                            <span class="badge badge--amber">{{ $p['a_fixar_lotes'] }}</span>
+                                        @else
+                                            <span style="color:var(--muted);">0</span>
+                                        @endif
+                                    </td>
+                                    <td class="num">{{ number_format($p['a_fixar_sacas'], 0, ',', '.') }}</td>
+                                    <td class="num">{{ $p['fixado_lotes'] ?: '—' }}</td>
+                                    <td class="num">{{ $p['level_medio'] !== null ? number_format($p['level_medio'], 2, ',', '.') . ' ' . $p['unidade'] : '—' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2">Total</td>
+                                <td class="num"><strong>{{ array_sum(array_column($posicao, 'a_fixar_lotes')) }}</strong></td>
+                                <td class="num"><strong>{{ number_format(array_sum(array_column($posicao, 'a_fixar_sacas')), 0, ',', '.') }}</strong></td>
+                                <td class="num"><strong>{{ array_sum(array_column($posicao, 'fixado_lotes')) }}</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="admin-grid">
         <div>
             <div class="card" style="margin-bottom:22px;">
