@@ -37,6 +37,8 @@
                     <tr><td style="color:var(--muted);">STATUS</td><td>
                         @if ($contrato->fixado)
                             <span class="badge badge--green">FIXED</span>
+                        @elseif ($contrato->parcialmenteFixado())
+                            <span class="badge badge--amber">PARCIAL {{ $contrato->lotesFixados() }}/{{ $contrato->lotes }}</span>
                         @else
                             <span class="badge badge--muted">A FIXAR</span>
                         @endif
@@ -49,4 +51,58 @@
             </table>
         </div>
     </div>
+
+    @if ($contrato->fixacoes->isNotEmpty())
+        <div class="card" style="margin-top:20px;">
+            <div class="card__header"><h2>Fixações (Tela NY)</h2></div>
+            <div class="card__body" style="padding:0;">
+                <div class="table-wrap" style="border:0; border-radius:0;">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Corretora</th>
+                                <th>Tela</th>
+                                <th class="num">Lotes</th>
+                                <th class="num">Level</th>
+                                <th class="num">Diferencial</th>
+                                <th class="num">Preço ({{ $contrato->unidadePreco() }})</th>
+                                <th>Por</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($contrato->fixacoes as $f)
+                                <tr>
+                                    <td>{{ $f->created_at->format('d/m/Y H:i') }}</td>
+                                    <td>
+                                        {{ $f->corretoraLabel() }}
+                                        @if ($f->brokerClienteLabel())
+                                            <br><span style="color:var(--muted); font-size:11.5px;">cliente: {{ $f->brokerClienteLabel() }}</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $f->tela ?: '—' }}</td>
+                                    <td class="num">{{ $f->lotes }}</td>
+                                    <td class="num">{{ number_format((float) $f->level, 2, ',', '.') }}</td>
+                                    <td class="num">{{ number_format((float) $f->diferencial, 2, ',', '.') }}</td>
+                                    <td class="num"><strong>{{ number_format((float) $f->preco, 2, ',', '.') }}</strong></td>
+                                    <td>{{ $f->criadoPor?->name ?? '—' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        @if ($contrato->fixado)
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3">Preço final (média ponderada)</td>
+                                    <td class="num">{{ $contrato->lotesFixados() }}</td>
+                                    <td class="num" colspan="2"></td>
+                                    <td class="num"><strong>{{ number_format((float) $contrato->preco_fixado, 2, ',', '.') }}</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        @endif
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
 @endsection

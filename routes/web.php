@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\QualidadeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Contratos\ContratoController;
+use App\Http\Controllers\Contratos\FixacaoController;
+use App\Http\Controllers\Mercado\MercadoController;
 use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -107,6 +109,24 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::post('/', [ContratoController::class, 'store'])->name('store');
             Route::get('/{contrato}', [ContratoController::class, 'show'])->name('show');
             Route::get('/{contrato}/pdf', [ContratoController::class, 'pdf'])->name('pdf');
+        });
+
+        /*
+        |----------------------------------------------------------------
+        | Módulo 3 — Mercado (Tela NY + cotações)
+        |----------------------------------------------------------------
+        | A Tela NY (fixação de contratos) é restrita a quem opera
+        | contratos; as cotações são leitura e abertas a todos os perfis.
+        */
+        Route::middleware('role:admin,compras')->group(function () {
+            Route::get('/tela-ny', [FixacaoController::class, 'index'])->name('ny.index');
+            Route::post('/tela-ny/fixacoes', [FixacaoController::class, 'store'])->name('ny.fixacoes.store');
+            Route::delete('/tela-ny/fixacoes/{fixacao}', [FixacaoController::class, 'destroy'])->name('ny.fixacoes.destroy');
+        });
+
+        Route::middleware('role:admin,compras,financeiro,diretoria')->group(function () {
+            Route::get('/mercado', [MercadoController::class, 'index'])->name('mercado.index');
+            Route::get('/api/market', [MercadoController::class, 'api'])->name('mercado.api');
         });
 
         /*

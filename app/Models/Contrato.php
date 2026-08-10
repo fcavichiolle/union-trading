@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Contrato extends Model
@@ -77,6 +78,66 @@ class Contrato extends Model
     public function criadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function fixacoes(): HasMany
+    {
+        return $this->hasMany(Fixacao::class);
+    }
+
+    /* ---------- Fixação por lotes (Tela NY) ---------- */
+
+    /**
+     * Lotes já fixados na Tela NY. Usa o agregado carregado via
+     * withSum('fixacoes as lotes_fixados', 'lotes') quando disponível
+     * (listagens, sem N+1); senão consulta direto.
+     */
+    public function lotesFixados(): int
+    {
+        if (array_key_exists('lotes_fixados', $this->attributes)) {
+            return (int) $this->attributes['lotes_fixados'];
+        }
+
+        return (int) $this->fixacoes()->sum('lotes');
+    }
+
+    public function lotesRestantes(): int
+    {
+        return max(0, (int) $this->lotes - $this->lotesFixados());
+    }
+
+    /** Tem tranche registrada, mas ainda não fechou todos os lotes. */
+    public function parcialmenteFixado(): bool
+    {
+        return ! $this->fixado && $this->lotesFixados() > 0;
+    }
+
+    /**
+     * Recalcula o estado de fixação a partir das tranches (chamado ao
+     * registrar/excluir uma fixação na Tela NY). Completou todos os lotes
+     * → vira FIXED com preço = média ponderada (por lotes) das tranches,
+     * na unidade da bolsa do porto. Ficou incompleto (tranche excluída)
+     * → volta a A FIXAR. Contratos criados manualmente como FIXED não têm
+     * tranches e nunca passam por aqui, então não são afetados.
+     */
+    public function recalcularFixacao(): void
+    {
+        $tranches = $this->fixacoes()->get();
+        $lotesFixados = (int) $tranches->sum('lotes');
+
+        if ($lotesFixados >= (int) $this->lotes && $lotesFixados > 0) {
+            $soma = $tranches->sum(fn (Fixacao $f) => $f->lotes * (float) $f->preco);
+
+            $this->fixado = true;
+            $this->preco_fixado = round($soma / $lotesFixados, 2);
+            $this->preco_fixado_unidade = $this->porto === 'VITORIA' ? 'USD_MT' : 'CTS_LB';
+        } else {
+            $this->fixado = false;
+            $this->preco_fixado = null;
+            $this->preco_fixado_unidade = null;
+        }
+
+        $this->save();
     }
 
     /** Peso da saca no cálculo: 59 kg para "Jute Bags 59kg", 60 kg no resto. */
