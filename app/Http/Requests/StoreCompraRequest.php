@@ -30,8 +30,21 @@ class StoreCompraRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'uts.unique' => 'Já existe uma compra cadastrada com esta referência (UTS).',
-            'fornecedor_cnpj' => 'CNPJ inválido.',
+            'uts.required' => 'Informe a UTS (referência da compra).',
+            'uts.unique' => 'Já existe uma compra cadastrada com esta UTS.',
+            'mes_ano.required' => 'Informe o mês/ano da entrega.',
+            'mes_ano.date' => 'O mês/ano da entrega não é uma data válida.',
+            'fornecedor_nome.required' => 'Informe o nome do fornecedor.',
+            // Atenção: a chave precisa do sufixo da regra. Sem ele
+            // ('fornecedor_cnpj' => ...) a mensagem substitui TODAS as regras
+            // do campo — era o bug que fazia um CNPJ em branco dizer
+            // "CNPJ inválido" em vez de "informe o CNPJ".
+            'fornecedor_cnpj.required' => 'Informe o CNPJ do fornecedor.',
+            'armazem.required' => 'Selecione o armazém de entrega.',
+            'certificacao.required' => 'Selecione a certificação.',
+            'volume_sacas.required' => 'Informe o volume entregue, em sacas.',
+            'volume_sacas.numeric' => 'O volume entregue deve ser um número (ex.: 600 ou 600,50).',
+            'volume_sacas.min' => 'O volume entregue deve ser maior que zero.',
         ];
     }
 }

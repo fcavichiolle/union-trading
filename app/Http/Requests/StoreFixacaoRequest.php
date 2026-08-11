@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Models\Contrato;
-use App\Models\Fixacao;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -27,8 +26,9 @@ class StoreFixacaoRequest extends FormRequest
         return [
             'contratos' => ['required', 'array', 'min:1'],
             'contratos.*' => ['integer', 'distinct', 'exists:contratos,id'],
-            'corretora' => ['required', Rule::in(array_keys(Fixacao::corretoras()))],
-            'broker_cliente' => ['nullable', Rule::in(array_keys(Fixacao::brokersCliente()))],
+            // Os dropdowns vêm do cadastro do admin; a fixação grava o nome.
+            'corretora' => ['required', 'string', 'max:80', Rule::exists('corretoras', 'nome')->where('tipo', 'NOSSA')],
+            'broker_cliente' => ['nullable', 'string', 'max:80', Rule::exists('corretoras', 'nome')->where('tipo', 'CLIENTE')],
             'tela' => ['required', 'string', 'max:20'], // pertencer à bolsa certa é checado abaixo
             'lotes' => ['nullable', 'integer', 'min:1'], // exigido só no modo de 1 contrato
             'level' => ['required', 'numeric', 'min:0.01', 'max:99999.99'],
@@ -54,6 +54,13 @@ class StoreFixacaoRequest extends FormRequest
 
             if ($jaFixados = $contratos->where('fixado', true)->pluck('numero_ut')->all()) {
                 $v->errors()->add('contratos', 'Contrato(s) já totalmente fixado(s): UT ' . implode(', UT ', $jaFixados) . '.');
+
+                return;
+            }
+
+            // Defesa em profundidade: a Tela NY já não lista cancelados.
+            if ($cancelados = $contratos->filter(fn (Contrato $c) => $c->cancelado())->pluck('numero_ut')->all()) {
+                $v->errors()->add('contratos', 'Contrato(s) cancelado(s) não podem ser fixados: UT ' . implode(', UT ', $cancelados) . '.');
 
                 return;
             }
@@ -92,8 +99,16 @@ class StoreFixacaoRequest extends FormRequest
     {
         return [
             'contratos.required' => 'Marque ao menos um contrato para fixar.',
+            'contratos.*.exists' => 'Um dos contratos marcados não existe mais.',
+            'contratos.*.distinct' => 'O mesmo contrato foi marcado duas vezes.',
+            'corretora.required' => 'Selecione a corretora.',
+            'corretora.exists' => 'Esta corretora não está no cadastro (Administração → Corretoras).',
+            'broker_cliente.exists' => 'Este broker de cliente não está no cadastro (Administração → Corretoras).',
             'tela.required' => 'Escolha a tela (mês da bolsa) contra a qual está fixando.',
+            'lotes.integer' => 'A quantidade de lotes deve ser um número inteiro.',
+            'lotes.min' => 'É preciso fixar ao menos 1 lote.',
             'level.required' => 'Informe o level (preço da bolsa).',
+            'level.numeric' => 'O level precisa ser um número (use ponto decimal, ex.: 335.00).',
             'diferenciais.required' => 'Informe o diferencial de cada contrato marcado.',
             'diferenciais.*.required' => 'Informe o diferencial de cada contrato marcado.',
             'diferenciais.*.numeric' => 'O diferencial precisa ser um número (use ponto decimal, ex.: -16.00).',

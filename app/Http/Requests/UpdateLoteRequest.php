@@ -17,4 +17,12 @@ class UpdateLoteRequest extends FormRequest
             'numero_lote' => ['required', 'string', 'max:60'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'numero_lote.required' => 'Informe o número do lote dado pelo armazém.',
+            'numero_lote.max' => 'O número do lote é muito longo (máximo de 60 caracteres).',
+        ];
+    }
 }

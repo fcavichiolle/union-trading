@@ -31,6 +31,13 @@ class NewPasswordController extends Controller
             'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', PasswordRule::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
+        ], [
+            'token.required' => 'Link de redefinição incompleto. Abra novamente o link que você recebeu por e-mail.',
+            'email.required' => 'Informe o e-mail da sua conta.',
+            'email.email' => 'Informe um e-mail válido.',
+            'password.required' => 'Informe a nova senha.',
+            'password.confirmed' => 'A nova senha e a confirmação não são iguais.',
+            'password.min' => 'A nova senha deve ter pelo menos 12 caracteres.',
         ]);
 
         // Password::reset() só executa a closure se o token (comparado via

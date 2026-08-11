@@ -36,6 +36,20 @@ class StoreClassificacaoRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'padrao_final.required' => 'Selecione o padrão final da classificação.',
+            'padrao_final.in' => 'O padrão final selecionado não existe na lista.',
+            // As 10 linhas de peneira usam as mesmas regras: uma mensagem por
+            // regra (com :attribute) cobre todas sem repetir campo por campo.
+            'required' => 'Preencha :attribute (use 0 se não houver).',
+            'numeric' => 'O valor de :attribute deve ser um número.',
+            'min' => 'O valor de :attribute não pode ser negativo.',
+            'max' => 'A porcentagem em :attribute não pode passar de 100%.',
+        ];
+    }
+
     /**
      * Regras "de negócio" que cruzam campos: a soma das porcentagens
      * deve fechar em 100% e a soma das sacas não pode passar do volume

@@ -31,7 +31,7 @@
             </thead>
             <tbody>
                 @forelse ($contratos as $contrato)
-                    <tr>
+                    <tr class="{{ $contrato->cancelado() ? 'linha-cancelada' : '' }}">
                         <td data-label="UT"><strong>UT {{ preg_replace('/\D+/', '', $contrato->numero_ut) ?: $contrato->numero_ut }}</strong></td>
                         <td data-label="Data">{{ $contrato->data_contrato->format('d/m/Y') }}</td>
                         <td data-label="Comprador">{{ $contrato->cliente_nome }}</td>
@@ -39,7 +39,9 @@
                         <td class="num" data-label="Qtde (kg)">{{ number_format((float) $contrato->quantidade_kg, 0, ',', '.') }}</td>
                         <td class="num" data-label="Lotes">{{ $contrato->lotes }}</td>
                         <td data-label="Preço">
-                            @if ($contrato->fixado)
+                            @if ($contrato->cancelado())
+                                <span class="badge badge--red" title="{{ $contrato->motivo_cancelamento }}">CANCELADO</span>
+                            @elseif ($contrato->fixado)
                                 <span class="badge badge--green">FIXED</span>
                             @elseif ($contrato->parcialmenteFixado())
                                 <span class="badge badge--amber">PARCIAL {{ $contrato->lotesFixados() }}/{{ $contrato->lotes }}</span>
@@ -47,8 +49,11 @@
                                 <span class="badge badge--muted">A FIXAR</span>
                             @endif
                         </td>
-                        <td class="cell-action" style="display:flex; gap:6px; justify-content:flex-end;">
+                        <td class="cell-action" style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
                             <a href="{{ route('contratos.show', $contrato) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Ver</a>
+                            @unless ($contrato->cancelado())
+                                <a href="{{ route('contratos.edit', $contrato) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Editar</a>
+                            @endunless
                             <a href="{{ route('contratos.pdf', $contrato) }}" class="btn btn-primary js-save-pdf" data-filename="{{ $contrato->nomeArquivoPdf() }}" style="padding:6px 12px; font-size:13px;">PDF</a>
                         </td>
                     </tr>

@@ -43,11 +43,14 @@
                         <a href="{{ route('compras.index') }}" class="sb-link {{ request()->routeIs('compras.index') || request()->routeIs('compras.show') ? 'is-active' : '' }}">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="17" rx="2"></rect><path d="M8.5 8h7M8.5 12h7M8.5 16h4"></path></svg>
                             <span>Compras lançadas</span>
+                            @isset($badgesMenu['compras.index'])
+                                <span class="sb-badge" title="Compras com etapa pendente">{{ $badgesMenu['compras.index'] }}</span>
+                            @endisset
                         </a>
                     @endif
                     <a href="{{ route('relatorio.index') }}" class="sb-link {{ request()->routeIs('relatorio.index') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"></path><rect x="6" y="11" width="3.2" height="6"></rect><rect x="11.4" y="7" width="3.2" height="10"></rect><rect x="16.8" y="13.5" width="3.2" height="3.5"></rect></svg>
-                        <span>Relatório (dashboard)</span>
+                        <span>Estoque</span>
                     </a>
                 </div>
             @endif
@@ -72,6 +75,9 @@
                     <a href="{{ route('ny.index') }}" class="sb-link {{ request()->routeIs('ny.index') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v4M7 14v6M7 8h0a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2Z"></path><path d="M17 4v2M17 16v4M17 6h0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path></svg>
                         <span>Tela NY (fixações)</span>
+                        @isset($badgesMenu['ny.index'])
+                            <span class="sb-badge" title="Lotes a fixar">{{ $badgesMenu['ny.index'] }}</span>
+                        @endisset
                     </a>
                 @endif
                 <a href="{{ route('mercado.index') }}" class="sb-link {{ request()->routeIs('mercado.index') ? 'is-active' : '' }}">
@@ -90,6 +96,10 @@
                     <a href="{{ route('admin.clientes.index') }}" class="sb-link {{ request()->routeIs('admin.clientes.*') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"></path><path d="M9 20v-6h6v6"></path></svg>
                         <span>Clientes</span>
+                    </a>
+                    <a href="{{ route('admin.corretoras.index') }}" class="sb-link {{ request()->routeIs('admin.corretoras.*') ? 'is-active' : '' }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5v-13l5-3.5 5 3.5v13"></path><path d="M13.5 20.5h7v-8.5l-3.5-2.5-3.5 2.5"></path><path d="M6.5 11h2M6.5 14.5h2M6.5 18h2M16.5 14.5h1.5M16.5 18h1.5"></path></svg>
+                        <span>Corretoras</span>
                     </a>
                     <a href="{{ route('admin.qualidades.index') }}" class="sb-link {{ request()->routeIs('admin.qualidades.*') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 9.7l5.4-.8Z"></path></svg>

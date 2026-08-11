@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -82,5 +83,29 @@ class Compra extends Model
     public function precisaDeNumeroLote(): bool
     {
         return blank($this->numero_lote);
+    }
+
+    /* ---------- Scopes de pendência (painel inicial e filtros) ---------- */
+
+    /** Versão SQL de precisaDeNumeroLote(): coluna nula ou string vazia. */
+    public function scopeSemNumeroLote(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->whereNull('numero_lote')->orWhere('numero_lote', ''));
+    }
+
+    /** Só as compras que já entraram definitivamente em estoque. */
+    public function scopeComNumeroLote(Builder $query): Builder
+    {
+        return $query->whereNotNull('numero_lote')->where('numero_lote', '!=', '');
+    }
+
+    /** Compra com qualquer etapa em aberto (lote, classificação ou financeiro). */
+    public function scopeComPendencia(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->semNumeroLote()
+                ->orWhereDoesntHave('classificacao')
+                ->orWhereDoesntHave('financeiro');
+        });
     }
 }

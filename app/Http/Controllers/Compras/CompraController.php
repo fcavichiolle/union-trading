@@ -36,6 +36,16 @@ class CompraController extends Controller
                     $q->whereHas('classificacao', fn ($c) => $c->where('padrao_final', $padrao));
                 }
             })
+            ->when($request->filled('pendencia'), function ($q) use ($request) {
+                // Atalhos vindos dos cards do painel inicial ("o que falta fazer").
+                match ($request->string('pendencia')->toString()) {
+                    'sem_lote' => $q->semNumeroLote(),
+                    'sem_classificacao' => $q->whereDoesntHave('classificacao'),
+                    'sem_financeiro' => $q->whereDoesntHave('financeiro'),
+                    'qualquer' => $q->comPendencia(),
+                    default => null, // valor desconhecido não filtra nada
+                };
+            })
             ->when($request->filled('busca'), function ($q) use ($request) {
                 $busca = $request->string('busca');
                 // Agrupado num where() próprio para não "vazar" o OR e brigar

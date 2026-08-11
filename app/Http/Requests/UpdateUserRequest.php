@@ -23,4 +23,17 @@ class UpdateUserRequest extends FormRequest
             'active' => ['required', 'boolean'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Informe o nome do usuário.',
+            'email.required' => 'Informe o e-mail do usuário.',
+            'email.email' => 'Informe um e-mail válido (ex.: nome@utrading.com.br).',
+            'email.unique' => 'Já existe outro usuário cadastrado com este e-mail.',
+            'role_id.required' => 'Selecione o perfil de acesso.',
+            'role_id.exists' => 'O perfil selecionado não existe.',
+            'active.required' => 'Selecione se a conta fica ativa ou suspensa.',
+        ];
+    }
 }

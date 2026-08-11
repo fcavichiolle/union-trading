@@ -77,9 +77,29 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   `<h1>` grande, com `@section('subtitle')` e `@section('page_actions')` opcionais. Todas as telas
   autenticadas (compras, relatório, usuários) herdam esse shell automaticamente. CSS em
   `partials/styles.blade.php` (blocos "App shell", "Início", "Gestão de usuários").
-- **Início** (`dashboard/home.blade.php`): 4 cards de atalho (Nova compra, Compras lançadas,
-  Relatório de classificação, Gestão de usuários), com visibilidade por perfil. Saudação usa o
-  **nome do usuário logado**: `Bem-vindo, {{ $user->name }}.`
+- **Início — painel** (`dashboard/home.blade.php`): deixou de ser 4 cards de atalho (que só
+  repetiam o menu lateral) e virou um painel que responde **"o que falta fazer agora?"**.
+  Três faixas: (1) **pendências** em cards clicáveis que levam à tela já filtrada —
+  compras sem nº do lote, não classificadas, sem financeiro, contratos a fixar e contratos
+  sem mês de embarque; (2) **posição geral** — sacas compradas, sacas em contrato, saldo
+  (compras − contratos) e lotes a fixar; (3) **últimos lançamentos** (compras e contratos).
+  Saudação usa o nome do usuário logado.
+  **Regras de desenho**: card com contador **zero não aparece** (se nada está pendente, sai
+  o aviso verde "Tudo em dia"); cada pendência tem seus perfis (ex.: "sem financeiro" também
+  para o perfil financeiro; diretoria vê só a posição). Os números são **totais gerais, sem
+  recorte de período** — decisão do projeto para não competir com o Relatório e com os
+  filtros de "Compras lançadas" (há uma nota na própria tela dizendo isso, e que o saldo
+  não considera estoque anterior ao sistema).
+- **Badges de pendência no menu lateral**: "Compras lançadas" mostra quantas compras têm
+  alguma etapa em aberto e "Tela NY" quantos lotes estão a fixar. Só aparecem quando > 0
+  (badge em tudo vira enfeite e para de ser lido). Alimentados por um **View composer** de
+  `layouts.app` no `AppServiceProvider`.
+- **Serviço `App\Services\PainelInicial`**: concentra as contagens/pendências/badges e é
+  registrado como **singleton** — o layout (badges) e a home pedem os mesmos números na
+  mesma requisição e as queries rodam uma vez só. Scopes novos no model `Compra`:
+  `semNumeroLote()` (versão SQL de `precisaDeNumeroLote()`) e `comPendencia()`.
+  "Compras lançadas" ganhou o filtro **Pendência** (`?pendencia=sem_lote|sem_classificacao|
+  sem_financeiro|qualquer`), que é o destino dos cards do painel.
 - **Gestão de usuários** (`admin/users/index.blade.php`): igual ao design — banner vermelho
   "Cadastro público desativado", **tabela de usuários** (avatar com iniciais, perfil em pill,
   último acesso, status Ativo/Suspenso; ações Editar/Resetar senha aparecem no hover e ficam
@@ -113,6 +133,27 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 - **Financeiro**: valor da saca, valor total (= saca × volume, calculado no servidor),
   corretor e comissão. Tem **preview do total em tempo real** no formulário (só visual;
   o valor oficial continua vindo do servidor ao salvar).
+- **Estoque** (antigo "Relatório de classificação", rota continua `relatorio.*`): a tela
+  passou a ser o **estoque** da empresa. **Regra central: só entra em estoque
+  definitivamente a compra que já tem o número do lote** informado pelo armazém — filtro
+  **Situação** com `definitivo` (padrão), `aguardando` e `todos`. Ganhou **filtro e coluna
+  de armazém**, com as linhas agrupadas por armazém (subtotal quando o armazém tem mais de
+  um padrão), porque a pergunta de estoque é "o que tenho na SAAG?".
+  **Nada some em silêncio**: dois avisos no topo mostram o que existe mas está fora da
+  tabela — (1) volume **aguardando nº do lote** e (2) volume **com lote mas sem
+  classificação** (é estoque real, só não tem distribuição de peneira lançada, então não
+  tem linha na tabela). Ambos linkam para "Compras lançadas" já filtrado. Esses avisos
+  respeitam mês/certificado/armazém/busca, mas **ignoram de propósito** os filtros
+  `padrao` e `situacao` — são justamente os recortes que esconderiam esses volumes.
+  **ATENÇÃO — é ENTRADA, não SALDO**: o sistema ainda não registra embarque/faturamento,
+  então os totais dizem quanto entrou, não quanto resta para vender (há nota na tela).
+  O fechamento real depende do módulo de embarque (ver "próximos passos").
+- **Link compartilhável x armazém**: o armazém **não viaja** no link assinado
+  (`FILTROS_LINK` não inclui `armazem`) e a versão pública nunca quebra por armazém, mesmo
+  se o parâmetro for forçado na URL — decisão do projeto: onde o café está guardado é
+  informação de casa, e um link com filtro de armazém invisível entregaria números
+  parciais sem o destinatário saber. A tela pública diz qual recorte está mostrando
+  ("Considera apenas o café com entrada confirmada em armazém"), sem citar armazém.
 - **Relatório (dashboard)** somente leitura, com **link temporário assinado (7 dias)** para
   compartilhar sem login. Tem uma única tabela — **Distribuição por padrão × peneira**
   (a tabela de "Distribuição por certificação" foi **removida**: tinha o mesmo "Total geral"
@@ -158,8 +199,41 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   cláusulas fixas (SELLER, SHIPPER, PAYMENT, ARBITRATION, OTHER CONDITIONS, APPLICABLE LAW,
   DESTINATION=T.B.I) no template; assinatura com espaço amplo para **carimbo**. Arquivo:
   `UT_<num>_<CLIENTE>_<dd-mm-aaaa>.pdf`.
+- **Editar contrato** (`contratos.edit/update`): o formulário virou a partial
+  `contratos/_form.blade.php`, compartilhada por "Novo contrato" e "Editar contrato" (a
+  partial recebe `$contrato = null` na criação). Ao salvar, sacas/lotes/containers são
+  recalculados e o **snapshot de cliente/qualidade é regravado**. Duas travas:
+  (1) não dá para reduzir a quantidade a ponto de o contrato ficar com **menos lotes do que
+  já foram fixados** na Tela NY (`UpdateContratoRequest` simula o cálculo do model antes de
+  gravar); (2) `Contrato::recalcularFixacao()` só roda **se existirem tranches** — senão ele
+  zeraria um contrato marcado como FIXED na mão, já que assume as tranches como fonte da
+  verdade.
+- **Cancelar × Excluir contrato** — são coisas diferentes de propósito:
+  - **Cancelar** (`contratos.cancelar`, PATCH): cliente desistiu. Exige **motivo**
+    (`motivo_cancelamento`, com `cancelado_em` e `cancelado_por`), o registro e o PDF
+    continuam disponíveis, mas o contrato **sai da posição**: `Contrato::scopeAtivos()` o
+    remove da Tela NY e de todos os números do `PainelInicial`. Fixações já registradas
+    **não são apagadas** — a operação de mercado aconteceu de verdade. Aparece na lista com
+    badge vermelho CANCELADO e linha esmaecida; a tela do contrato mostra motivo, data e autor.
+  - **Excluir** (`contratos.destroy`, DELETE): só para contrato **lançado errado**. Também
+    exige motivo, que vai para o **AuditLog** — único lugar onde a informação sobrevive
+    depois que o registro some. **Bloqueado quando há fixações**: `fixacoes.contrato_id` tem
+    `cascadeOnDelete`, então excluir apagaria as tranches junto (perda de registro de
+    operação real); nesse caso a tela orienta cancelar. O botão já vem desabilitado.
+  - **Reativar** (`contratos.reativar`, PATCH): desfaz um cancelamento feito por engano.
+    Também exige motivo. O contrato volta para a posição (Tela NY e painel) e os campos de
+    cancelamento são limpos — a história não se perde porque o AuditLog guarda tanto o
+    cancelamento quanto a reativação, e a descrição da reativação **repete o motivo do
+    cancelamento anterior**. O formulário fica dentro do próprio aviso vermelho, num
+    `<details>` ("Foi cancelado por engano?").
+  - Cancelar e excluir ficam numa "zona de risco" (`<details>` fechado por padrão) no rodapé
+    da tela do contrato, cada uma com seu campo de motivo e `confirm()`. As três ações usam
+    o mesmo `MotivoContratoRequest` (motivo obrigatório, 5–500 caracteres).
+- **Link compartilhável com botão "Copiar"** (`partials/flash.blade.php`): usa a Clipboard
+  API quando disponível e cai para `execCommand('copy')` via textarea temporária fora de
+  contexto seguro; dá feedback "Copiado!" no próprio botão.
 - **Snapshot**: grava nome/endereço do cliente e descrição da qualidade na criação → editar o
-  cadastro depois **não altera** contratos antigos.
+  cadastro depois **não altera** contratos antigos (na edição o snapshot é regravado, ver acima).
 - **Lista** de contratos gerados (`contratos.index`) com re-download do PDF. **Nº UT** manual e único.
 - **Listas fixas** em `Contrato::`: certificados (Sem cert., 4C, EUDR, RFA, 4C+EUDR, RFA+EUDR),
   embalagens (**Bulk Liner, Jute Bags, Jute Bags 59kg, Big Bag, Jute + Grainpro**), incoterms (FOB),
@@ -184,12 +258,14 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   Contratos criados manualmente como FIXED não têm tranches e não passam por esse fluxo.
   Fixações aparecem na tela do contrato; badge **PARCIAL n/m** (âmbar) nas listas
   (`withSum('fixacoes as lotes_fixados', 'lotes')` para evitar N+1). AuditLog registra
-  fixação criada/excluída. **Corretoras (nossas)**: lista fixa em `Fixacao::corretoras()` —
-  StoneX East Coast, ICAP Corporates LLC (Hedgepoint) e Marex Financial Limited AGS Coffee.
-  **Broker do cliente**: campo opcional da fixação (`fixacoes.broker_cliente`), dropdown com
-  lista fixa em `Fixacao::brokersCliente()` (Stonex Miami, Adm Investor Services Inc,
-  Macquarie USA, Stonex London, Sucden London, Macquarie futures broker LLC, Stonex East
-  Coast, Marex London). Para adicionar/renomear em qualquer uma: editar o array.
+  fixação criada/excluída. **Corretoras e brokers dos clientes**: cadastro gerenciado pelo
+  admin em **Administração → Corretoras** (`admin.corretoras.*`, model `Corretora`, tabela
+  `corretoras` com `tipo` NOSSA/CLIENTE) — deixaram de ser listas fixas no código porque os
+  brokers dos clientes mudam o tempo todo. A fixação grava o **nome como snapshot**
+  (`fixacoes.corretora`/`broker_cliente` são strings): renomear/excluir um cadastro não
+  altera fixações antigas. A validação usa `Rule::exists('corretoras','nome')` filtrado
+  por tipo. A migration `..._create_corretoras_table.php` semeia as listas que eram
+  fixas e converte os códigos antigos ('STONEX') para nomes nas fixações existentes.
 - **Posição de fixações por tela** (card no topo da Tela NY): para cada tela, os lotes/
   sacas **a fixar** (contratos pendentes agrupados pelo `mes_fixacao` previsto; sacas =
   lotes restantes × divisor do tipo de café) e os lotes **fixados** naquela tela com o
@@ -260,7 +336,28 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
    'Illuminate\...\Model'*) quando ele não indexou a pasta `vendor/`. **Não afetam a execução**.
    Resolver com Ctrl+Shift+P → "Developer: Reload Window" e aguardar a indexação. Erros de
    *Undefined property* de atributos do Eloquent são inerentes e podem ser ignorados.
-5. **Página do relatório renderizava tudo duas vezes.** O arquivo
+5. **Mensagens de validação apareciam como "validation.required" na tela.** O `.env` usa
+   `APP_LOCALE=pt_BR` **e** `APP_FALLBACK_LOCALE=pt_BR`, mas não existia a pasta
+   `lang/pt_BR/`. Sem o arquivo do locale — e sem fallback em inglês, já que o fallback
+   também é pt_BR — o Laravel imprime a **chave crua** da tradução. Afetava **todos** os
+   formulários do sistema. Corrigido criando `lang/pt_BR/validation.php` (mensagens +
+   `attributes` com o rótulo de cada campo como aparece no formulário), `passwords.php`,
+   `auth.php` e `pagination.php` (os botões do paginador saíam "pagination.previous").
+   **Campo novo em formulário ⇒ acrescentar a etiqueta em `validation.attributes`**, senão
+   a mensagem sai com o nome técnico da coluna.
+   Guardado por `tests/Feature/MensagensValidacaoTest.php`, que checa a existência de cada
+   regra traduzida e varre a tela renderizada procurando `validation.`.
+6. **Mensagem de validação sem o sufixo da regra vale para TODAS as regras do campo.**
+   Havia `'fornecedor_cnpj' => 'CNPJ inválido.'` no `StoreCompraRequest` e
+   `'current_password' => 'A senha atual ... está incorreta.'` no `ChangePasswordRequest`:
+   com o campo **em branco**, a tela dizia "CNPJ inválido"/"senha incorreta" em vez de pedir
+   o preenchimento. A chave precisa ser `campo.regra`
+   (`fornecedor_cnpj.required`, `current_password.current_password`).
+7. **Nos testes, o flash de erros não sobrevive a uma requisição separada** (sessão `array`
+   + `actingAs()` migrando a sessão). Para conferir o que o usuário vê depois de um POST
+   inválido, use `->from(rota)->followingRedirects()->post(...)`, que renderiza o destino no
+   mesmo ciclo — não faça `post()` e depois um `get()` esperando achar as mensagens.
+8. **Página do relatório renderizava tudo duas vezes.** O arquivo
    `dashboard/compras.blade.php` tinha o conteúdo inteiro **colado duas vezes dentro do próprio
    arquivo** (resíduo de uma edição anterior), então o form/tabela apareciam repetidos na tela.
    Corrigido reescrevendo o arquivo do zero. Fica como lembrete: depois de editar uma view,
