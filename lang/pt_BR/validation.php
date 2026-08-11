@@ -190,6 +190,7 @@ return [
 
         // Classificação
         'padrao_final' => 'padrão final',
+        'tipo_bebida' => 'tipo de bebida',
         'peneira_1718_pct' => '% da peneira 17/18',
         'peneira_1718_sacas' => 'sacas da peneira 17/18',
         'peneira_1416_pct' => '% da peneira 14/16',

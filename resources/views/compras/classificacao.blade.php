@@ -19,15 +19,28 @@
                 @csrf
                 @method('PUT')
 
-                <div class="field {{ $errors->has('padrao_final') ? 'has-error' : '' }}" style="margin-bottom:18px; max-width:280px;">
-                    <label for="padrao_final">Padrão final</label>
-                    <select id="padrao_final" name="padrao_final" required>
-                        <option value="">Selecione...</option>
-                        @foreach (\App\Models\Classificacao::padroes() as $cod => $rotulo)
-                            <option value="{{ $cod }}" @selected(old('padrao_final', $classificacao?->padrao_final) === $cod)>{{ $rotulo }}</option>
-                        @endforeach
-                    </select>
-                    @error('padrao_final') <div class="field-error">{{ $message }}</div> @enderror
+                <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:18px;">
+                    <div class="field {{ $errors->has('padrao_final') ? 'has-error' : '' }}" style="flex:1; min-width:250px; margin-bottom:0;">
+                        <label for="padrao_final">Padrão final</label>
+                        <select id="padrao_final" name="padrao_final" required>
+                            <option value="">Selecione...</option>
+                            @foreach (\App\Models\Classificacao::padroes() as $cod => $rotulo)
+                                <option value="{{ $cod }}" @selected(old('padrao_final', $classificacao?->padrao_final) === $cod)>{{ $rotulo }}</option>
+                            @endforeach
+                        </select>
+                        @error('padrao_final') <div class="field-error">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="field {{ $errors->has('tipo_bebida') ? 'has-error' : '' }}" style="flex:1; min-width:250px; margin-bottom:0;">
+                        <label for="tipo_bebida">Tipo de bebida</label>
+                        <select id="tipo_bebida" name="tipo_bebida" required>
+                            <option value="">Selecione...</option>
+                            @foreach (\App\Models\Classificacao::tiposBebida() as $cod => $rotulo)
+                                <option value="{{ $cod }}" @selected(old('tipo_bebida', $classificacao?->tipo_bebida) === $cod)>{{ $rotulo }}</option>
+                            @endforeach
+                        </select>
+                        @error('tipo_bebida') <div class="field-error">{{ $message }}</div> @enderror
+                    </div>
                 </div>
 
                 <div class="table-wrap">

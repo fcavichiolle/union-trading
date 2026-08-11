@@ -73,6 +73,9 @@
                         <td data-label="Padrão">
                             @if ($compra->classificacao)
                                 <span class="badge badge--green">{{ \App\Models\Classificacao::padroes()[$compra->classificacao->padrao_final] ?? $compra->classificacao->padrao_final }}</span>
+                                @if ($compra->classificacao->tipoBebidaLabel())
+                                    <br><span style="color:var(--muted); font-size:11.5px;">{{ $compra->classificacao->tipoBebidaLabel() }}</span>
+                                @endif
                             @else
                                 <span class="badge badge--muted">Não classificada</span>
                             @endif

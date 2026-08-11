@@ -73,7 +73,7 @@ class PainelInicialTest extends TestCase
         $compra = $this->novaCompra(['uts' => 'UTS OK', 'numero_lote' => 'L-1']);
 
         Classificacao::create([
-            'compra_id' => $compra->id, 'padrao_final' => 'FINE_CUP',
+            'compra_id' => $compra->id, 'padrao_final' => 'FINE_CUP', 'tipo_bebida' => 'DURO',
             'peneira_1718_pct' => 100, 'peneira_1718_sacas' => 600,
             'peneira_1416_pct' => 0, 'peneira_1416_sacas' => 0,
             'mercado_interno_pct' => 0, 'mercado_interno_sacas' => 0,

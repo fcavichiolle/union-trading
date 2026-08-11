@@ -183,6 +183,7 @@ class MensagensValidacaoTest extends TestCase
             ->put(route('compras.classificacao.update', $compra), [])
             ->assertSessionHasErrors([
                 'padrao_final' => 'Selecione o padrão final da classificação.',
+                'tipo_bebida' => 'Selecione o tipo de bebida.',
                 'peneira_1718_sacas' => 'Preencha sacas da peneira 17/18 (use 0 se não houver).',
                 'moka_pct' => 'Preencha % de moka (use 0 se não houver).',
             ]);

@@ -63,11 +63,12 @@
                 <div class="table-wrap">
                     <table class="data">
                         <thead>
-                            <tr><th>Padrão final</th><th class="num">SCS 17/18</th><th class="num">SCS 14/16</th><th class="num">Mercado interno</th><th class="num">Grinders</th><th class="num">Moka</th><th class="num">Qtd. lotes</th></tr>
+                            <tr><th>Padrão final</th><th>Tipo de bebida</th><th class="num">SCS 17/18</th><th class="num">SCS 14/16</th><th class="num">Mercado interno</th><th class="num">Grinders</th><th class="num">Moka</th><th class="num">Qtd. lotes</th></tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>{{ \App\Models\Classificacao::padroes()[$c->padrao_final] ?? $c->padrao_final }}</td>
+                                <td>{{ $c->tipoBebidaLabel() ?? '—' }}</td>
                                 <td class="num">{{ number_format($c->peneira_1718_sacas, 2, ',', '.') }} ({{ number_format($c->peneira_1718_pct, 1, ',', '.') }}%)</td>
                                 <td class="num">{{ number_format($c->peneira_1416_sacas, 2, ',', '.') }} ({{ number_format($c->peneira_1416_pct, 1, ',', '.') }}%)</td>
                                 <td class="num">{{ number_format($c->mercado_interno_sacas, 2, ',', '.') }} ({{ number_format($c->mercado_interno_pct, 1, ',', '.') }}%)</td>
