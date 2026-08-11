@@ -12,10 +12,14 @@ use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
- * Relatório de classificação: somente leitura, com filtros (intervalo de
- * meses, padrão, certificado e busca por UTS/fornecedor). A tabela de
- * distribuição por certificação foi removida — "certificado" agora é um
- * filtro sobre a tabela por padrão, não uma tabela própria.
+ * Tela de ESTOQUE (antigo "relatório de classificação"): somente leitura,
+ * com filtros de intervalo de meses, armazém, situação, padrão, certificado
+ * e busca por UTS/fornecedor.
+ *
+ * Importante: o padrão da tela é "estoque definitivo", ou seja, **só entra
+ * a compra que já tem número de lote**. Por isso o helper daqui cria as
+ * compras já com lote — uma compra sem lote é o caso de exceção, testado
+ * em EstoqueTest.
  */
 class RelatorioClassificacaoTest extends TestCase
 {
@@ -52,6 +56,9 @@ class RelatorioClassificacaoTest extends TestCase
             'armazem' => 'SAAG',
             'certificacao' => 'SEM_CERT',
             'volume_sacas' => 300,
+            // Com lote: é assim que a compra conta como estoque definitivo,
+            // que é o recorte padrão da tela.
+            'numero_lote' => 'L-' . fake()->unique()->numberBetween(1000, 999999),
             'created_by' => $this->admin->id,
         ], array_diff_key($compraOverrides, array_flip(['fornecedor_nome', 'cnpj']))));
 
@@ -147,5 +154,16 @@ class RelatorioClassificacaoTest extends TestCase
         $this->assertStringContainsString('mes_de=2026-01', $link);
         $this->assertStringContainsString('mes_ate=2026-03', $link);
         $this->assertStringContainsString('certificado=RFA', $link);
+    }
+
+    /** O armazém é informação de casa: não viaja no link compartilhável. */
+    public function test_link_compartilhavel_nao_leva_o_armazem(): void
+    {
+        $this->actingAs($this->admin)->post(route('relatorio.link'), [
+            'mes_de' => '2026-01',
+            'armazem' => 'SAAG',
+        ])->assertRedirect();
+
+        $this->assertStringNotContainsString('armazem', session('linkGerado'));
     }
 }

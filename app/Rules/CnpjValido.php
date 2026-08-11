@@ -16,12 +16,12 @@ class CnpjValido implements ValidationRule
         $cnpj = preg_replace('/\D/', '', (string) $value);
 
         if (strlen($cnpj) !== 14 || preg_match('/^(\d)\1{13}$/', $cnpj)) {
-            $fail('O :attribute informado não é válido.');
+            $fail('O :attribute informado não é válido — confira os 14 dígitos.');
             return;
         }
 
         if (! $this->digitosValidos($cnpj)) {
-            $fail('O :attribute informado não é válido.');
+            $fail('O :attribute informado não é válido — confira os 14 dígitos.');
         }
     }
 

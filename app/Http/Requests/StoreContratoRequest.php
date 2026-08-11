@@ -41,9 +41,27 @@ class StoreContratoRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'numero_ut.required' => 'Informe o número UT do contrato.',
             'numero_ut.unique' => 'Já existe um contrato com este número UT.',
+            'data_contrato.required' => 'Informe a data do contrato.',
+            'cliente_id.required' => 'Selecione o cliente (comprador).',
+            'cliente_id.exists' => 'O cliente selecionado não está mais cadastrado.',
+            'qualidade_id.required' => 'Selecione a qualidade do café.',
+            'qualidade_id.exists' => 'A qualidade selecionada não está mais cadastrada.',
+            'tipo_cafe.required' => 'Selecione o tipo de café (arábica ou conilon).',
+            'certificado.required' => 'Selecione o certificado.',
+            'quantidade_kg.required' => 'Informe a quantidade em quilos.',
+            'quantidade_kg.numeric' => 'A quantidade deve ser um número em quilos (ex.: 108000).',
+            'quantidade_kg.min' => 'A quantidade em quilos deve ser maior que zero.',
+            'tipo_container.required' => 'Selecione o tipo de container (20\' ou 40\').',
+            'embalagem.required' => 'Selecione a embalagem.',
+            'porto.required' => 'Selecione o porto de embarque.',
+            'embarque_mes.regex' => 'Informe o mês de embarque no formato mês/ano.',
+            'mes_fixacao.in' => 'O mês de fixação escolhido não pertence à bolsa deste porto.',
             'preco_fixado.required_if' => 'Informe o preço fixado (contrato marcado como FIXED).',
+            'preco_fixado.numeric' => 'O preço fixado deve ser um número (ex.: 353.40).',
             'preco_fixado_unidade.required_if' => 'Informe a unidade do preço fixado (cts/lb ou USD/MT).',
+            'remarks.max' => 'As observações passaram do limite de 2.000 caracteres.',
         ];
     }
 }

@@ -62,7 +62,7 @@ class FixacaoTest extends TestCase
     {
         $payload = array_merge([
             'contratos' => [$this->contrato->id],
-            'corretora' => 'STONEX',
+            'corretora' => 'StoneX East Coast', // nome do cadastro (seed da migration de corretoras)
             'tela' => 'Z6',
             'lotes' => 2,
             'level' => '335.00',
@@ -207,11 +207,10 @@ class FixacaoTest extends TestCase
         $this->fixar(['lotes' => 1])->assertSessionHasNoErrors();
         $this->assertNull(Fixacao::first()->broker_cliente);
 
-        // Com broker do cliente: fica gravado.
-        $this->fixar(['lotes' => 1, 'broker_cliente' => 'MACQUARIE_USA'])->assertSessionHasNoErrors();
+        // Com broker do cliente: fica gravado (nome do cadastro, como snapshot).
+        $this->fixar(['lotes' => 1, 'broker_cliente' => 'Macquarie USA'])->assertSessionHasNoErrors();
         $f = Fixacao::orderByDesc('id')->first();
-        $this->assertSame('MACQUARIE_USA', $f->broker_cliente);
-        $this->assertSame('Macquarie USA', $f->brokerClienteLabel());
+        $this->assertSame('Macquarie USA', $f->broker_cliente);
     }
 
     public function test_broker_do_cliente_fora_da_lista_e_recusado(): void

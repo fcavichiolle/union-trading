@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +31,9 @@ class Contrato extends Model
         'diferencial', 'mes_fixacao', 'fixado', 'preco_fixado', 'preco_fixado_unidade',
         'embarque_mes', 'incoterms', 'porto', 'remarks',
         'created_by',
+        // Cancelamento é sempre gravado pelo controller (nunca vem de
+        // formulário de contrato), mas fica preenchível para os testes.
+        'cancelado_em', 'motivo_cancelamento', 'cancelado_por',
     ];
 
     protected function casts(): array
@@ -42,6 +46,7 @@ class Contrato extends Model
             'sacas' => 'decimal:2',
             'fixado' => 'boolean',
             'preco_fixado' => 'decimal:2',
+            'cancelado_em' => 'datetime',
         ];
     }
 
@@ -83,6 +88,28 @@ class Contrato extends Model
     public function fixacoes(): HasMany
     {
         return $this->hasMany(Fixacao::class);
+    }
+
+    public function canceladoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelado_por');
+    }
+
+    /* ---------- Cancelamento ---------- */
+
+    public function cancelado(): bool
+    {
+        return $this->cancelado_em !== null;
+    }
+
+    /**
+     * Contratos que ainda valem. Cancelado continua no sistema (histórico),
+     * mas sai da posição: não aparece na Tela NY nem entra nos números do
+     * painel — não há mais o que fixar nem o que embarcar.
+     */
+    public function scopeAtivos(Builder $query): Builder
+    {
+        return $query->whereNull('cancelado_em');
     }
 
     /* ---------- Fixação por lotes (Tela NY) ---------- */

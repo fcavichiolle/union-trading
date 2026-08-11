@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ClienteController;
+use App\Http\Controllers\Admin\CorretoraController;
 use App\Http\Controllers\Admin\QualidadeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -92,6 +93,12 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::put('/clientes/{cliente}', [ClienteController::class, 'update'])->name('clientes.update');
             Route::delete('/clientes/{cliente}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
 
+            // Corretoras (nossas) e brokers dos clientes — dropdowns da Tela NY
+            Route::get('/corretoras', [CorretoraController::class, 'index'])->name('corretoras.index');
+            Route::post('/corretoras', [CorretoraController::class, 'store'])->name('corretoras.store');
+            Route::put('/corretoras/{corretora}', [CorretoraController::class, 'update'])->name('corretoras.update');
+            Route::delete('/corretoras/{corretora}', [CorretoraController::class, 'destroy'])->name('corretoras.destroy');
+
             Route::get('/qualidades', [QualidadeController::class, 'index'])->name('qualidades.index');
             Route::post('/qualidades', [QualidadeController::class, 'store'])->name('qualidades.store');
             Route::put('/qualidades/{qualidade}', [QualidadeController::class, 'update'])->name('qualidades.update');
@@ -108,6 +115,13 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::get('/novo', [ContratoController::class, 'create'])->name('create');
             Route::post('/', [ContratoController::class, 'store'])->name('store');
             Route::get('/{contrato}', [ContratoController::class, 'show'])->name('show');
+            Route::get('/{contrato}/editar', [ContratoController::class, 'edit'])->name('edit');
+            Route::put('/{contrato}', [ContratoController::class, 'update'])->name('update');
+            // Cancelar mantém o registro (com motivo); excluir remove de vez
+            // e é bloqueado quando já existem fixações (ver controller).
+            Route::patch('/{contrato}/cancelar', [ContratoController::class, 'cancelar'])->name('cancelar');
+            Route::patch('/{contrato}/reativar', [ContratoController::class, 'reativar'])->name('reativar');
+            Route::delete('/{contrato}', [ContratoController::class, 'destroy'])->name('destroy');
             Route::get('/{contrato}/pdf', [ContratoController::class, 'pdf'])->name('pdf');
         });
 

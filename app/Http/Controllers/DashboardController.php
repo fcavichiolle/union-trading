@@ -2,22 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PainelInicial;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Página inicial pós-login. Mostra só os atalhos que fazem sentido
- * para o perfil do usuário (o menu por setor é montado aqui e
- * também no layout principal), mas a proteção de verdade contra
- * acesso indevido está nas rotas (middleware 'role'), não na
- * exibição do menu.
+ * Página inicial pós-login: um painel do que falta fazer (pendências),
+ * a posição geral e os últimos lançamentos. O que cada perfil enxerga é
+ * decidido no PainelInicial, mas a proteção de verdade contra acesso
+ * indevido está nas rotas (middleware 'role'), não na exibição.
  */
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(PainelInicial $painel): View
     {
+        $user = Auth::user();
+
         return view('dashboard.home', [
-            'user' => Auth::user(),
+            'user' => $user,
+            'pendencias' => $painel->pendencias($user),
+            'numeros' => $painel->numeros(),
+            'ultimasCompras' => $user->hasRole('admin', 'compras')
+                ? $painel->ultimasCompras()
+                : collect(),
+            'ultimosContratos' => $user->hasRole('admin', 'compras')
+                ? $painel->ultimosContratos()
+                : collect(),
         ]);
     }
 }

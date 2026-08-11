@@ -143,9 +143,9 @@
                                         <td>{{ $f->created_at->format('d/m/Y H:i') }}</td>
                                         <td><strong>UT {{ $f->contrato?->numero_ut }}</strong></td>
                                         <td>
-                                            {{ $f->corretoraLabel() }}
-                                            @if ($f->brokerClienteLabel())
-                                                <br><span style="color:var(--muted); font-size:11.5px;">cliente: {{ $f->brokerClienteLabel() }}</span>
+                                            {{ $f->corretora }}
+                                            @if ($f->broker_cliente)
+                                                <br><span style="color:var(--muted); font-size:11.5px;">cliente: {{ $f->broker_cliente }}</span>
                                             @endif
                                         </td>
                                         <td>{{ $f->tela ?: '—' }}</td>
@@ -213,10 +213,13 @@
                     <div class="field {{ $errors->has('corretora') ? 'has-error' : '' }}" style="margin-bottom:14px;">
                         <label for="corretora">Corretora</label>
                         <select id="corretora" name="corretora" required>
-                            @foreach (\App\Models\Fixacao::corretoras() as $cod => $rotulo)
-                                <option value="{{ $cod }}" @selected(old('corretora') === $cod)>{{ $rotulo }}</option>
+                            @foreach ($corretoras as $c)
+                                <option value="{{ $c->nome }}" @selected(old('corretora') === $c->nome)>{{ $c->nome }}</option>
                             @endforeach
                         </select>
+                        @if (auth()->user()->hasRole('admin'))
+                            <span class="hint">Gerencie a lista em Administração → <a href="{{ route('admin.corretoras.index') }}" style="color:var(--primary);">Corretoras</a>.</span>
+                        @endif
                         @error('corretora') <div class="field-error">{{ $message }}</div> @enderror
                     </div>
 
@@ -224,8 +227,8 @@
                         <label for="broker_cliente">Broker do cliente <span class="hint">(opcional)</span></label>
                         <select id="broker_cliente" name="broker_cliente">
                             <option value="">—</option>
-                            @foreach (\App\Models\Fixacao::brokersCliente() as $cod => $rotulo)
-                                <option value="{{ $cod }}" @selected(old('broker_cliente') === $cod)>{{ $rotulo }}</option>
+                            @foreach ($brokersCliente as $c)
+                                <option value="{{ $c->nome }}" @selected(old('broker_cliente') === $c->nome)>{{ $c->nome }}</option>
                             @endforeach
                         </select>
                         @error('broker_cliente') <div class="field-error">{{ $message }}</div> @enderror

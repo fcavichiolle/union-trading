@@ -46,6 +46,9 @@ class QualidadeController extends Controller
     {
         return $request->validate([
             'descricao' => ['required', 'string', 'max:200'],
+        ], [
+            'descricao.required' => 'Informe a descrição da qualidade (como sai no QUALITY do contrato).',
+            'descricao.max' => 'A descrição passou do limite de 200 caracteres.',
         ]);
     }
 }

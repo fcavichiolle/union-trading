@@ -19,4 +19,15 @@ class StoreFinanceiroRequest extends FormRequest
             'comissao_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'valor_saca.required' => 'Informe o valor da saca.',
+            'valor_saca.numeric' => 'O valor da saca deve ser um número (ex.: 1200 ou 1200,50).',
+            'valor_saca.min' => 'O valor da saca não pode ser negativo.',
+            'comissao_pct.numeric' => 'A comissão deve ser um número em porcentagem (ex.: 1,5).',
+            'comissao_pct.max' => 'A comissão não pode passar de 100%.',
+        ];
+    }
 }

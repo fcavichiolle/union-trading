@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFixacaoRequest;
 use App\Models\AuditLog;
 use App\Models\Contrato;
+use App\Models\Corretora;
 use App\Models\Fixacao;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -26,6 +27,7 @@ class FixacaoController extends Controller
         // fixados carregado de uma vez (sem N+1 na listagem).
         $contratos = Contrato::with('cliente')
             ->withSum('fixacoes as lotes_fixados', 'lotes')
+            ->ativos() // contrato cancelado não tem mais o que fixar
             ->where('fixado', false)
             ->orderByDesc('data_contrato')
             ->orderByDesc('id')
@@ -40,6 +42,8 @@ class FixacaoController extends Controller
             'contratos' => $contratos,
             'fixacoes' => $fixacoes,
             'posicao' => $this->posicaoPorTela($contratos),
+            'corretoras' => Corretora::nossas()->orderBy('nome')->get(),
+            'brokersCliente' => Corretora::doCliente()->orderBy('nome')->get(),
         ]);
     }
 
@@ -141,7 +145,7 @@ class FixacaoController extends Controller
                 AuditLog::registrar(
                     'fixacao_registrada',
                     "Contrato UT {$contrato->numero_ut}: {$lotes} lote(s) @ {$fixacao->level} tela {$fixacao->tela} "
-                        . "({$fixacao->corretoraLabel()}), preço {$fixacao->preco}.",
+                        . "({$fixacao->corretora}), preço {$fixacao->preco}.",
                     Auth::id()
                 );
             }

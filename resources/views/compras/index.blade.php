@@ -23,11 +23,21 @@
             </select>
         </div>
         <div class="field">
+            <label for="pendencia">Pendência</label>
+            <select id="pendencia" name="pendencia">
+                <option value="">Todas</option>
+                <option value="qualquer" @selected(request('pendencia') === 'qualquer')>Qualquer pendência</option>
+                <option value="sem_lote" @selected(request('pendencia') === 'sem_lote')>Sem nº do lote</option>
+                <option value="sem_classificacao" @selected(request('pendencia') === 'sem_classificacao')>Sem classificação</option>
+                <option value="sem_financeiro" @selected(request('pendencia') === 'sem_financeiro')>Sem financeiro</option>
+            </select>
+        </div>
+        <div class="field">
             <label for="busca">Buscar (UTS ou fornecedor)</label>
             <input type="search" id="busca" name="busca" value="{{ request('busca') }}" placeholder="Ex: UTS-2026-001">
         </div>
         <button type="submit" class="btn btn-primary">Filtrar</button>
-        @if (request()->hasAny(['mes_de', 'mes_ate', 'padrao', 'busca']))
+        @if (request()->hasAny(['mes_de', 'mes_ate', 'padrao', 'pendencia', 'busca']))
             <a href="{{ route('compras.index') }}" class="btn btn-ghost">Limpar</a>
         @endif
     </form>

@@ -53,6 +53,10 @@ class ClienteController extends Controller
             'nome' => ['required', 'string', 'max:150'],
             'endereco' => ['required', 'string', 'max:500'],
             'ref_padrao' => ['nullable', 'string', 'max:120'],
+        ], [
+            'nome.required' => 'Informe o nome do cliente (como sai no BUYER do contrato).',
+            'endereco.required' => 'Informe o endereço do cliente.',
+            'endereco.max' => 'O endereço passou do limite de 500 caracteres.',
         ]);
     }
 }

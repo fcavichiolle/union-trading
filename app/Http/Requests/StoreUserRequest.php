@@ -30,7 +30,13 @@ class StoreUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'name.required' => 'Informe o nome do usuário.',
+            'email.required' => 'Informe o e-mail do usuário.',
+            'email.email' => 'Informe um e-mail válido (ex.: nome@utrading.com.br).',
             'email.unique' => 'Já existe um usuário cadastrado com este e-mail.',
+            'role_id.required' => 'Selecione o perfil de acesso.',
+            'role_id.exists' => 'O perfil selecionado não existe.',
+            'password.confirmed' => 'A senha e a confirmação não são iguais.',
         ];
     }
 }

@@ -171,6 +171,61 @@
   .home-foot { margin-top: auto; padding-top: 28px; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: rgba(11,61,36,.42); }
   .home-foot .mono { font-family: var(--font-data); letter-spacing: .05em; }
 
+  /* ---------- Painel inicial (pendências + posição) ---------- */
+  .painel-titulo {
+    margin: 0 0 14px; font-family: var(--font-data); font-size: 11px; font-weight: 600;
+    letter-spacing: .13em; text-transform: uppercase; color: var(--muted);
+  }
+  .painel-titulo:not(:first-child) { margin-top: 30px; }
+
+  /* cards de pendência: número grande + o que é + link direto p/ a tela filtrada */
+  .pend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+  .pend-card {
+    display: flex; flex-direction: column; gap: 3px; padding: 16px 18px;
+    border-radius: 12px; text-decoration: none; background: var(--surface);
+    box-shadow: var(--shadow); border-left: 4px solid var(--border);
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .pend-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(11,61,36,.08), 0 16px 32px -14px rgba(11,61,36,.34); }
+  .pend-card__num { font-family: var(--font-data); font-size: 30px; font-weight: 700; line-height: 1.05; color: var(--ink); }
+  .pend-card__titulo { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .pend-card__desc { font-size: 12px; line-height: 1.45; color: var(--muted); }
+  .pend-card--alerta { border-left-color: var(--accent); }
+  .pend-card--alerta .pend-card__num { color: var(--danger-text); }
+  .pend-card--atencao { border-left-color: #D9A227; }
+  .pend-card--neutro { border-left-color: var(--primary-light); }
+
+  /* estado "sem pendência alguma" */
+  .painel-ok {
+    display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+    background: var(--success-bg); border-radius: var(--radius); color: var(--success-text);
+  }
+  .painel-ok__dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: none; }
+  .painel-ok strong { display: block; font-size: 14px; }
+  .painel-ok span:last-child { font-size: 12.5px; opacity: .85; }
+
+  /* números de posição */
+  .num-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+  .num-tile { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .num-tile__lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .num-tile__val { font-family: var(--font-data); font-size: 26px; font-weight: 700; line-height: 1.1; color: var(--ink); }
+  .num-tile__val.is-neg { color: var(--danger-text); }
+  .num-tile__val.is-alerta { color: #8A6116; }
+  .num-tile__sub { font-size: 11.5px; color: var(--muted); }
+  .painel-nota { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+  .painel-nota a { color: var(--primary); }
+
+  /* badge de pendência no menu lateral */
+  .sb-badge {
+    margin-left: auto; min-width: 20px; padding: 1px 6px; border-radius: 99px;
+    background: #E8322C; color: #fff; text-align: center;
+    font-family: var(--font-data); font-size: 10.5px; font-weight: 700; line-height: 17px;
+  }
+
+  :root[data-theme="dark"] .painel-ok { background: rgba(122,214,163,.12); color: #9BD8B3; }
+  :root[data-theme="dark"] .num-tile__val.is-alerta { color: #F0D9A8; }
+  :root[data-theme="dark"] .pend-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 16px 32px -14px rgba(0,0,0,.7); }
+
   /* ---------- Gestão de usuários ---------- */
   .notice-danger {
     display: flex; align-items: center; gap: 14px; padding: 15px 18px; border-radius: 12px; margin-bottom: 22px;
@@ -310,6 +365,44 @@
   .alert { padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 18px; font-size: 14px; }
   .alert-success { background: var(--success-bg); color: var(--success-text); border: 1px solid #BFE0C9; }
   .alert-error { background: var(--danger-bg); color: var(--danger-text); border: 1px solid #F0C4BE; }
+  .alert__hint { display: block; margin-top: 8px; font-size: 12.5px; opacity: .8; }
+
+  /* reativar contrato cancelado, dentro do próprio aviso vermelho */
+  .reativar { margin-top: 12px; }
+  .reativar > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; }
+  .reativar form { margin-top: 10px; max-width: 520px; }
+  .reativar textarea { width: 100%; resize: vertical; }
+
+  /* "zona de risco": ações destrutivas, fechadas por padrão (<details>) */
+  .zona-risco { margin-top: 26px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  .zona-risco > summary {
+    padding: 14px 20px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--danger-text);
+    list-style: none;
+  }
+  .zona-risco > summary::-webkit-details-marker { display: none; }
+  .zona-risco > summary::before { content: "▸ "; }
+  .zona-risco[open] > summary::before { content: "▾ "; }
+  .zona-risco[open] > summary { box-shadow: inset 0 -1px 0 var(--border); }
+  .zona-risco__corpo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px; }
+  .zona-risco__corpo h3 { margin: 0 0 6px; font-size: 15px; color: var(--ink); }
+  .zona-risco__corpo p { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+  .zona-risco__corpo textarea { width: 100%; resize: vertical; }
+  .zona-risco__corpo .btn { margin-top: 10px; }
+  @media (max-width: 860px) { .zona-risco__corpo { grid-template-columns: 1fr; } }
+
+  /* contrato cancelado: linha apagada, sem sumir da lista */
+  tr.linha-cancelada td { opacity: .55; }
+  tr.linha-cancelada td:first-child strong { text-decoration: line-through; }
+
+  /* faixa do link compartilhável, com botão de copiar */
+  .link-share { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .link-share__lbl { flex: none; font-weight: 600; }
+  .link-share__url { flex: 1; min-width: 240px; word-break: break-all; font-family: var(--font-data); font-size: 12px; }
+  .link-share .btn { flex: none; padding: 6px 14px; font-size: 13px; }
+
+  /* subtotal por armazém na tabela de estoque */
+  tr.linha-subtotal td { background: var(--primary-soft); font-weight: 600; }
+  :root[data-theme="dark"] tr.linha-subtotal td { background: rgba(122,214,163,.10); }
   .alert code { background: rgba(0,0,0,.06); padding: 1px 6px; border-radius: 4px; }
 
   .filter-bar { display: flex; gap: 12px; align-items: end; margin-bottom: 18px; flex-wrap: wrap; }
