@@ -109,6 +109,24 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   `UserController::index` agora também passa `$roles` para a view.
 
 ### Módulo 1 — Compras e Classificação
+
+> **COMPRA ≠ ENTREGA (mudança estrutural, ago/2026).** Antes uma compra era
+> uma linha só (um armazém, um volume, um nº de lote) e `uts` é única — era
+> impossível registrar a realidade da mesa: *a mesma UTS entra em partes, em
+> meses e armazéns diferentes, cada parte com o seu lote*. Agora:
+> - **`compras`** = o NEGÓCIO fechado (funcionário 1 → funcionária 2): UTS,
+>   data, vendedor, **volume contratado**, preço, corretor, comissão,
+>   pagamento (data + observação livre), logística (POSTO/RETIRAR) e certificação;
+> - **`entregas`** = cada ENTRADA física (funcionário 3): mês, armazém,
+>   **volume real** e número do lote.
+>
+> O volume da entrega **não é limitado pelo contratado** — pode vir mais ou
+> menos, quem confere é o armazém; o sistema mostra a diferença em vez de
+> impedir. Daí saem `Compra::sacasEntregues()`, `saldoAEntregar()`,
+> `entregouAMais()`, `valorContratado()` e `valorEntregue()` (paga-se pelo
+> que entrou). A tabela `financeiro_compras` foi **removida**: preço,
+> corretor e comissão são dados da negociação e vivem na compra — a tela do
+> perfil financeiro continua existindo, editando essas colunas.
 - **Cadastro de compra**: UTS, mês/ano (rotulado "Mês/ano da entrega"), fornecedor + CNPJ
   validado, armazém, certificação, tipo de entrada (padrão "BICA"), volume em sacas.
 - **Número do lote** (`compras.numero_lote`, coluna nova): preenchido **depois** do lançamento
@@ -140,6 +158,20 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 - **Financeiro**: valor da saca, valor total (= saca × volume, calculado no servidor),
   corretor e comissão. Tem **preview do total em tempo real** no formulário (só visual;
   o valor oficial continua vindo do servidor ao salvar).
+- **Fornecedor com CNPJ ou CPF, e opcional**: a coluna virou `documento` (só dígitos) +
+  `tipo_documento`. Pode ficar em branco ("vendedor a confirmar", como na planilha da mesa)
+  e vira pendência no painel — exigir o documento empurrava a funcionária 2 de volta para o
+  Excel. Validação de CNPJ **e** CPF em `App\Rules\DocumentoValido`. **Busca automática do
+  nome por CNPJ** via BrasilAPI (`App\Services\ConsultaCnpj`, pública e sem chave, cache de
+  30 dias) — é conveniência, nunca dependência: se a API cair, o nome é digitado.
+  **Não existe consulta pública de nome por CPF no Brasil** (dado pessoal protegido): para
+  CPF o sistema só valida os dígitos. Reaproveitamento do cadastro em
+  `Fornecedor::localizarOuCriar()` — casa pelo documento quando há, pelo nome quando não há.
+- **Rateio da classificação no Estoque**: a classificação é da **UTS inteira** (decisão do
+  projeto), mas o café pode ter entrado em vários armazéns. O Estoque distribui cada peneira
+  entre as entregas na proporção `volume da entrega ÷ total classificado`, então o total do
+  estoque bate com o que realmente entrou. **Cuidado**: o `* 1.0` no SQL é obrigatório — no
+  SQLite a divisão entre dois inteiros trunca (250/500 = 0) e o rateio zeraria em silêncio.
 - **Estoque** (antigo "Relatório de classificação", rota continua `relatorio.*`): a tela
   passou a ser o **estoque** da empresa. **Regra central: só entra em estoque
   definitivamente a compra que já tem o número do lote** informado pelo armazém — filtro

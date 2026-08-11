@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\Compra;
 use App\Models\Contrato;
+use App\Models\Entrega;
 use App\Models\Fixacao;
+use App\Models\Fornecedor;
 use App\Models\User;
 
 /**
@@ -40,16 +42,21 @@ class PainelInicial
             ->get();
 
         return $this->numeros = [
-            'compras_sem_lote' => Compra::semNumeroLote()->count(),
+            'entregas_sem_lote' => Entrega::semNumeroLote()->count(),
             'compras_sem_classificacao' => Compra::whereDoesntHave('classificacao')->count(),
-            'compras_sem_financeiro' => Compra::whereDoesntHave('financeiro')->count(),
+            'compras_sem_preco' => Compra::semPreco()->count(),
+            'compras_com_saldo' => Compra::comSaldoAEntregar()->count(),
+            'fornecedores_sem_documento' => Fornecedor::semDocumento()->count(),
             'compras_com_pendencia' => Compra::comPendencia()->count(),
 
             'contratos_a_fixar' => $aFixar->count(),
             'lotes_a_fixar' => (int) $aFixar->sum(fn (Contrato $c) => $c->lotesRestantes()),
             'contratos_sem_embarque' => Contrato::ativos()->whereNull('embarque_mes')->count(),
 
-            'sacas_compradas' => (float) Compra::sum('volume_sacas'),
+            // "Comprado" é o que realmente entrou no armazém, não o
+            // contratado — é o número que casa com o estoque.
+            'sacas_compradas' => (float) Entrega::sum('volume_sacas'),
+            'sacas_contratadas_compra' => (float) Compra::sum('volume_contratado'),
             'sacas_contratadas' => (float) Contrato::ativos()->sum('sacas'),
             'contratos_total' => Contrato::ativos()->count(),
             'lotes_fixados' => (int) Fixacao::sum('lotes'),
@@ -68,11 +75,19 @@ class PainelInicial
 
         $todas = [
             [
-                'quantidade' => $n['compras_sem_lote'],
-                'titulo' => 'sem nº do lote',
-                'descricao' => 'Compras que ainda não contam como estoque definitivo.',
+                'quantidade' => $n['entregas_sem_lote'],
+                'titulo' => 'entregas sem nº do lote',
+                'descricao' => 'Entradas em armazém que ainda não contam como estoque definitivo.',
                 'url' => route('compras.index', ['pendencia' => 'sem_lote']),
                 'tom' => 'alerta',
+                'perfis' => ['admin', 'compras'],
+            ],
+            [
+                'quantidade' => $n['compras_com_saldo'],
+                'titulo' => 'UTS com saldo a entregar',
+                'descricao' => 'Compras cujo volume contratado ainda não entrou todo no armazém.',
+                'url' => route('compras.index', ['pendencia' => 'saldo_a_entregar']),
+                'tom' => 'atencao',
                 'perfis' => ['admin', 'compras'],
             ],
             [
@@ -84,12 +99,20 @@ class PainelInicial
                 'perfis' => ['admin', 'compras'],
             ],
             [
-                'quantidade' => $n['compras_sem_financeiro'],
-                'titulo' => 'sem financeiro',
+                'quantidade' => $n['compras_sem_preco'],
+                'titulo' => 'sem preço',
                 'descricao' => 'Compras sem valor da saca lançado.',
-                'url' => route('compras.index', ['pendencia' => 'sem_financeiro']),
+                'url' => route('compras.index', ['pendencia' => 'sem_preco']),
                 'tom' => 'atencao',
                 'perfis' => ['admin', 'compras', 'financeiro'],
+            ],
+            [
+                'quantidade' => $n['fornecedores_sem_documento'],
+                'titulo' => 'vendedores a confirmar',
+                'descricao' => 'Fornecedores cadastrados sem CNPJ/CPF informado.',
+                'url' => route('compras.index', ['pendencia' => 'sem_documento']),
+                'tom' => 'neutro',
+                'perfis' => ['admin', 'compras'],
             ],
             [
                 'quantidade' => $n['contratos_a_fixar'],
@@ -135,7 +158,11 @@ class PainelInicial
     /** Últimos lançamentos, para dar noção de atividade sem abrir as listas. */
     public function ultimasCompras(int $limite = 5)
     {
-        return Compra::with('fornecedor')->latest()->limit($limite)->get();
+        return Compra::with(['fornecedor', 'classificacao'])
+            ->withSum('entregas as sacas_entregues', 'volume_sacas')
+            ->latest('data_compra')->latest('id')
+            ->limit($limite)
+            ->get();
     }
 
     public function ultimosContratos(int $limite = 5)

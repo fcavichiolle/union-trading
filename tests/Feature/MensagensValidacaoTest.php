@@ -76,12 +76,10 @@ class MensagensValidacaoTest extends TestCase
             ->post(route('compras.store'), [])
             ->assertSessionHasErrors([
                 'uts' => 'Informe a UTS (referência da compra).',
-                'mes_ano' => 'Informe o mês/ano da entrega.',
-                'fornecedor_nome' => 'Informe o nome do fornecedor.',
-                'fornecedor_cnpj' => 'Informe o CNPJ do fornecedor.',
-                'armazem' => 'Selecione o armazém de entrega.',
+                'data_compra' => 'Informe a data da compra.',
+                'fornecedor_nome' => 'Informe o nome do vendedor (se ainda não souber o documento, deixe o CNPJ/CPF em branco).',
                 'certificacao' => 'Selecione a certificação.',
-                'volume_sacas' => 'Informe o volume entregue, em sacas.',
+                'volume_contratado' => 'Informe o volume contratado, em sacas.',
             ]);
 
         // E o que o usuário realmente vê ao ser devolvido ao formulário.
@@ -92,27 +90,32 @@ class MensagensValidacaoTest extends TestCase
             ->followingRedirects()
             ->post(route('compras.store'), [])
             ->assertOk()
-            ->assertSee('7 campos precisam de atenção')
+            ->assertSee('5 campos precisam de atenção')
             ->assertSee('Informe a UTS (referência da compra).')
             ->assertDontSee('validation.');
     }
 
     /**
-     * O bug irmão: mensagem cadastrada sem o sufixo da regra
-     * ('fornecedor_cnpj' em vez de 'fornecedor_cnpj.required') vale para
-     * TODAS as regras do campo — um CNPJ em branco dizia "CNPJ inválido".
+     * O documento do vendedor é OPCIONAL (vendedor "a confirmar"), mas
+     * quando preenchido tem de ser um CNPJ ou CPF válido.
      */
-    public function test_cnpj_vazio_pede_preenchimento_e_cnpj_errado_avisa_invalido(): void
+    public function test_documento_do_vendedor_e_opcional_mas_validado_quando_preenchido(): void
     {
+        // Em branco: nenhum erro nesse campo.
         $this->actingAs($this->admin)
             ->post(route('compras.store'), [])
-            ->assertSessionHasErrors(['fornecedor_cnpj' => 'Informe o CNPJ do fornecedor.']);
+            ->assertSessionDoesntHaveErrors('fornecedor_documento');
 
         $this->actingAs($this->admin)
-            ->post(route('compras.store'), ['fornecedor_cnpj' => '11.111.111/1111-11'])
+            ->post(route('compras.store'), ['fornecedor_documento' => '11.111.111/1111-11'])
             ->assertSessionHasErrors([
-                'fornecedor_cnpj' => 'O CNPJ do fornecedor informado não é válido — confira os 14 dígitos.',
+                'fornecedor_documento' => 'Informe um CNPJ (14 dígitos) ou CPF (11 dígitos) válido — confira os números digitados.',
             ]);
+
+        // CPF inválido também é pego.
+        $this->actingAs($this->admin)
+            ->post(route('compras.store'), ['fornecedor_documento' => '111.111.111-11'])
+            ->assertSessionHasErrors('fornecedor_documento');
     }
 
     public function test_senha_atual_em_branco_pede_preenchimento_em_vez_de_dizer_incorreta(): void
@@ -172,11 +175,11 @@ class MensagensValidacaoTest extends TestCase
 
     public function test_classificacao_em_branco_explica_cada_campo(): void
     {
-        $fornecedor = Fornecedor::create(['nome' => 'Fornecedor X', 'cnpj' => '12345678000199']);
+        $fornecedor = Fornecedor::create(['nome' => 'Fornecedor X', 'documento' => '12345678000199']);
         $compra = Compra::create([
-            'uts' => 'UTS 1', 'mes_ano' => '2026-08-01', 'fornecedor_id' => $fornecedor->id,
-            'armazem' => 'SAAG', 'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
-            'volume_sacas' => 600, 'created_by' => $this->admin->id,
+            'uts' => 'UTS 1', 'data_compra' => '2026-08-01', 'fornecedor_id' => $fornecedor->id,
+            'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
+            'volume_contratado' => 600, 'created_by' => $this->admin->id,
         ]);
 
         $this->actingAs($this->admin)
@@ -189,27 +192,31 @@ class MensagensValidacaoTest extends TestCase
             ]);
     }
 
-    public function test_numero_do_lote_em_branco_explica_o_que_falta(): void
+    public function test_entrega_em_branco_explica_o_que_falta(): void
     {
-        $fornecedor = Fornecedor::create(['nome' => 'Fornecedor X', 'cnpj' => '12345678000199']);
+        $fornecedor = Fornecedor::create(['nome' => 'Fornecedor X', 'documento' => '12345678000199']);
         $compra = Compra::create([
-            'uts' => 'UTS 1', 'mes_ano' => '2026-08-01', 'fornecedor_id' => $fornecedor->id,
-            'armazem' => 'SAAG', 'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
-            'volume_sacas' => 600, 'created_by' => $this->admin->id,
+            'uts' => 'UTS 1', 'data_compra' => '2026-08-01', 'fornecedor_id' => $fornecedor->id,
+            'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
+            'volume_contratado' => 600, 'created_by' => $this->admin->id,
         ]);
 
         $this->actingAs($this->admin)
-            ->put(route('compras.lote.update', $compra), ['numero_lote' => ''])
-            ->assertSessionHasErrors(['numero_lote' => 'Informe o número do lote dado pelo armazém.']);
+            ->post(route('compras.entregas.store', $compra), [])
+            ->assertSessionHasErrors([
+                'mes_ano' => 'Informe o mês/ano da entrega.',
+                'armazem' => 'Selecione o armazém que recebeu o café.',
+                'volume_sacas' => 'Informe quantas sacas entraram no armazém.',
+            ]);
     }
 
     public function test_financeiro_em_branco_explica_o_que_falta(): void
     {
-        $fornecedor = Fornecedor::create(['nome' => 'Fornecedor X', 'cnpj' => '12345678000199']);
+        $fornecedor = Fornecedor::create(['nome' => 'Fornecedor X', 'documento' => '12345678000199']);
         $compra = Compra::create([
-            'uts' => 'UTS 1', 'mes_ano' => '2026-08-01', 'fornecedor_id' => $fornecedor->id,
-            'armazem' => 'SAAG', 'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
-            'volume_sacas' => 600, 'created_by' => $this->admin->id,
+            'uts' => 'UTS 1', 'data_compra' => '2026-08-01', 'fornecedor_id' => $fornecedor->id,
+            'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
+            'volume_contratado' => 600, 'created_by' => $this->admin->id,
         ]);
 
         $this->actingAs($this->admin)

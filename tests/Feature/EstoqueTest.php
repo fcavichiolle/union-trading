@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Classificacao;
 use App\Models\Compra;
+use App\Models\Entrega;
 use App\Models\Fornecedor;
 use App\Models\Role;
 use App\Models\User;
@@ -33,21 +34,34 @@ class EstoqueTest extends TestCase
             'role_id' => $role->id, 'name' => 'Admin', 'email' => 'admin@teste.com',
             'password' => Hash::make('x'), 'force_password_change' => false, 'active' => true,
         ]);
-        $this->fornecedor = Fornecedor::create(['nome' => 'Fazenda Teste', 'cnpj' => '12345678000199']);
+        $this->fornecedor = Fornecedor::create(['nome' => 'Fazenda Teste', 'documento' => '12345678000199']);
     }
 
+    /** Compra com uma única entrega — o caso simples. */
     private function compra(string $uts, string $armazem, ?string $lote, float $sacas = 300): Compra
     {
-        return Compra::create([
-            'uts' => $uts, 'mes_ano' => '2026-01-01', 'fornecedor_id' => $this->fornecedor->id,
-            'armazem' => $armazem, 'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'BICA',
-            'volume_sacas' => $sacas, 'numero_lote' => $lote, 'created_by' => $this->admin->id,
+        $compra = Compra::create([
+            'uts' => $uts, 'data_compra' => '2026-01-01', 'fornecedor_id' => $this->fornecedor->id,
+            'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'BICA',
+            'volume_contratado' => $sacas, 'created_by' => $this->admin->id,
+        ]);
+
+        $this->entregar($compra, $armazem, $sacas, $lote);
+
+        return $compra->refresh();
+    }
+
+    private function entregar(Compra $compra, string $armazem, float $sacas, ?string $lote, string $mes = '2026-01-01'): Entrega
+    {
+        return $compra->entregas()->create([
+            'mes_ano' => $mes, 'armazem' => $armazem, 'volume_sacas' => $sacas,
+            'numero_lote' => $lote, 'created_by' => $this->admin->id,
         ]);
     }
 
-    private function classificar(Compra $compra, string $padrao = 'FINE_CUP'): Classificacao
+    private function classificar(Compra $compra, string $padrao = 'FINE_CUP', ?float $sacasClassificadas = null): Classificacao
     {
-        $sacas = (float) $compra->volume_sacas;
+        $sacas = $sacasClassificadas ?? (float) $compra->volume_contratado;
 
         return Classificacao::create([
             'compra_id' => $compra->id, 'padrao_final' => $padrao, 'tipo_bebida' => 'DURO',
@@ -111,6 +125,43 @@ class EstoqueTest extends TestCase
             ->assertSee('800,00 sc')
             ->assertSee('aguardando o nº do lote')
             ->assertSee(route('compras.index', ['pendencia' => 'sem_lote']), false);
+    }
+
+    /** Uma UTS entregue em dois armazéns: a classificação é rateada. */
+    public function test_classificacao_da_uts_e_rateada_entre_os_armazens(): void
+    {
+        $compra = Compra::create([
+            'uts' => 'UTS 7312', 'data_compra' => '2026-01-01', 'fornecedor_id' => $this->fornecedor->id,
+            'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'BICA',
+            'volume_contratado' => 500, 'created_by' => $this->admin->id,
+        ]);
+        $this->entregar($compra, 'QUALITE', 250, 'L-1');
+        $this->entregar($compra, 'SAAG', 250, 'L-2');
+        $this->classificar($compra->refresh()); // 500 sacas, 100% na 17/18
+
+        $resposta = $this->actingAs($this->admin)->get(route('relatorio.index'))->assertOk();
+
+        // Metade das sacas em cada armazém => metade da peneira em cada um.
+        $linhas = $resposta->viewData('linhas')->keyBy('armazem');
+        $this->assertEqualsWithDelta(250.0, (float) $linhas['QUALITE']->scs_1718, 0.01);
+        $this->assertEqualsWithDelta(250.0, (float) $linhas['SAAG']->scs_1718, 0.01);
+        $this->assertEqualsWithDelta(500.0, $resposta->viewData('totalGeral'), 0.01);
+    }
+
+    /** Entregou menos que o classificado: o estoque acompanha o real. */
+    public function test_rateio_acompanha_o_volume_realmente_entregue(): void
+    {
+        $compra = Compra::create([
+            'uts' => 'UTS 7313', 'data_compra' => '2026-01-01', 'fornecedor_id' => $this->fornecedor->id,
+            'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'BICA',
+            'volume_contratado' => 500, 'created_by' => $this->admin->id,
+        ]);
+        $this->classificar($compra, 'FINE_CUP', 500); // classificou as 500 contratadas
+        $this->entregar($compra, 'SAAG', 480, 'L-1'); // mas só entraram 480
+
+        $resposta = $this->actingAs($this->admin)->get(route('relatorio.index'))->assertOk();
+
+        $this->assertEqualsWithDelta(480.0, $resposta->viewData('totalGeral'), 0.01);
     }
 
     public function test_estoque_com_lote_mas_sem_classificacao_e_avisado(): void

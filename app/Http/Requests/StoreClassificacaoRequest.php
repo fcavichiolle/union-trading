@@ -82,8 +82,18 @@ class StoreClassificacaoRequest extends FormRequest
                     + (float) ($data['grinders_sacas'] ?? 0)
                     + (float) ($data['moka_sacas'] ?? 0);
 
-                if ($somaSacas - (float) $compra->volume_sacas > 0.01) {
-                    $validator->errors()->add('peneira_1718_sacas', 'A soma das sacas classificadas (' . number_format($somaSacas, 2) . ') não pode ultrapassar o volume entregue (' . number_format((float) $compra->volume_sacas, 2) . ').');
+                // Teto = o maior entre o contratado e o que já entrou. A
+                // classificação é da UTS inteira e pode ser feita antes de
+                // tudo chegar (teto = contratado), mas o armazém também pode
+                // receber mais do que o contratado (teto = entregue).
+                $teto = max((float) $compra->volume_contratado, $compra->sacasEntregues());
+
+                if ($somaSacas - $teto > 0.01) {
+                    $validator->errors()->add(
+                        'peneira_1718_sacas',
+                        'A soma das sacas classificadas (' . number_format($somaSacas, 2)
+                            . ') não pode ultrapassar o volume da UTS (' . number_format($teto, 2) . ').'
+                    );
                 }
             }
         });

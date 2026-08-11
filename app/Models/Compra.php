@@ -6,29 +6,42 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * O NEGÓCIO fechado: UTS, fornecedor, volume contratado, preço, corretor,
+ * pagamento e logística. O que realmente entrou no armazém mora em
+ * Entrega — uma compra pode ter várias, em meses e armazéns diferentes.
+ */
 class Compra extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'uts',
-        'mes_ano',
+        'data_compra',
         'fornecedor_id',
-        'armazem',
         'certificacao',
+        'logistica',
         'tipo_entrada',
-        'volume_sacas',
-        'numero_lote',
+        'volume_contratado',
+        'valor_saca',
+        'corretor_nome',
+        'comissao_pct',
+        'pagamento_previsto',
+        'pagamento_obs',
         'created_by',
     ];
 
     protected function casts(): array
     {
         return [
-            'mes_ano' => 'date',
-            'volume_sacas' => 'decimal:2',
+            'data_compra' => 'date',
+            'pagamento_previsto' => 'date',
+            'volume_contratado' => 'decimal:2',
+            'valor_saca' => 'decimal:2',
+            'comissao_pct' => 'decimal:2',
         ];
     }
 
@@ -47,14 +60,14 @@ class Compra extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function entregas(): HasMany
+    {
+        return $this->hasMany(Entrega::class);
+    }
+
     public function classificacao(): HasOne
     {
         return $this->hasOne(Classificacao::class);
-    }
-
-    public function financeiro(): HasOne
-    {
-        return $this->hasOne(FinanceiroCompra::class);
     }
 
     public static function armazens(): array
@@ -75,37 +88,95 @@ class Compra extends Model
         ];
     }
 
+    /** POSTO = o vendedor entrega no armazém; RETIRAR = nós buscamos. */
+    public static function logisticas(): array
+    {
+        return ['POSTO' => 'Posto', 'RETIRAR' => 'Retirar'];
+    }
+
+    public function logisticaLabel(): ?string
+    {
+        return $this->logistica === null ? null : (self::logisticas()[$this->logistica] ?? $this->logistica);
+    }
+
+    /* ---------- Volumes: contratado × entregue ---------- */
+
     /**
-     * Sem o número do lote (dado pelo armazém/controle de estoque), a
-     * compra não pode ser considerada definitivamente em estoque — usado
-     * para exibir o alerta em "Compras lançadas" e na tela da compra.
+     * Total efetivamente entregue. Usa o agregado carregado via
+     * withSum('entregas as sacas_entregues', 'volume_sacas') quando existir,
+     * para não fazer uma query por linha nas listagens.
      */
-    public function precisaDeNumeroLote(): bool
+    public function sacasEntregues(): float
     {
-        return blank($this->numero_lote);
+        if (array_key_exists('sacas_entregues', $this->attributes)) {
+            return (float) $this->attributes['sacas_entregues'];
+        }
+
+        return (float) $this->entregas()->sum('volume_sacas');
     }
 
-    /* ---------- Scopes de pendência (painel inicial e filtros) ---------- */
-
-    /** Versão SQL de precisaDeNumeroLote(): coluna nula ou string vazia. */
-    public function scopeSemNumeroLote(Builder $query): Builder
+    /**
+     * Quanto ainda falta entregar. Pode ser negativo quando o armazém
+     * recebe mais do que o contratado — a diferença é informação, não erro
+     * (ver saldoDivergente()).
+     */
+    public function saldoAEntregar(): float
     {
-        return $query->where(fn (Builder $q) => $q->whereNull('numero_lote')->orWhere('numero_lote', ''));
+        return round((float) $this->volume_contratado - $this->sacasEntregues(), 2);
     }
 
-    /** Só as compras que já entraram definitivamente em estoque. */
-    public function scopeComNumeroLote(Builder $query): Builder
+    public function totalmenteEntregue(): bool
     {
-        return $query->whereNotNull('numero_lote')->where('numero_lote', '!=', '');
+        return $this->sacasEntregues() > 0 && abs($this->saldoAEntregar()) < 0.01;
     }
 
-    /** Compra com qualquer etapa em aberto (lote, classificação ou financeiro). */
+    /** Entregou mais do que o contratado. */
+    public function entregouAMais(): bool
+    {
+        return $this->saldoAEntregar() < -0.01;
+    }
+
+    /* ---------- Financeiro (dados da negociação) ---------- */
+
+    /** Valor do negócio como foi fechado. */
+    public function valorContratado(): ?float
+    {
+        return $this->valor_saca === null
+            ? null
+            : round((float) $this->valor_saca * (float) $this->volume_contratado, 2);
+    }
+
+    /** Valor do que realmente entrou — é por ele que se paga. */
+    public function valorEntregue(): ?float
+    {
+        return $this->valor_saca === null
+            ? null
+            : round((float) $this->valor_saca * $this->sacasEntregues(), 2);
+    }
+
+    /* ---------- Scopes de pendência ---------- */
+
+    /** Nenhuma entrega registrada ou ainda falta volume a entregar. */
+    public function scopeComSaldoAEntregar(Builder $query): Builder
+    {
+        return $query->whereRaw(
+            'volume_contratado > (select coalesce(sum(volume_sacas), 0) from entregas where entregas.compra_id = compras.id)'
+        );
+    }
+
+    public function scopeSemPreco(Builder $query): Builder
+    {
+        return $query->whereNull('valor_saca');
+    }
+
+    /** Compra com qualquer etapa em aberto (classificação, preço ou saldo). */
     public function scopeComPendencia(Builder $query): Builder
     {
         return $query->where(function (Builder $q) {
-            $q->semNumeroLote()
-                ->orWhereDoesntHave('classificacao')
-                ->orWhereDoesntHave('financeiro');
+            $q->whereDoesntHave('classificacao')
+                ->orWhere(fn (Builder $s) => $s->semPreco())
+                ->orWhere(fn (Builder $s) => $s->comSaldoAEntregar())
+                ->orWhereHas('entregas', fn ($e) => $e->semNumeroLote());
         });
     }
 }

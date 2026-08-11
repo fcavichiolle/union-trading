@@ -46,21 +46,29 @@ class RelatorioClassificacaoTest extends TestCase
     {
         $fornecedor = Fornecedor::create([
             'nome' => $compraOverrides['fornecedor_nome'] ?? 'Fazenda Teste',
-            'cnpj' => $compraOverrides['cnpj'] ?? fake()->unique()->numerify('##.###.###/####-##'),
+            'documento' => $compraOverrides['cnpj'] ?? fake()->unique()->numerify('##.###.###/####-##'),
         ]);
 
         $compra = Compra::create(array_merge([
             'uts' => 'UTS-' . fake()->unique()->numberBetween(1000, 999999),
-            'mes_ano' => '2026-01-01',
-            'fornecedor_id' => $fornecedor->id,
-            'armazem' => 'SAAG',
+            'data_compra' => '2026-01-01', 'fornecedor_id' => $fornecedor->id,
             'certificacao' => 'SEM_CERT',
-            'volume_sacas' => 300,
+            'volume_contratado' => 300,
             // Com lote: é assim que a compra conta como estoque definitivo,
             // que é o recorte padrão da tela.
             'numero_lote' => 'L-' . fake()->unique()->numberBetween(1000, 999999),
             'created_by' => $this->admin->id,
         ], array_diff_key($compraOverrides, array_flip(['fornecedor_nome', 'cnpj']))));
+
+        // A entrega é o que faz o café entrar em estoque — com lote, para
+        // cair no recorte padrão da tela.
+        $compra->entregas()->create([
+            'mes_ano' => $compra->data_compra,
+            'armazem' => $compraOverrides['armazem'] ?? 'SAAG',
+            'volume_sacas' => $compra->volume_contratado,
+            'numero_lote' => 'L-' . fake()->unique()->numberBetween(1000, 999999),
+            'created_by' => $this->admin->id,
+        ]);
 
         Classificacao::create(array_merge([
             'compra_id' => $compra->id,
@@ -161,8 +169,7 @@ class RelatorioClassificacaoTest extends TestCase
     {
         $this->actingAs($this->admin)->post(route('relatorio.link'), [
             'mes_de' => '2026-01',
-            'armazem' => 'SAAG',
-        ])->assertRedirect();
+            ])->assertRedirect();
 
         $this->assertStringNotContainsString('armazem', session('linkGerado'));
     }

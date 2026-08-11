@@ -36,14 +36,12 @@ class ClassificacaoHttpTest extends TestCase
             'force_password_change' => false,
             'active' => true,
         ]);
-        $fornecedor = Fornecedor::create(['nome' => 'Fazenda Teste', 'cnpj' => '00.000.000/0001-00']);
+        $fornecedor = Fornecedor::create(['nome' => 'Fazenda Teste', 'documento' => '12345678000199']);
         $this->compra = Compra::create([
             'uts' => 'UTS-2026-TESTE',
-            'mes_ano' => '2026-01-01',
-            'fornecedor_id' => $fornecedor->id,
-            'armazem' => 'SAAG',
+            'data_compra' => '2026-01-01', 'fornecedor_id' => $fornecedor->id,
             'certificacao' => 'SEM_CERT',
-            'volume_sacas' => 300,
+            'volume_contratado' => 300,
             'created_by' => $this->admin->id,
         ]);
     }
