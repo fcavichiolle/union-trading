@@ -367,6 +367,20 @@
   .alert-error { background: var(--danger-bg); color: var(--danger-text); border: 1px solid #F0C4BE; }
   .alert__hint { display: block; margin-top: 8px; font-size: 12.5px; opacity: .8; }
 
+  /* Tabela de entregas: campos editáveis dentro das células. Sem altura
+     fixa — o `height` que estava aqui cortava o nome do armazém no select,
+     porque brigava com o padding herdado dos inputs globais. */
+  .tabela-entregas td { vertical-align: middle; }
+  .tabela-entregas input, .tabela-entregas select {
+    padding: 6px 9px; font-size: 13.5px; line-height: 1.35; min-width: 0;
+  }
+  .tabela-entregas select { min-width: 150px; }
+  .tabela-entregas .campo-sacas { width: 110px; text-align: right; }
+  .tabela-entregas .campo-lote { width: 150px; }
+  @media (max-width: 980px) {
+    .tabela-entregas select { min-width: 120px; }
+  }
+
   /* reativar contrato cancelado, dentro do próprio aviso vermelho */
   .reativar { margin-top: 12px; }
   .reativar > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; }

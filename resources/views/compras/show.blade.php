@@ -18,6 +18,7 @@
         $entregues = $compra->sacasEntregues();
         $saldo = $compra->saldoAEntregar();
         $semLote = $compra->entregas->filter(fn ($e) => $e->precisaDeNumeroLote());
+        $divergente = $compra->divergenciaPendente();
     @endphp
 
     {{-- Situação da entrega em uma linha: é a pergunta do funcionário 3. --}}
@@ -31,8 +32,20 @@
             <span class="calc-val">{{ number_format($entregues, 2, ',', '.') }} sc</span>
         </div>
         <div class="calc-item">
-            <span class="calc-lbl">{{ $saldo < 0 ? 'Entregue a mais' : 'Falta entregar' }}</span>
-            <span class="calc-val {{ abs($saldo) > 0.01 ? 'is-alerta' : '' }}">{{ number_format(abs($saldo), 2, ',', '.') }} sc</span>
+            <span class="calc-lbl">
+                @if ($compra->liquidada())
+                    Liquidada
+                @else
+                    {{ $saldo < 0 ? 'Entregue a mais' : 'Falta entregar' }}
+                @endif
+            </span>
+            <span class="calc-val {{ $divergente ? 'is-alerta' : '' }}">
+                @if ($compra->liquidada())
+                    {{ number_format($entregues, 2, ',', '.') }} sc
+                @else
+                    {{ number_format(abs($saldo), 2, ',', '.') }} sc
+                @endif
+            </span>
         </div>
         <div class="calc-item">
             <span class="calc-lbl">Valor efetivo</span>
@@ -41,6 +54,51 @@
             </span>
         </div>
     </div>
+
+    @error('liquidacao')
+        <div class="alert alert-error">{{ $message }}</div>
+    @enderror
+
+    {{-- Liquidação: enquanto ninguém decide, a diferença pode ser café a
+         receber de verdade — por isso o aviso fica. Liquidar encerra a
+         compra com o que entrou. --}}
+    @if ($compra->liquidada())
+        <div class="alert alert-success" style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+            <strong>Compra liquidada com {{ number_format($entregues, 2, ',', '.') }} sc.</strong>
+            <span>
+                Encerrada em {{ $compra->liquidada_em->format('d/m/Y \à\s H:i') }}
+                @if ($compra->liquidadaPor) por {{ $compra->liquidadaPor->name }} @endif —
+                o sistema reconhece este volume como final
+                @if (abs($saldo) > 0.01)
+                    (contratado era {{ number_format((float) $compra->volume_contratado, 2, ',', '.') }} sc)
+                @endif.
+            </span>
+            <form method="POST" action="{{ route('compras.reabrir', $compra) }}" style="margin-left:auto;"
+                  onsubmit="return confirm('Reabrir a UTS {{ $compra->uts }}? A diferença entre contratado e entregue volta a aparecer como pendência.');">
+                @csrf @method('PATCH')
+                <button type="submit" class="mini">Reabrir</button>
+            </form>
+        </div>
+    @elseif ($divergente)
+        <div class="alert" style="background:#FCF3DC; color:#8A6116; border:1px solid #EBD9A8; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+            <strong>
+                @if ($saldo > 0)
+                    Faltam {{ number_format($saldo, 2, ',', '.') }} sc para completar o contratado.
+                @else
+                    Entraram {{ number_format(abs($saldo), 2, ',', '.') }} sc a mais que o contratado.
+                @endif
+            </strong>
+            <span>
+                Se não vem (nem sai) mais nada, <strong>liquide a compra</strong>: o sistema passa a reconhecer
+                as {{ number_format($entregues, 2, ',', '.') }} sc entregues como o volume final e este aviso desaparece.
+            </span>
+            <form method="POST" action="{{ route('compras.liquidar', $compra) }}" style="margin-left:auto;"
+                  onsubmit="return confirm('Liquidar a UTS {{ $compra->uts }} com {{ number_format($entregues, 2, ',', '.') }} sc? O contratado fica registrado como histórico.');">
+                @csrf @method('PATCH')
+                <button type="submit" class="btn btn-primary" style="padding:6px 14px; font-size:13px;">Liquidar compra</button>
+            </form>
+        </div>
+    @endif
 
     @if ($semLote->isNotEmpty())
         <div class="alert alert-error">
@@ -83,12 +141,13 @@
         <div class="card__header"><h2>Entregas no armazém</h2></div>
         <div class="card__body" style="padding:0;">
             <div class="table-wrap" style="border:0; border-radius:0;">
-                <table class="data">
+                <table class="data tabela-entregas">
                     <thead>
                         <tr>
                             <th>Mês/Ano</th>
                             <th>Armazém</th>
                             <th class="num">Sacas</th>
+                            <th class="num">Valor da entrega</th>
                             <th>Nº do lote</th>
                             <th>Lançada por</th>
                             <th></th>
@@ -96,13 +155,18 @@
                     </thead>
                     <tbody>
                         @forelse ($compra->entregas->sortBy('mes_ano') as $entrega)
+                            @php
+                                $valorEntrega = $compra->valor_saca === null
+                                    ? null
+                                    : (float) $entrega->volume_sacas * (float) $compra->valor_saca;
+                            @endphp
                             <tr>
                                 <form method="POST" action="{{ route('compras.entregas.update', [$compra, $entrega]) }}" id="e-{{ $entrega->id }}">
                                     @csrf @method('PUT')
                                 </form>
-                                <td><input type="month" form="e-{{ $entrega->id }}" name="mes_ano" value="{{ $entrega->mes_ano->format('Y-m') }}" required style="height:36px;"></td>
+                                <td><input type="month" form="e-{{ $entrega->id }}" name="mes_ano" value="{{ $entrega->mes_ano->format('Y-m') }}" required></td>
                                 <td>
-                                    <select form="e-{{ $entrega->id }}" name="armazem" required style="height:36px;">
+                                    <select form="e-{{ $entrega->id }}" name="armazem" required>
                                         @foreach (\App\Models\Compra::armazens() as $cod => $rotulo)
                                             <option value="{{ $cod }}" @selected($entrega->armazem === $cod)>{{ $rotulo }}</option>
                                         @endforeach
@@ -111,11 +175,14 @@
                                 <td class="num">
                                     <input type="number" step="0.01" min="0.01" form="e-{{ $entrega->id }}" name="volume_sacas"
                                            value="{{ rtrim(rtrim((string) $entrega->volume_sacas, '0'), '.') }}" required
-                                           style="height:36px; width:110px; text-align:right;">
+                                           class="campo-sacas">
+                                </td>
+                                <td class="num" style="font-family:var(--font-data); font-size:13px;">
+                                    {{ $valorEntrega === null ? '—' : 'R$ ' . number_format($valorEntrega, 2, ',', '.') }}
                                 </td>
                                 <td>
                                     <input type="text" form="e-{{ $entrega->id }}" name="numero_lote" value="{{ $entrega->numero_lote }}"
-                                           placeholder="Ex.: L-2026-0451" style="height:36px; width:150px;">
+                                           placeholder="Ex.: L-2026-0451" class="campo-lote">
                                 </td>
                                 <td style="font-size:12.5px; color:var(--muted);">
                                     {{ $entrega->criadoPor?->name ?? '—' }}<br>{{ $entrega->created_at->format('d/m/Y') }}
@@ -131,12 +198,24 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">
+                                <td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">
                                     Nenhuma entrega lançada — o café desta UTS ainda não entrou no armazém.
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
+                    @if ($compra->entregas->count() > 1)
+                        <tfoot>
+                            <tr>
+                                <td colspan="2">Total entregue</td>
+                                <td class="num"><strong>{{ number_format($entregues, 2, ',', '.') }}</strong></td>
+                                <td class="num" style="font-family:var(--font-data); font-size:13px;">
+                                    <strong>{{ $compra->valorEntregue() === null ? '—' : 'R$ ' . number_format($compra->valorEntregue(), 2, ',', '.') }}</strong>
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </tfoot>
+                    @endif
                 </table>
             </div>
 

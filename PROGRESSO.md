@@ -158,6 +158,16 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 - **Financeiro**: valor da saca, valor total (= saca × volume, calculado no servidor),
   corretor e comissão. Tem **preview do total em tempo real** no formulário (só visual;
   o valor oficial continua vindo do servidor ao salvar).
+- **Liquidação da compra** (`compras.liquidar` / `compras.reabrir`, PATCH): o armazém quase
+  nunca recebe exatamente o contratado — vêm 260 no lugar de 250, ou 240 e ficou por isso
+  mesmo. Enquanto ninguém decide, o sistema **avisa da diferença**, porque pode haver café a
+  receber de verdade. Ao **liquidar**, o volume entregue vira o final: os avisos somem da
+  tela da compra e de "Compras lançadas", e a UTS sai da pendência "saldo a entregar".
+  **`volume_contratado` NÃO é sobrescrito** de propósito — a diferença (quebra ou excedente)
+  é informação real e continua visível; a liquidação é uma decisão registrada com data e
+  autor (`liquidada_em`/`liquidada_por` + AuditLog), não um apagamento. **Reabrir** desfaz.
+  Só é possível liquidar UTS com ao menos uma entrega. Filtro novo em "Compras lançadas":
+  **Divergência a liquidar**. Ver `Compra::divergenciaPendente()` e `volumeReconhecido()`.
 - **Fornecedor com CNPJ ou CPF, e opcional**: a coluna virou `documento` (só dígitos) +
   `tipo_documento`. Pode ficar em branco ("vendedor a confirmar", como na planilha da mesa)
   e vira pendência no painel — exigir o documento empurrava a funcionária 2 de volta para o

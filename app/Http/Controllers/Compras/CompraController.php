@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Compras;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCompraRequest;
+use App\Models\AuditLog;
 use App\Models\Compra;
 use App\Models\Fornecedor;
 use App\Services\ConsultaCnpj;
@@ -47,6 +48,10 @@ class CompraController extends Controller
                     'sem_classificacao' => $q->whereDoesntHave('classificacao'),
                     'sem_preco' => $q->semPreco(),
                     'saldo_a_entregar' => $q->comSaldoAEntregar(),
+                    // Diferença (para cima ou para baixo) esperando decisão.
+                    'divergente' => $q->naoLiquidadas()->has('entregas')->whereRaw(
+                        'volume_contratado <> (select coalesce(sum(volume_sacas), 0) from entregas where entregas.compra_id = compras.id)'
+                    ),
                     'sem_documento' => $q->whereHas('fornecedor', fn ($f) => $f->semDocumento()),
                     'qualquer' => $q->comPendencia(),
                     default => null, // valor desconhecido não filtra nada
@@ -140,9 +145,59 @@ class CompraController extends Controller
 
     public function show(Compra $compra): View
     {
-        $compra->load(['fornecedor', 'classificacao', 'criadoPor', 'entregas.criadoPor']);
+        $compra->load(['fornecedor', 'classificacao', 'criadoPor', 'entregas.criadoPor', 'liquidadaPor']);
 
         return view('compras.show', compact('compra'));
+    }
+
+    /**
+     * Encerra a compra com o volume que realmente entrou. O armazém quase
+     * nunca recebe exatamente o contratado — vieram 260 no lugar de 250, ou
+     * 240 e ficou por isso mesmo. Liquidar é a decisão de que aquilo é o
+     * final: os avisos de diferença param de aparecer.
+     *
+     * O volume contratado NÃO é sobrescrito: a diferença continua visível
+     * como histórico (quebra ou excedente).
+     */
+    public function liquidar(Compra $compra): RedirectResponse
+    {
+        if ($compra->liquidada()) {
+            return back()->with('status', 'Esta compra já estava liquidada.');
+        }
+
+        if ($compra->sacasEntregues() <= 0) {
+            return back()->withErrors([
+                'liquidacao' => 'Não há entrega lançada nesta UTS — lance a entrada no armazém antes de liquidar.',
+            ]);
+        }
+
+        $compra->update(['liquidada_em' => now(), 'liquidada_por' => Auth::id()]);
+
+        $entregues = number_format($compra->sacasEntregues(), 2, ',', '.');
+        AuditLog::registrar(
+            'compra_liquidada',
+            "Compra UTS {$compra->uts} liquidada com {$entregues} sc "
+                . '(contratado ' . number_format((float) $compra->volume_contratado, 2, ',', '.') . ' sc).',
+            Auth::id()
+        );
+
+        return redirect()->route('compras.show', $compra)
+            ->with('status', "UTS {$compra->uts} liquidada: o sistema passa a reconhecer {$entregues} sc.");
+    }
+
+    /** Desfaz a liquidação — a compra volta a acusar a diferença. */
+    public function reabrir(Compra $compra): RedirectResponse
+    {
+        if (! $compra->liquidada()) {
+            return back()->with('status', 'Esta compra não está liquidada.');
+        }
+
+        $compra->update(['liquidada_em' => null, 'liquidada_por' => null]);
+
+        AuditLog::registrar('compra_reaberta', "Compra UTS {$compra->uts} reaberta.", Auth::id());
+
+        return redirect()->route('compras.show', $compra)
+            ->with('status', "UTS {$compra->uts} reaberta — a diferença entre contratado e entregue volta a aparecer.");
     }
 
     /**

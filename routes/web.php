@@ -159,6 +159,11 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::get('/{compra}/editar', [CompraController::class, 'edit'])->name('edit');
             Route::put('/{compra}', [CompraController::class, 'update'])->name('update');
 
+            // Liquidar: aceita o volume entregue como final e cala os avisos
+            // de diferença (ver ContratoController… CompraController::liquidar).
+            Route::patch('/{compra}/liquidar', [CompraController::class, 'liquidar'])->name('liquidar');
+            Route::patch('/{compra}/reabrir', [CompraController::class, 'reabrir'])->name('reabrir');
+
             // Entregas: o que realmente entrou no armazém (funcionário 3).
             Route::post('/{compra}/entregas', [EntregaController::class, 'store'])->name('entregas.store');
             Route::put('/{compra}/entregas/{entrega}', [EntregaController::class, 'update'])->name('entregas.update');
