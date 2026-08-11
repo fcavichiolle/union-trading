@@ -52,6 +52,7 @@ class ClassificacaoHttpTest extends TestCase
     {
         return array_merge([
             'padrao_final' => 'FINE_CUP',
+            'tipo_bebida' => 'DURO',
             'peneira_1718_pct' => 50, 'peneira_1718_sacas' => 150,
             'peneira_1416_pct' => 30, 'peneira_1416_sacas' => 100,
             'mercado_interno_pct' => 10, 'mercado_interno_sacas' => 30,
@@ -71,6 +72,7 @@ class ClassificacaoHttpTest extends TestCase
         $this->assertDatabaseHas('classificacoes', [
             'compra_id' => $this->compra->id,
             'padrao_final' => 'FINE_CUP',
+            'tipo_bebida' => 'DURO',
         ]);
 
         $lotes = (float) $this->compra->fresh()->classificacao->quantidade_lotes;

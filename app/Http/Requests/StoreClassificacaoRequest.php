@@ -18,6 +18,7 @@ class StoreClassificacaoRequest extends FormRequest
     {
         return [
             'padrao_final' => ['required', Rule::in(array_keys(Classificacao::padroes()))],
+            'tipo_bebida' => ['required', Rule::in(array_keys(Classificacao::tiposBebida()))],
 
             'peneira_1718_pct' => ['required', 'numeric', 'min:0', 'max:100'],
             'peneira_1718_sacas' => ['required', 'numeric', 'min:0'],
@@ -41,6 +42,8 @@ class StoreClassificacaoRequest extends FormRequest
         return [
             'padrao_final.required' => 'Selecione o padrão final da classificação.',
             'padrao_final.in' => 'O padrão final selecionado não existe na lista.',
+            'tipo_bebida.required' => 'Selecione o tipo de bebida.',
+            'tipo_bebida.in' => 'O tipo de bebida selecionado não existe na lista.',
             // As 10 linhas de peneira usam as mesmas regras: uma mensagem por
             // regra (com :attribute) cobre todas sem repetir campo por campo.
             'required' => 'Preencha :attribute (use 0 se não houver).',

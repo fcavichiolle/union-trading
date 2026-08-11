@@ -18,6 +18,7 @@ class Classificacao extends Model
     protected $fillable = [
         'compra_id',
         'padrao_final',
+        'tipo_bebida',
         'peneira_1718_pct',
         'peneira_1718_sacas',
         'peneira_1416_pct',
@@ -103,5 +104,34 @@ class Classificacao extends Model
     public function padraoLabel(): string
     {
         return self::padroes()[$this->padrao_final] ?? $this->padrao_final;
+    }
+
+    /**
+     * Tipos de bebida (código => rótulo). Diferente de `padroes()`, a
+     * coluna `tipo_bebida` é VARCHAR e não ENUM: para acrescentar um tipo
+     * basta editar este array — não precisa de migration (ver a migration
+     * ..._add_tipo_bebida_to_classificacoes.php).
+     *
+     * @return array<string,string>
+     */
+    public static function tiposBebida(): array
+    {
+        return [
+            'DURO' => 'Duro',
+            'DURO_1RY' => 'Duro + 1RY',
+            'DURO_2RY' => 'Duro + 2RY',
+            'DURO_2RY_1RIO' => 'Duro + 2RY + 1 Rio',
+            'DURO_2RY_2RIO' => 'Duro + 2RY + 2 Rio',
+            'RIO' => 'Rio',
+        ];
+    }
+
+    public function tipoBebidaLabel(): ?string
+    {
+        if ($this->tipo_bebida === null) {
+            return null;
+        }
+
+        return self::tiposBebida()[$this->tipo_bebida] ?? $this->tipo_bebida;
     }
 }

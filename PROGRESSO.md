@@ -119,6 +119,13 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   tela da compra, com um formulário simples (`compras/{compra}/lote`, `PUT`) para preenchê-lo.
   Rota/controller (`CompraController::atualizarLote`) restrita a admin/compras, igual ao resto
   do módulo.
+- **Tipo de bebida** na classificação (`classificacoes.tipo_bebida`): Duro, Duro + 1RY,
+  Duro + 2RY, Duro + 2RY + 1 Rio, Duro + 2RY + 2 Rio e Rio. Lista em
+  `Classificacao::tiposBebida()`. **A coluna é VARCHAR, não ENUM, de propósito**: assim
+  incluir um tipo novo é só editar o array — sem a migration de ALTER que `padrao_final` e
+  `certificacao` exigem (GOTCHA 3). Nullable no banco (classificações antigas não têm o
+  dado), obrigatório no formulário. Aparece na tela da compra e sob o padrão em
+  "Compras lançadas".
 - **Classificação**: Fine Cup / Good Cup, distribuição nas peneiras 17/18, 14/16, mercado
   interno, grinders e **moka** (% e sacas). **Cálculo de lotes** (total de sacas ÷ 283,49) feito
   sempre no servidor. A linha "Moka" foi adicionada depois das demais (colunas `moka_pct`/

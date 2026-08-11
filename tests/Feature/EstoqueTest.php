@@ -50,7 +50,7 @@ class EstoqueTest extends TestCase
         $sacas = (float) $compra->volume_sacas;
 
         return Classificacao::create([
-            'compra_id' => $compra->id, 'padrao_final' => $padrao,
+            'compra_id' => $compra->id, 'padrao_final' => $padrao, 'tipo_bebida' => 'DURO',
             'peneira_1718_pct' => 100, 'peneira_1718_sacas' => $sacas,
             'peneira_1416_pct' => 0, 'peneira_1416_sacas' => 0,
             'mercado_interno_pct' => 0, 'mercado_interno_sacas' => 0,
