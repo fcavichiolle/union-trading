@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy">
-    <title>Relatório de classificação</title>
+    <title>Estoque</title>
     <style>
   :root {
     --bg: #F6F2EA;
@@ -691,6 +691,100 @@
 
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---------- Painel inicial (pendências + posição) ---------- */
+  .painel-titulo {
+    margin: 0 0 14px; font-family: var(--font-data); font-size: 11px; font-weight: 600;
+    letter-spacing: .13em; text-transform: uppercase; color: var(--muted);
+  }
+  .painel-titulo:not(:first-child) { margin-top: 30px; }
+
+  /* cards de pendência: número grande + o que é + link direto p/ a tela filtrada */
+  .pend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+  .pend-card {
+    display: flex; flex-direction: column; gap: 3px; padding: 16px 18px;
+    border-radius: 12px; text-decoration: none; background: var(--surface);
+    box-shadow: var(--shadow); border-left: 4px solid var(--border);
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .pend-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(11,61,36,.08), 0 16px 32px -14px rgba(11,61,36,.34); }
+  .pend-card__num { font-family: var(--font-data); font-size: 30px; font-weight: 700; line-height: 1.05; color: var(--ink); }
+  .pend-card__titulo { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .pend-card__desc { font-size: 12px; line-height: 1.45; color: var(--muted); }
+  .pend-card--alerta { border-left-color: var(--accent); }
+  .pend-card--alerta .pend-card__num { color: var(--danger-text); }
+  .pend-card--atencao { border-left-color: #D9A227; }
+  .pend-card--neutro { border-left-color: var(--primary-light); }
+
+  /* estado "sem pendência alguma" */
+  .painel-ok {
+    display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+    background: var(--success-bg); border-radius: var(--radius); color: var(--success-text);
+  }
+  .painel-ok__dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: none; }
+  .painel-ok strong { display: block; font-size: 14px; }
+  .painel-ok span:last-child { font-size: 12.5px; opacity: .85; }
+
+  /* números de posição */
+  .num-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+  .num-tile { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .num-tile__lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .num-tile__val { font-family: var(--font-data); font-size: 26px; font-weight: 700; line-height: 1.1; color: var(--ink); }
+  .num-tile__val.is-neg { color: var(--danger-text); }
+  .num-tile__val.is-alerta { color: #8A6116; }
+  .num-tile__sub { font-size: 11.5px; color: var(--muted); }
+  .painel-nota { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+  .painel-nota a { color: var(--primary); }
+
+  /* badge de pendência no menu lateral */
+  .sb-badge {
+    margin-left: auto; min-width: 20px; padding: 1px 6px; border-radius: 99px;
+    background: #E8322C; color: #fff; text-align: center;
+    font-family: var(--font-data); font-size: 10.5px; font-weight: 700; line-height: 17px;
+  }
+
+  :root[data-theme="dark"] .painel-ok { background: rgba(122,214,163,.12); color: #9BD8B3; }
+  :root[data-theme="dark"] .num-tile__val.is-alerta { color: #F0D9A8; }
+  :root[data-theme="dark"] .pend-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 16px 32px -14px rgba(0,0,0,.7); }
+
+  .alert__hint { display: block; margin-top: 8px; font-size: 12.5px; opacity: .8; }
+
+  /* reativar contrato cancelado, dentro do próprio aviso vermelho */
+  .reativar { margin-top: 12px; }
+  .reativar > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; }
+  .reativar form { margin-top: 10px; max-width: 520px; }
+  .reativar textarea { width: 100%; resize: vertical; }
+
+  /* "zona de risco": ações destrutivas, fechadas por padrão (<details>) */
+  .zona-risco { margin-top: 26px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  .zona-risco > summary {
+    padding: 14px 20px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--danger-text);
+    list-style: none;
+  }
+  .zona-risco > summary::-webkit-details-marker { display: none; }
+  .zona-risco > summary::before { content: "▸ "; }
+  .zona-risco[open] > summary::before { content: "▾ "; }
+  .zona-risco[open] > summary { box-shadow: inset 0 -1px 0 var(--border); }
+  .zona-risco__corpo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px; }
+  .zona-risco__corpo h3 { margin: 0 0 6px; font-size: 15px; color: var(--ink); }
+  .zona-risco__corpo p { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+  .zona-risco__corpo textarea { width: 100%; resize: vertical; }
+  .zona-risco__corpo .btn { margin-top: 10px; }
+  @media (max-width: 860px) { .zona-risco__corpo { grid-template-columns: 1fr; } }
+
+  /* contrato cancelado: linha apagada, sem sumir da lista */
+  tr.linha-cancelada td { opacity: .55; }
+  tr.linha-cancelada td:first-child strong { text-decoration: line-through; }
+
+  /* faixa do link compartilhável, com botão de copiar */
+  .link-share { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .link-share__lbl { flex: none; font-weight: 600; }
+  .link-share__url { flex: 1; min-width: 240px; word-break: break-all; font-family: var(--font-data); font-size: 12px; }
+  .link-share .btn { flex: none; padding: 6px 14px; font-size: 13px; }
+
+  /* subtotal por armazém na tabela de estoque */
+  tr.linha-subtotal td { background: var(--primary-soft); font-weight: 600; }
+  :root[data-theme="dark"] tr.linha-subtotal td { background: rgba(122,214,163,.10); }
 </style>
     
     <script>(function(){try{if(localStorage.getItem('ut-theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}})();</script>
@@ -717,10 +811,11 @@
                         <a href="compras.html" class="sb-link ">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="17" rx="2"></rect><path d="M8.5 8h7M8.5 12h7M8.5 16h4"></path></svg>
                             <span>Compras lançadas</span>
+                            <span class="sb-badge" title="Compras com etapa pendente">8</span>
                         </a>
                                         <a href="relatorio.html" class="sb-link is-active">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"></path><rect x="6" y="11" width="3.2" height="6"></rect><rect x="11.4" y="7" width="3.2" height="10"></rect><rect x="16.8" y="13.5" width="3.2" height="3.5"></rect></svg>
-                        <span>Relatório (dashboard)</span>
+                        <span>Estoque</span>
                     </a>
                 </div>
             
@@ -741,6 +836,7 @@
                     <a href="tela-ny.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v4M7 14v6M7 8h0a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2Z"></path><path d="M17 4v2M17 16v4M17 6h0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path></svg>
                         <span>Tela NY (fixações)</span>
+                        <span class="sb-badge" title="Lotes a fixar">7</span>
                     </a>
                     <a href="cotacoes.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"></path><path d="m5 14 4-4 3.5 3L18 7"></path><path d="M14.5 7H18v3.5"></path></svg>
@@ -758,6 +854,10 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"></path><path d="M9 20v-6h6v6"></path></svg>
                         <span>Clientes</span>
                     </a>
+                    <a href="corretoras.html" class="sb-link ">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5v-13l5-3.5 5 3.5v13"></path><path d="M13.5 20.5h7v-8.5l-3.5-2.5-3.5 2.5"></path><path d="M6.5 11h2M6.5 14.5h2M6.5 18h2M16.5 14.5h1.5M16.5 18h1.5"></path></svg>
+                        <span>Corretoras</span>
+                    </a>
                     <a href="qualidades.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 9.7l5.4-.8Z"></path></svg>
                         <span>Qualidades</span>
@@ -774,6 +874,7 @@
     <div class="main">
         <header class="appbar">
             <div class="appbar__crumb">
+                                        <span>Compras &amp; Classificação</span><span class="sep">/</span><b>Estoque</b>
                             </div>
             <div class="appbar__user">
                 <button type="button" class="theme-toggle" id="themeToggle" aria-label="Alternar modo escuro" title="Alternar modo escuro">
@@ -797,115 +898,173 @@
         <div class="content">
             <div class="page-head">
                 <div>
-                    <h1>Relatório de classificação</h1>
-                                    </div>
-                            </div>
+                    <h1>Estoque</h1>
+                    <p class="page-sub">Distribuição das sacas em estoque por armazém, padrão e peneira.</p>
+                </div>
+            </div>
 
-                            <form method="GET" action="relatorio.html" class="filter-bar">
-        <div class="field">
-            <label for="mes_de">Mês inicial</label>
-            <input type="month" id="mes_de" name="mes_de" value="">
-        </div>
-        <div class="field">
-            <label for="mes_ate">Mês final</label>
-            <input type="month" id="mes_ate" name="mes_ate" value="">
-        </div>
-        <div class="field">
-            <label for="padrao">Padrão</label>
-            <select id="padrao" name="padrao">
-                <option value="">Todos</option>
-                <option value="FINE_CUP">Fine Cup</option>
-                <option value="GOOD_CUP">Good Cup</option>
-                <option value="GOOD_CUP_2R">Good Cup 2R</option>
-                <option value="RIO_MINAS">Rio Minas</option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="certificado">Certificado</label>
-            <select id="certificado" name="certificado">
-                <option value="">Todos</option>
-                <option value="SEM_CERT">Sem certificação</option>
-                <option value="4C">4C</option>
-                <option value="RFA">RFA</option>
-                <option value="EUDR">EUDR</option>
-                <option value="4C_EUDR">4C + EUDR</option>
-                <option value="RFA_EUDR">RFA + EUDR</option>
-                <option value="4C_RFA">4C + RFA</option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="busca">Buscar (UTS ou fornecedor)</label>
-            <input type="search" id="busca" name="busca" value="" placeholder="Ex: UTS-2026-001">
-        </div>
-        <button type="submit" class="btn btn-primary">Filtrar</button>
-        
-                                    <button type="submit" formaction="relatorio.html/link" formmethod="POST" class="btn btn-ghost" style="margin-left:auto;">
+            <form method="GET" action="relatorio.html" class="filter-bar">
+                <div class="field">
+                    <label for="mes_de">Mês inicial</label>
+                    <input type="month" id="mes_de" name="mes_de" value="">
+                </div>
+                <div class="field">
+                    <label for="mes_ate">Mês final</label>
+                    <input type="month" id="mes_ate" name="mes_ate" value="">
+                </div>
+                <div class="field">
+                    <label for="armazem">Armazém</label>
+                    <select id="armazem" name="armazem">
+                        <option value="">Todos</option>
+                        <option value="SAAG">SAAG</option>
+                        <option value="QUALITE">QUALITÉ</option>
+                        <option value="DINAMO_MACHADO">DÍNAMO MACHADO</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="situacao">Situação</label>
+                    <select id="situacao" name="situacao">
+                        <option value="definitivo" selected>Estoque definitivo (com nº de lote)</option>
+                        <option value="aguardando">Aguardando nº do lote</option>
+                        <option value="todos">Todos</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="padrao">Padrão</label>
+                    <select id="padrao" name="padrao">
+                        <option value="">Todos</option>
+                        <option value="FINE_CUP">Fine Cup</option>
+                        <option value="GOOD_CUP">Good Cup</option>
+                        <option value="GOOD_CUP_2R">Good Cup 2R</option>
+                        <option value="RIO_MINAS">Rio Minas</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="certificado">Certificado</label>
+                    <select id="certificado" name="certificado">
+                        <option value="">Todos</option>
+                        <option value="SEM_CERT">Sem certificação</option>
+                        <option value="4C">4C</option>
+                        <option value="RFA">RFA</option>
+                        <option value="EUDR">EUDR</option>
+                        <option value="4C_EUDR">4C + EUDR</option>
+                        <option value="RFA_EUDR">RFA + EUDR</option>
+                        <option value="4C_RFA">4C + RFA</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="busca">Buscar (UTS ou fornecedor)</label>
+                    <input type="search" id="busca" name="busca" value="" placeholder="Ex: UTS-2026-001">
+                </div>
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <button type="submit" class="btn btn-ghost" style="margin-left:auto;"
+                        title="O link compartilhável não inclui a quebra por armazém.">
                     Gerar link compartilhável (7 dias)
                 </button>
-                        </form>
+            </form>
 
-    <div class="card">
-        <div class="card__header card__header--dark mesh-texture">
-            <h2>Distribuição por padrão e peneira — somente leitura</h2>
-        </div>
-        <div class="card__body" style="padding:0;">
-            <div class="table-wrap" style="border:0; border-radius:0;">
-    <table class="data">
-        <thead>
-            <tr>
-                <th>Padrão</th>
-                <th class="num">SCS 17/18</th>
-                <th class="num">SCS 14/16</th>
-                <th class="num">Mercado interno</th>
-                <th class="num">Grinders</th>
-                <th class="num">Moka</th>
-                <th class="num">Total de SCS</th>
-                <th class="num">% do total</th>
-            </tr>
-        </thead>
-        <tbody>
-                            <tr>
-                    <td>Fine Cup</td>
-                    <td class="num">690,00</td>
-                    <td class="num">600,00</td>
-                    <td class="num">220,00</td>
-                    <td class="num">190,00</td>
-                    <td class="num">100,00</td>
-                    <td class="num"><strong>1.800,00</strong></td>
-                    <td class="num">65,2%</td>
-                </tr>
-                            <tr>
-                    <td>Good Cup</td>
-                    <td class="num">540,00</td>
-                    <td class="num">210,00</td>
-                    <td class="num">60,00</td>
-                    <td class="num">90,00</td>
-                    <td class="num">60,00</td>
-                    <td class="num"><strong>960,00</strong></td>
-                    <td class="num">34,8%</td>
-                </tr>
-                    </tbody>
-                    <tfoot>
-                <tr>
-                    <td>Total geral</td>
-                    <td class="num">1.230,00</td>
-                    <td class="num">810,00</td>
-                    <td class="num">280,00</td>
-                    <td class="num">280,00</td>
-                    <td class="num">160,00</td>
-                    <td class="num">2.760,00</td>
-                    <td class="num">100,0%</td>
-                </tr>
-            </tfoot>
-            </table>
-</div>
-        </div>
-    </div>
+            <div class="alert alert-error" style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+                <strong>Fora do estoque:</strong>
+                <span>820,00 sc em 2 compras aguardando o nº do lote do armazém.</span>
+                <a href="compras.html?pendencia=sem_lote" style="margin-left:auto; font-size:13px;">Ver e informar os lotes →</a>
+            </div>
 
-    <p style="color:var(--muted); font-size:12.5px;">
-        Esta tela é somente leitura — não existe nenhum formulário de edição aqui.
-        Para alterar uma classificação, acesse a compra correspondente em "Compras lançadas".
-    </p>
+            <div class="alert" style="background:#FCF3DC; color:#8A6116; border:1px solid #EBD9A8; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+                <strong>Em estoque, sem classificação:</strong>
+                <span>450,00 sc em 1 compra com lote, mas sem distribuição de peneiras — não entram na tabela abaixo.</span>
+                <a href="compras.html?pendencia=sem_classificacao" style="margin-left:auto; font-size:13px;">Classificar →</a>
+            </div>
+
+            <div class="card">
+                <div class="card__header card__header--dark mesh-texture">
+                    <h2>Estoque definitivo — por armazém e peneira</h2>
+                </div>
+                <div class="card__body" style="padding:0;">
+                    <div class="table-wrap" style="border:0; border-radius:0;">
+                        <table class="data">
+                            <thead>
+                                <tr>
+                                    <th>Armazém</th>
+                                    <th>Padrão</th>
+                                    <th class="num">SCS 17/18</th>
+                                    <th class="num">SCS 14/16</th>
+                                    <th class="num">Mercado interno</th>
+                                    <th class="num">Grinders</th>
+                                    <th class="num">Moka</th>
+                                    <th class="num">Total de SCS</th>
+                                    <th class="num">% do total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>QUALITÉ</td>
+                                    <td>Fine Cup</td>
+                                    <td class="num">390,00</td>
+                                    <td class="num">260,00</td>
+                                    <td class="num">60,00</td>
+                                    <td class="num">90,00</td>
+                                    <td class="num">0,00</td>
+                                    <td class="num"><strong>800,00</strong></td>
+                                    <td class="num">38,5%</td>
+                                </tr>
+                                <tr>
+                                    <td>SAAG</td>
+                                    <td>Fine Cup</td>
+                                    <td class="num">300,00</td>
+                                    <td class="num">340,00</td>
+                                    <td class="num">160,00</td>
+                                    <td class="num">100,00</td>
+                                    <td class="num">100,00</td>
+                                    <td class="num"><strong>1.000,00</strong></td>
+                                    <td class="num">48,1%</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>Good Cup</td>
+                                    <td class="num">120,00</td>
+                                    <td class="num">60,00</td>
+                                    <td class="num">30,00</td>
+                                    <td class="num">50,00</td>
+                                    <td class="num">20,00</td>
+                                    <td class="num"><strong>280,00</strong></td>
+                                    <td class="num">13,4%</td>
+                                </tr>
+                                <tr class="linha-subtotal">
+                                    <td></td>
+                                    <td>Subtotal SAAG</td>
+                                    <td class="num">420,00</td>
+                                    <td class="num">400,00</td>
+                                    <td class="num">190,00</td>
+                                    <td class="num">150,00</td>
+                                    <td class="num">120,00</td>
+                                    <td class="num">1.280,00</td>
+                                    <td class="num">61,5%</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2">Total geral</td>
+                                    <td class="num">810,00</td>
+                                    <td class="num">660,00</td>
+                                    <td class="num">250,00</td>
+                                    <td class="num">240,00</td>
+                                    <td class="num">120,00</td>
+                                    <td class="num">2.080,00</td>
+                                    <td class="num">100,0%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <p style="color:var(--muted); font-size:12.5px;">
+                Só entra no estoque definitivamente a compra com o <strong>número do lote</strong> informado
+                pelo armazém. Os totais acima são de <strong>entrada</strong> em estoque — o sistema ainda não
+                registra embarque/faturamento, então não representam saldo disponível para venda.
+                Esta tela é somente leitura: para alterar uma classificação, acesse a compra em
+                <a href="compras.html">Compras lançadas</a>.
+            </p>
         </div>
     </div>
 </div>
