@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy">
-    <title>Clientes</title>
+    <meta name="csrf-token" content="vhRvWWL4FZ5QDWReVKoIkjf1brazouERT5rwZov5">
+    <title>Corretoras &amp; Brokers</title>
     <style>
   :root {
     --bg: #F6F2EA;
@@ -850,11 +850,11 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5.5 19.5c1.3-3.2 3.8-4.8 6.5-4.8s5.2 1.6 6.5 4.8"></path></svg>
                         <span>Usuários</span>
                     </a>
-                    <a href="clientes.html" class="sb-link is-active">
+                    <a href="clientes.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"></path><path d="M9 20v-6h6v6"></path></svg>
                         <span>Clientes</span>
                     </a>
-                    <a href="corretoras.html" class="sb-link ">
+                    <a href="corretoras.html" class="sb-link is-active">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5v-13l5-3.5 5 3.5v13"></path><path d="M13.5 20.5h7v-8.5l-3.5-2.5-3.5 2.5"></path><path d="M6.5 11h2M6.5 14.5h2M6.5 18h2M16.5 14.5h1.5M16.5 18h1.5"></path></svg>
                         <span>Corretoras</span>
                     </a>
@@ -874,7 +874,7 @@
     <div class="main">
         <header class="appbar">
             <div class="appbar__crumb">
-                                        <span>Administração</span><span class="sep">/</span><b>Clientes</b>
+                                        <span>Administração</span><span class="sep">/</span><b>Corretoras</b>
                             </div>
             <div class="appbar__user">
                 <button type="button" class="theme-toggle" id="themeToggle" aria-label="Alternar modo escuro" title="Alternar modo escuro">
@@ -889,7 +889,7 @@
                 <div class="appbar__acts">
                     <a href="#" title="Trocar senha">Trocar senha</a>
                     <form method="POST" action="index.html">
-                        <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off">                        <button type="submit" title="Sair">Sair</button>
+                        <input type="hidden" name="_token" value="vhRvWWL4FZ5QDWReVKoIkjf1brazouERT5rwZov5" autocomplete="off">                        <button type="submit" title="Sair">Sair</button>
                     </form>
                 </div>
             </div>
@@ -898,72 +898,171 @@
         <div class="content">
             <div class="page-head">
                 <div>
-                    <h1>Clientes</h1>
-                    <p class="page-sub">Compradores (BUYER) usados nos contratos de exportação.</p>                </div>
-                            </div>
-
-                            <div class="admin-grid">
-        <div class="usercard">
-            <div class="utable__head" style="grid-template-columns: 1fr 1.4fr 150px;">
-                <span>Nome</span><span>Endereço</span><span class="r">Ações</span>
+                    <h1>Corretoras &amp; Brokers</h1>
+                    <p class="page-sub">Corretoras da Union e brokers usados pelos clientes — alimentam os dropdowns da Tela NY. Fixações já registradas guardam o nome da época e não mudam.</p>
+                </div>
             </div>
 
-                            <div class="utable__row" style="grid-template-columns: 1fr 1.4fr 150px; position:static;">
-                    <span class="utable__name">ICONA</span>
-                    <span style="font-size:12.5px; color:var(--muted); white-space:pre-line; line-height:1.45;">INICIATIVAS COMERCIALES NAVARRAS S.A
-Principe de Vergara, 136 – of 9 y 10
-Madrid – Spain Zipcode 28002</span>
-                    <span style="justify-self:end; display:flex; gap:6px;">
-                        <a href="clientes.html/1/editar" class="mini">Editar</a>
-                        <form method="POST" action="clientes.html/1" onsubmit="return confirm('Remover o cliente ICONA?');" style="margin:0;">
-                            <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                            <button type="submit" class="mini mini--danger">Excluir</button>
+            <div class="admin-grid">
+                <div>
+                    <div class="usercard" style="margin-bottom:22px;">
+                        <div class="utable__head" style="grid-template-columns: 1fr 160px;">
+                            <span>Nossas corretoras</span><span class="r">Ações</span>
+                        </div>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-1" style="margin:0;">
+                        <input type="text" name="nome" value="ICAP Corporates LLC (Hedgepoint)" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-1" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
                         </form>
-                    </span>
+                    </div>
                 </div>
-                            <div class="utable__row" style="grid-template-columns: 1fr 1.4fr 150px; position:static;">
-                    <span class="utable__name">MIORI CF LLC</span>
-                    <span style="font-size:12.5px; color:var(--muted); white-space:pre-line; line-height:1.45;">OFFICE 201,15, 1-ST MIKRORAYON
-SVERDLOV URBAN SETTLEMENT, VSEVOLOZHSK
-DISTRICT, LENINGRAD OBLAST, 188682,
-RUSSIAN FEDERATION</span>
-                    <span style="justify-self:end; display:flex; gap:6px;">
-                        <a href="clientes.html/2/editar" class="mini">Editar</a>
-                        <form method="POST" action="clientes.html/2" onsubmit="return confirm('Remover o cliente MIORI CF LLC?');" style="margin:0;">
-                            <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                            <button type="submit" class="mini mini--danger">Excluir</button>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-2" style="margin:0;">
+                        <input type="text" name="nome" value="Marex Financial Limited AGS Coffee" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-2" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
                         </form>
-                    </span>
+                    </div>
                 </div>
-            
-            <div class="usercard__foot">
-                <span>2 clientes</span>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-3" style="margin:0;">
+                        <input type="text" name="nome" value="StoneX East Coast" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-3" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                        <div class="usercard__foot"><span>3 corretoras</span></div>
+                    </div>
+
+                    <div class="usercard">
+                        <div class="utable__head" style="grid-template-columns: 1fr 160px;">
+                            <span>Brokers dos clientes</span><span class="r">Ações</span>
+                        </div>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-10" style="margin:0;">
+                        <input type="text" name="nome" value="Adm Investor Services Inc" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-10" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-11" style="margin:0;">
+                        <input type="text" name="nome" value="Macquarie futures broker LLC" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-11" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-12" style="margin:0;">
+                        <input type="text" name="nome" value="Macquarie USA" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-12" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-13" style="margin:0;">
+                        <input type="text" name="nome" value="Marex London" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-13" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-14" style="margin:0;">
+                        <input type="text" name="nome" value="Stonex East Coast" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-14" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-15" style="margin:0;">
+                        <input type="text" name="nome" value="Stonex London" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-15" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-16" style="margin:0;">
+                        <input type="text" name="nome" value="Stonex Miami" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-16" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
+                    <form method="POST" action="corretoras.html" id="c-17" style="margin:0;">
+                        <input type="text" name="nome" value="Sucden London" required style="height:38px; font-size:13.5px; width:100%;">
+                    </form>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="submit" form="c-17" class="mini" title="Salvar alteração">Salvar</button>
+                        <form method="POST" action="corretoras.html" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            <button type="submit" class="mini mini--danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+                        <div class="usercard__foot"><span>8 brokers</span></div>
+                    </div>
+                </div>
+
+                <form method="POST" action="corretoras.html" class="userform">
+                    <div>
+                        <h2>Adicionar corretora / broker</h2>
+                        <p class="userform__lead">Cada cliente usa um broker diferente — cadastre aqui e ele aparece na hora no formulário da Tela NY.</p>
+                    </div>
+                    <div class="fields">
+                        <label>
+                            <span class="lbl">Nome</span>
+                            <input type="text" name="nome" value="" placeholder="Ex.: Macquarie USA" required>
+                        </label>
+                        <label>
+                            <span class="lbl">Tipo</span>
+                            <select name="tipo" required>
+                                <option value="NOSSA">Nossa corretora</option>
+                                <option value="CLIENTE">Broker do cliente</option>
+                            </select>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-coffee" style="margin-top:2px;">Adicionar</button>
+                </form>
             </div>
         </div>
-
-        <form method="POST" action="clientes.html" class="userform">
-            <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off">            <div>
-                <h2>Adicionar cliente</h2>
-                <p class="userform__lead">O nome vira a 1ª linha (em negrito) e o endereço o bloco abaixo, no campo BUYER do contrato.</p>
-            </div>
-            <div class="fields">
-                <label>
-                    <span class="lbl">Nome</span>
-                    <input type="text" name="nome" value="" placeholder="Ex.: ICONA" required>
-                </label>
-                <label>
-                    <span class="lbl">Endereço (uma linha por linha)</span>
-                    <textarea name="endereco" rows="4" placeholder="INICIATIVAS COMERCIALES NAVARRAS S.A&#10;Principe de Vergara, 136 – of 9 y 10&#10;Madrid – Spain Zipcode 28002" required style="width:100%; resize:vertical;"></textarea>
-                </label>
-                <label>
-                    <span class="lbl">Ref. padrão do comprador (opcional)</span>
-                    <input type="text" name="ref_padrao" value="" placeholder="Ex.: CONTRACT NO. 26-003 DD. 17.02.2026">
-                    <span class="hint">Se preenchido, é lançado automaticamente no "Ref. Comprador" ao escolher este cliente.</span>
-                </label>
-            </div>
-            <button type="submit" class="btn-coffee" style="margin-top:2px;">Adicionar cliente</button>
-        </form>
-    </div>
-
-            </div>
     </div>
 </div>
 
