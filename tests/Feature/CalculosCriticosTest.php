@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Classificacao;
 use App\Models\Compra;
-use App\Models\FinanceiroCompra;
 use App\Models\Fornecedor;
 use App\Models\Role;
 use App\Models\User;
@@ -37,14 +36,12 @@ class CalculosCriticosTest extends TestCase
             'force_password_change' => false,
             'active' => true,
         ]);
-        $fornecedor = Fornecedor::create(['nome' => 'Fazenda Teste', 'cnpj' => '00.000.000/0001-00']);
+        $fornecedor = Fornecedor::create(['nome' => 'Fazenda Teste', 'documento' => '12345678000199']);
         $this->compra = Compra::create([
             'uts' => 'UTS-2026-TESTE',
-            'mes_ano' => '2026-01-01',
-            'fornecedor_id' => $fornecedor->id,
-            'armazem' => 'SAAG',
+            'data_compra' => '2026-01-01', 'fornecedor_id' => $fornecedor->id,
             'certificacao' => 'SEM_CERT',
-            'volume_sacas' => 300,
+            'volume_contratado' => 300,
             'created_by' => $this->user->id,
         ]);
     }
@@ -108,31 +105,45 @@ class CalculosCriticosTest extends TestCase
         $this->assertEqualsWithDelta(round(300 / Classificacao::SACAS_POR_LOTE, 4), (float) $classificacao->quantidade_lotes, 0.00001);
     }
 
-    public function test_valor_total_e_valor_da_saca_vezes_o_volume_da_compra(): void
+    public function test_valor_contratado_e_o_preco_vezes_o_volume_contratado(): void
     {
-        $financeiro = FinanceiroCompra::create([
-            'compra_id' => $this->compra->id,
-            'valor_saca' => 1000,
-            'created_by' => $this->user->id,
-        ]);
+        $this->compra->update(['valor_saca' => 1000]);
 
-        // 1000 * 300 = 300000
-        $this->assertEqualsWithDelta(300000.00, (float) $financeiro->valor_total, 0.001);
+        // 1000 × 300 contratadas
+        $this->assertEqualsWithDelta(300000.00, $this->compra->valorContratado(), 0.001);
     }
 
-    public function test_valor_total_ignora_valor_enviado_e_recalcula_no_servidor(): void
+    /**
+     * O valor efetivo segue o que REALMENTE entrou no armazém — é por ele
+     * que se paga, e ele muda conforme o funcionário 3 confere as entregas.
+     */
+    public function test_valor_efetivo_acompanha_o_volume_entregue(): void
     {
-        $financeiro = FinanceiroCompra::create([
-            'compra_id' => $this->compra->id,
-            'valor_saca' => 1000,
-            'created_by' => $this->user->id,
+        $this->compra->update(['valor_saca' => 1000]);
+
+        // Nada entregue ainda: não há o que pagar.
+        $this->assertEqualsWithDelta(0.0, $this->compra->valorEntregue(), 0.001);
+
+        $this->compra->entregas()->create([
+            'mes_ano' => '2026-01-01', 'armazem' => 'SAAG', 'volume_sacas' => 280,
+            'numero_lote' => 'L-1', 'created_by' => $this->user->id,
         ]);
 
-        // Tenta forjar o total e salvar de novo.
-        $financeiro->valor_total = 1;
-        $financeiro->save();
-        $financeiro->refresh();
+        // 1000 × 280 entregues (e não as 300 contratadas).
+        $this->assertEqualsWithDelta(280000.00, $this->compra->refresh()->valorEntregue(), 0.001);
+        $this->assertEqualsWithDelta(300000.00, $this->compra->valorContratado(), 0.001);
+    }
 
-        $this->assertEqualsWithDelta(300000.00, (float) $financeiro->valor_total, 0.001);
+    public function test_valores_nao_sao_gravados_no_banco_sao_sempre_calculados(): void
+    {
+        $this->compra->update(['valor_saca' => 1000]);
+
+        // Não existe coluna de total: qualquer tentativa de forjar o número
+        // morre no model, porque ele é derivado de preço × volume.
+        $this->assertFalse(
+            \Illuminate\Support\Facades\Schema::hasColumn('compras', 'valor_total'),
+            'O total não deve ser persistido — é sempre recalculado.'
+        );
+        $this->assertEqualsWithDelta(300000.00, $this->compra->valorContratado(), 0.001);
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Classificacao;
 use App\Models\Compra;
+use App\Models\Entrega;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -96,13 +97,35 @@ class DashboardController extends Controller
      */
     private function distribuicao(array $filtros, bool $comArmazem)
     {
+        // A classificação é da UTS inteira, mas o café pode ter entrado em
+        // vários armazéns. O rateio abaixo distribui cada peneira entre as
+        // entregas na proporção do volume de cada uma sobre o total
+        // classificado — assim o total do estoque bate com o que realmente
+        // entrou, repartido pelas proporções da classificação.
+        // O "* 1.0" é obrigatório: no SQLite a divisão entre dois inteiros
+        // trunca (250/500 = 0), o que zeraria o rateio silenciosamente.
+        $fator = '(entregas.volume_sacas * 1.0 / NULLIF(cl.total_classificado, 0))';
+
         $query = Classificacao::query()
             ->join('compras', 'compras.id', '=', 'classificacoes.compra_id')
+            ->join('entregas', 'entregas.compra_id', '=', 'compras.id')
+            ->joinSub(
+                Classificacao::selectRaw(
+                    'compra_id, (peneira_1718_sacas + peneira_1416_sacas + mercado_interno_sacas'
+                    . ' + grinders_sacas + moka_sacas) as total_classificado'
+                ),
+                'cl',
+                'cl.compra_id',
+                '=',
+                'classificacoes.compra_id'
+            )
             ->when($filtros['mes_de'] !== '', function ($q) use ($filtros) {
-                $q->whereDate('compras.mes_ano', '>=', $filtros['mes_de'] . '-01');
+                // Recorte pelo mês da ENTRADA em armazém, que é o que
+                // interessa para estoque.
+                $q->whereDate('entregas.mes_ano', '>=', $filtros['mes_de'] . '-01');
             })
             ->when($filtros['mes_ate'] !== '', function ($q) use ($filtros) {
-                $q->whereDate('compras.mes_ano', '<=', $filtros['mes_ate'] . '-01');
+                $q->whereDate('entregas.mes_ano', '<=', $filtros['mes_ate'] . '-01');
             })
             ->when($filtros['padrao'] !== '', function ($q) use ($filtros) {
                 $q->where('classificacoes.padrao_final', $filtros['padrao']);
@@ -111,7 +134,7 @@ class DashboardController extends Controller
                 $q->where('compras.certificacao', $filtros['certificado']);
             })
             ->when($filtros['armazem'] !== '', function ($q) use ($filtros) {
-                $q->where('compras.armazem', $filtros['armazem']);
+                $q->where('entregas.armazem', $filtros['armazem']);
             })
             ->when($filtros['busca'] !== '', function ($q) use ($filtros) {
                 $busca = $filtros['busca'];
@@ -124,16 +147,16 @@ class DashboardController extends Controller
 
         $this->aplicarSituacao($query, $filtros['situacao']);
 
-        $colunas = 'padrao_final,
-            SUM(peneira_1718_sacas) as scs_1718,
-            SUM(peneira_1416_sacas) as scs_1416,
-            SUM(grinders_sacas) as grinders,
-            SUM(mercado_interno_sacas) as mercado_interno,
-            SUM(moka_sacas) as moka';
+        $colunas = "padrao_final,
+            SUM(peneira_1718_sacas * {$fator}) as scs_1718,
+            SUM(peneira_1416_sacas * {$fator}) as scs_1416,
+            SUM(grinders_sacas * {$fator}) as grinders,
+            SUM(mercado_interno_sacas * {$fator}) as mercado_interno,
+            SUM(moka_sacas * {$fator}) as moka";
 
         if ($comArmazem) {
-            $query->selectRaw('compras.armazem, ' . $colunas)->groupBy('compras.armazem', 'padrao_final')
-                ->orderBy('compras.armazem')->orderBy('padrao_final');
+            $query->selectRaw('entregas.armazem, ' . $colunas)->groupBy('entregas.armazem', 'padrao_final')
+                ->orderBy('entregas.armazem')->orderBy('padrao_final');
         } else {
             $query->selectRaw($colunas)->groupBy('padrao_final');
         }
@@ -151,8 +174,8 @@ class DashboardController extends Controller
     private function aplicarSituacao($query, string $situacao): void
     {
         match ($situacao) {
-            'definitivo' => $query->whereNotNull('compras.numero_lote')->where('compras.numero_lote', '!=', ''),
-            'aguardando' => $query->where(fn ($q) => $q->whereNull('compras.numero_lote')->orWhere('compras.numero_lote', '=', '')),
+            'definitivo' => $query->whereNotNull('entregas.numero_lote')->where('entregas.numero_lote', '!=', ''),
+            'aguardando' => $query->where(fn ($q) => $q->whereNull('entregas.numero_lote')->orWhere('entregas.numero_lote', '=', '')),
             default => null, // 'todos'
         };
     }
@@ -170,28 +193,33 @@ class DashboardController extends Controller
      */
     private function volumesForaDoEstoque(array $filtros): array
     {
-        $base = fn () => Compra::query()
-            ->when($filtros['mes_de'] !== '', fn ($q) => $q->whereDate('mes_ano', '>=', $filtros['mes_de'] . '-01'))
-            ->when($filtros['mes_ate'] !== '', fn ($q) => $q->whereDate('mes_ano', '<=', $filtros['mes_ate'] . '-01'))
-            ->when($filtros['certificado'] !== '', fn ($q) => $q->where('certificacao', $filtros['certificado']))
-            ->when($filtros['armazem'] !== '', fn ($q) => $q->where('armazem', $filtros['armazem']))
+        // Agora o volume mora na ENTREGA, então as duas contas partem dela.
+        $base = fn () => Entrega::query()
+            ->join('compras', 'compras.id', '=', 'entregas.compra_id')
+            ->when($filtros['mes_de'] !== '', fn ($q) => $q->whereDate('entregas.mes_ano', '>=', $filtros['mes_de'] . '-01'))
+            ->when($filtros['mes_ate'] !== '', fn ($q) => $q->whereDate('entregas.mes_ano', '<=', $filtros['mes_ate'] . '-01'))
+            ->when($filtros['certificado'] !== '', fn ($q) => $q->where('compras.certificacao', $filtros['certificado']))
+            ->when($filtros['armazem'] !== '', fn ($q) => $q->where('entregas.armazem', $filtros['armazem']))
             ->when($filtros['busca'] !== '', function ($q) use ($filtros) {
                 $busca = $filtros['busca'];
-                $q->where(function ($sub) use ($busca) {
-                    $sub->where('uts', 'like', "%{$busca}%")
-                        ->orWhereHas('fornecedor', fn ($f) => $f->where('nome', 'like', "%{$busca}%"));
-                });
+                $q->join('fornecedores', 'fornecedores.id', '=', 'compras.fornecedor_id')
+                    ->where(function ($sub) use ($busca) {
+                        $sub->where('compras.uts', 'like', "%{$busca}%")
+                            ->orWhere('fornecedores.nome', 'like', "%{$busca}%");
+                    });
             });
 
         $aguardando = $base()->semNumeroLote();
-        $semClassificacao = $base()->comNumeroLote()->whereDoesntHave('classificacao');
+        $semClassificacao = $base()->comNumeroLote()
+            ->whereNotExists(fn ($q) => $q->selectRaw(1)->from('classificacoes')
+                ->whereColumn('classificacoes.compra_id', 'compras.id'));
 
         // Clona antes de cada agregação: sum()/count() deixam bindings de
         // agregado no builder e reaproveitá-lo daria número errado.
         return [
-            'aguardando_sacas' => (float) (clone $aguardando)->sum('volume_sacas'),
+            'aguardando_sacas' => (float) (clone $aguardando)->sum('entregas.volume_sacas'),
             'aguardando_compras' => (clone $aguardando)->count(),
-            'sem_classificacao_sacas' => (float) (clone $semClassificacao)->sum('volume_sacas'),
+            'sem_classificacao_sacas' => (float) (clone $semClassificacao)->sum('entregas.volume_sacas'),
             'sem_classificacao_compras' => (clone $semClassificacao)->count(),
         ];
     }

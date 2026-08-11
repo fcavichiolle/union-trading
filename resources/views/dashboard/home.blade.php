@@ -73,7 +73,7 @@
                                     <tr>
                                         <th>UTS</th>
                                         <th>Fornecedor</th>
-                                        <th class="num">Volume (sc)</th>
+                                        <th class="num">Entregue / contratado</th>
                                         <th>Pendência</th>
                                     </tr>
                                 </thead>
@@ -82,14 +82,17 @@
                                         <tr>
                                             <td><a href="{{ route('compras.show', $c) }}"><strong>{{ $c->uts }}</strong></a></td>
                                             <td>{{ \Illuminate\Support\Str::limit($c->fornecedor?->nome, 20) }}</td>
-                                            <td class="num">{{ number_format((float) $c->volume_sacas, 0, ',', '.') }}</td>
+                                            <td class="num">
+                                                {{ number_format($c->sacasEntregues(), 0, ',', '.') }} /
+                                                {{ number_format((float) $c->volume_contratado, 0, ',', '.') }}
+                                            </td>
                                             <td>
-                                                @if ($c->precisaDeNumeroLote())
-                                                    <span class="badge badge--red">nº do lote</span>
+                                                @if ($c->saldoAEntregar() > 0.01)
+                                                    <span class="badge badge--amber">a entregar</span>
                                                 @elseif (! $c->classificacao)
                                                     <span class="badge badge--amber">classificar</span>
-                                                @elseif (! $c->financeiro)
-                                                    <span class="badge badge--amber">financeiro</span>
+                                                @elseif ($c->valor_saca === null)
+                                                    <span class="badge badge--amber">preço</span>
                                                 @else
                                                     <span class="badge badge--green">completa</span>
                                                 @endif

@@ -177,15 +177,22 @@ return [
     */
 
     'attributes' => [
-        // Compras
+        // Compras (o negócio)
         'uts' => 'UTS (ref. de compra)',
-        'mes_ano' => 'mês/ano da entrega',
-        'fornecedor_nome' => 'nome do fornecedor',
-        'fornecedor_cnpj' => 'CNPJ do fornecedor',
-        'armazem' => 'armazém de entrega',
+        'data_compra' => 'data da compra',
+        'fornecedor_nome' => 'nome do vendedor',
+        'fornecedor_documento' => 'CNPJ/CPF do vendedor',
         'certificacao' => 'certificação',
+        'logistica' => 'logística',
         'tipo_entrada' => 'tipo padrão de entrada',
-        'volume_sacas' => 'volume entregue (sacas)',
+        'volume_contratado' => 'volume contratado (sacas)',
+        'pagamento_previsto' => 'pagamento previsto',
+        'pagamento_obs' => 'observação do pagamento',
+
+        // Entregas (o que entrou no armazém)
+        'mes_ano' => 'mês/ano da entrega',
+        'armazem' => 'armazém',
+        'volume_sacas' => 'sacas entregues',
         'numero_lote' => 'número do lote',
 
         // Classificação

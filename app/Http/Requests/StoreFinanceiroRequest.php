@@ -4,6 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Campos financeiros da compra editados pelo perfil financeiro. Os valores
+ * totais (contratado e efetivo) não são gravados: saem de valor_saca ×
+ * volume, calculados no model (Compra::valorContratado/valorEntregue).
+ */
 class StoreFinanceiroRequest extends FormRequest
 {
     public function authorize(): bool
@@ -24,9 +29,9 @@ class StoreFinanceiroRequest extends FormRequest
     {
         return [
             'valor_saca.required' => 'Informe o valor da saca.',
-            'valor_saca.numeric' => 'O valor da saca deve ser um número (ex.: 1200 ou 1200,50).',
+            'valor_saca.numeric' => 'O valor da saca deve ser um número (ex.: 1630 ou 1630,50).',
             'valor_saca.min' => 'O valor da saca não pode ser negativo.',
-            'comissao_pct.numeric' => 'A comissão deve ser um número em porcentagem (ex.: 1,5).',
+            'comissao_pct.numeric' => 'A comissão deve ser um número em porcentagem (ex.: 0,5).',
             'comissao_pct.max' => 'A comissão não pode passar de 100%.',
         ];
     }

@@ -9,7 +9,9 @@
         </div>
         <div class="card__body">
             <p style="color:var(--muted); font-size:13.5px; margin-top:0;">
-                Volume entregue: <strong>{{ number_format($compra->volume_sacas, 2, ',', '.') }} sacas</strong>.
+                Volume da UTS: <strong>{{ number_format(max((float) $compra->volume_contratado, $compra->sacasEntregues()), 2, ',', '.') }} sacas</strong>
+                (contratado {{ number_format((float) $compra->volume_contratado, 2, ',', '.') }} ·
+                entregue {{ number_format($compra->sacasEntregues(), 2, ',', '.') }}).
                 Preencha a % de cada peneira — o campo de sacas é preenchido automaticamente
                 (você pode ajustar manualmente). A quantidade de lotes é calculada pelo
                 servidor (total de sacas ÷ 283,49) e a soma das % deve fechar em 100%.
@@ -96,7 +98,7 @@
         // informada. O servidor SEMPRE recalcula a quantidade de lotes e
         // valida a soma — este script não substitui a validação real.
         (function () {
-            var volumeTotal = {{ (float) $compra->volume_sacas }};
+            var volumeTotal = {{ max((float) $compra->volume_contratado, $compra->sacasEntregues()) }};
             var pctInputs = document.querySelectorAll('.js-pct');
             var somaPctEl = document.getElementById('soma-pct');
             var somaSacasEl = document.getElementById('soma-sacas');

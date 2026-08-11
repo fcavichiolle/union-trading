@@ -7,25 +7,23 @@ use App\Http\Requests\StoreFinanceiroRequest;
 use App\Models\Compra;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
 
+/**
+ * Tela enxuta do perfil FINANCEIRO. Preço, corretor e comissão são dados
+ * da negociação e vivem na própria compra (a tabela financeiro_compras foi
+ * removida) — mas o perfil financeiro não edita compras, então esta tela
+ * existe para ele ajustar só esses três campos.
+ */
 class FinanceiroController extends Controller
 {
     public function edit(Compra $compra): View
     {
-        $financeiro = $compra->financeiro;
-
-        return view('compras.financeiro', compact('compra', 'financeiro'));
+        return view('compras.financeiro', compact('compra'));
     }
 
     public function update(StoreFinanceiroRequest $request, Compra $compra): RedirectResponse
     {
-        $dados = $request->validated();
-        $dados['created_by'] = Auth::id();
-
-        // valor_total é recalculado automaticamente no model
-        // (FinanceiroCompra::booted -> saving) = valor_saca * volume_sacas.
-        $compra->financeiro()->updateOrCreate(['compra_id' => $compra->id], $dados);
+        $compra->update($request->validated());
 
         return redirect()->route('compras.show', $compra)->with('status', 'Dados financeiros salvos com sucesso.');
     }

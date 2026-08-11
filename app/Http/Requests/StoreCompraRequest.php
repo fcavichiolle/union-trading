@@ -3,9 +3,18 @@
 namespace App\Http\Requests;
 
 use App\Models\Compra;
-use App\Rules\CnpjValido;
+use App\Rules\DocumentoValido;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
+/**
+ * Lançamento do NEGÓCIO (o que a funcionária 2 recebe do funcionário 1).
+ * O que chegou no armazém não entra aqui — é registrado como Entrega.
+ *
+ * Preço e documento do fornecedor são opcionais de propósito: a mesa fecha
+ * compra com vendedor "a confirmar" e às vezes sem o preço definido. O que
+ * falta vira pendência no painel em vez de impedir o lançamento.
+ */
 class StoreCompraRequest extends FormRequest
 {
     public function authorize(): bool
@@ -16,14 +25,19 @@ class StoreCompraRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'uts' => ['required', 'string', 'max:60', 'unique:compras,uts'],
-            'mes_ano' => ['required', 'date'],
+            'uts' => ['required', 'string', 'max:60', Rule::unique('compras', 'uts')->ignore($this->route('compra'))],
+            'data_compra' => ['required', 'date'],
             'fornecedor_nome' => ['required', 'string', 'max:180'],
-            'fornecedor_cnpj' => ['required', 'string', new CnpjValido()],
-            'armazem' => ['required', 'in:' . implode(',', array_keys(Compra::armazens()))],
-            'certificacao' => ['required', 'in:' . implode(',', array_keys(Compra::certificacoes()))],
+            'fornecedor_documento' => ['nullable', 'string', new DocumentoValido()],
+            'certificacao' => ['required', Rule::in(array_keys(Compra::certificacoes()))],
+            'logistica' => ['nullable', Rule::in(array_keys(Compra::logisticas()))],
             'tipo_entrada' => ['nullable', 'string', 'max:40'],
-            'volume_sacas' => ['required', 'numeric', 'min:0.01', 'max:999999'],
+            'volume_contratado' => ['required', 'numeric', 'min:0.01', 'max:999999'],
+            'valor_saca' => ['nullable', 'numeric', 'min:0', 'max:999999'],
+            'corretor_nome' => ['nullable', 'string', 'max:150'],
+            'comissao_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'pagamento_previsto' => ['nullable', 'date'],
+            'pagamento_obs' => ['nullable', 'string', 'max:200'],
         ];
     }
 
@@ -32,19 +46,15 @@ class StoreCompraRequest extends FormRequest
         return [
             'uts.required' => 'Informe a UTS (referência da compra).',
             'uts.unique' => 'Já existe uma compra cadastrada com esta UTS.',
-            'mes_ano.required' => 'Informe o mês/ano da entrega.',
-            'mes_ano.date' => 'O mês/ano da entrega não é uma data válida.',
-            'fornecedor_nome.required' => 'Informe o nome do fornecedor.',
-            // Atenção: a chave precisa do sufixo da regra. Sem ele
-            // ('fornecedor_cnpj' => ...) a mensagem substitui TODAS as regras
-            // do campo — era o bug que fazia um CNPJ em branco dizer
-            // "CNPJ inválido" em vez de "informe o CNPJ".
-            'fornecedor_cnpj.required' => 'Informe o CNPJ do fornecedor.',
-            'armazem.required' => 'Selecione o armazém de entrega.',
+            'data_compra.required' => 'Informe a data da compra.',
+            'fornecedor_nome.required' => 'Informe o nome do vendedor (se ainda não souber o documento, deixe o CNPJ/CPF em branco).',
             'certificacao.required' => 'Selecione a certificação.',
-            'volume_sacas.required' => 'Informe o volume entregue, em sacas.',
-            'volume_sacas.numeric' => 'O volume entregue deve ser um número (ex.: 600 ou 600,50).',
-            'volume_sacas.min' => 'O volume entregue deve ser maior que zero.',
+            'volume_contratado.required' => 'Informe o volume contratado, em sacas.',
+            'volume_contratado.numeric' => 'O volume contratado deve ser um número (ex.: 500 ou 500,50).',
+            'volume_contratado.min' => 'O volume contratado deve ser maior que zero.',
+            'valor_saca.numeric' => 'O preço da saca deve ser um número (ex.: 1630 ou 1630,50).',
+            'comissao_pct.numeric' => 'A comissão deve ser um número em porcentagem (ex.: 0,5).',
+            'comissao_pct.max' => 'A comissão não pode passar de 100%.',
         ];
     }
 }

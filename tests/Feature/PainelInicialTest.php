@@ -6,7 +6,6 @@ use App\Models\Classificacao;
 use App\Models\Cliente;
 use App\Models\Compra;
 use App\Models\Contrato;
-use App\Models\FinanceiroCompra;
 use App\Models\Fornecedor;
 use App\Models\Qualidade;
 use App\Models\Role;
@@ -40,15 +39,15 @@ class PainelInicialTest extends TestCase
             'password' => Hash::make('x'), 'force_password_change' => false, 'active' => true,
         ]);
 
-        $this->fornecedor = Fornecedor::create(['nome' => 'LUIZ PEREIRA', 'cnpj' => '12345678000199']);
+        $this->fornecedor = Fornecedor::create(['nome' => 'LUIZ PEREIRA', 'documento' => '12345678000199']);
     }
 
     private function novaCompra(array $overrides = []): Compra
     {
         return Compra::create(array_merge([
-            'uts' => 'UTS 100', 'mes_ano' => '2026-08-01', 'fornecedor_id' => $this->fornecedor->id,
-            'armazem' => 'SAAG', 'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
-            'volume_sacas' => 600, 'created_by' => $this->admin->id,
+            'uts' => 'UTS 100', 'data_compra' => '2026-08-01', 'fornecedor_id' => $this->fornecedor->id,
+            'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
+            'volume_contratado' => 600, 'created_by' => $this->admin->id,
         ], $overrides));
     }
 
@@ -67,10 +66,22 @@ class PainelInicialTest extends TestCase
         ], $overrides));
     }
 
-    /** Compra completa: com lote, classificação e financeiro — não é pendência. */
+    private function entregar(Compra $compra, float $sacas, ?string $lote = 'L-1'): void
+    {
+        $compra->entregas()->create([
+            'mes_ano' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => $sacas,
+            'numero_lote' => $lote, 'created_by' => $this->admin->id,
+        ]);
+    }
+
+    /**
+     * Compra sem pendência nenhuma: preço lançado, totalmente entregue com
+     * lote e classificada.
+     */
     private function compraCompleta(): Compra
     {
-        $compra = $this->novaCompra(['uts' => 'UTS OK', 'numero_lote' => 'L-1']);
+        $compra = $this->novaCompra(['uts' => 'UTS OK', 'valor_saca' => 1200]);
+        $this->entregar($compra, 600, 'L-1');
 
         Classificacao::create([
             'compra_id' => $compra->id, 'padrao_final' => 'FINE_CUP', 'tipo_bebida' => 'DURO',
@@ -81,25 +92,28 @@ class PainelInicialTest extends TestCase
             'moka_pct' => 0, 'moka_sacas' => 0,
             'created_by' => $this->admin->id,
         ]);
-        FinanceiroCompra::create([
-            'compra_id' => $compra->id, 'valor_saca' => 1200, 'corretor' => 'X', 'comissao' => 1,
-            'created_by' => $this->admin->id,
-        ]);
 
-        return $compra;
+        return $compra->refresh();
     }
 
     public function test_conta_cada_tipo_de_pendencia(): void
     {
-        $this->compraCompleta();                                  // sem pendência
-        $this->novaCompra(['uts' => 'UTS SEM LOTE']);             // sem lote + sem class. + sem fin.
-        $this->novaCompra(['uts' => 'UTS COM LOTE', 'numero_lote' => 'L-2']); // sem class. + sem fin.
+        $this->compraCompleta(); // nada pendente
+
+        // Entregue sem lote, sem classificação e sem preço.
+        $semLote = $this->novaCompra(['uts' => 'UTS SEM LOTE']);
+        $this->entregar($semLote, 600, null);
+
+        // Só metade entregue: fica com saldo a entregar.
+        $parcial = $this->novaCompra(['uts' => 'UTS PARCIAL', 'valor_saca' => 1000]);
+        $this->entregar($parcial, 300, 'L-9');
 
         $n = app(PainelInicial::class)->numeros();
 
-        $this->assertSame(1, $n['compras_sem_lote']);
+        $this->assertSame(1, $n['entregas_sem_lote']);
         $this->assertSame(2, $n['compras_sem_classificacao']);
-        $this->assertSame(2, $n['compras_sem_financeiro']);
+        $this->assertSame(1, $n['compras_sem_preco']);
+        $this->assertSame(1, $n['compras_com_saldo']);
         $this->assertSame(2, $n['compras_com_pendencia']); // distintas, não a soma
     }
 
@@ -143,36 +157,39 @@ class PainelInicialTest extends TestCase
 
     public function test_home_mostra_cards_de_pendencia_com_link_filtrado(): void
     {
-        $this->novaCompra(['uts' => 'UTS SEM LOTE']);
+        $this->entregar($this->novaCompra(['uts' => 'UTS SEM LOTE']), 600, null);
 
         $this->actingAs($this->admin)->get(route('dashboard'))
             ->assertOk()
             ->assertSee('O que falta fazer')
-            ->assertSee('sem nº do lote')
+            ->assertSee('entregas sem nº do lote')
             ->assertSee(route('compras.index', ['pendencia' => 'sem_lote']), false);
     }
 
     public function test_diretoria_ve_posicao_mas_nao_pendencias_de_compra(): void
     {
-        $this->novaCompra(['uts' => 'UTS SEM LOTE']);
+        $this->entregar($this->novaCompra(['uts' => 'UTS SEM LOTE']), 600, null);
 
         $this->assertSame([], app(PainelInicial::class)->pendencias($this->diretoria));
 
         $this->actingAs($this->diretoria)->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Posição geral')
-            ->assertDontSee('sem nº do lote');
+            ->assertDontSee('entregas sem nº do lote');
     }
 
     public function test_posicao_soma_sacas_compradas_e_contratadas(): void
     {
-        $this->novaCompra(['uts' => 'A', 'volume_sacas' => 600]);
-        $this->novaCompra(['uts' => 'B', 'volume_sacas' => 400]);
+        // "Sacas compradas" é o que ENTROU no armazém — o contratado sem
+        // entrega ainda não é café na mão.
+        $this->entregar($this->novaCompra(['uts' => 'A', 'volume_contratado' => 600]), 600);
+        $this->entregar($this->novaCompra(['uts' => 'B', 'volume_contratado' => 400]), 380);
         $this->novoContrato('5940'); // 108.000 kg / 60 = 1.800 sacas
 
         $n = app(PainelInicial::class)->numeros();
 
-        $this->assertEqualsWithDelta(1000, $n['sacas_compradas'], 0.01);
+        $this->assertEqualsWithDelta(980, $n['sacas_compradas'], 0.01);
+        $this->assertEqualsWithDelta(1000, $n['sacas_contratadas_compra'], 0.01);
         $this->assertEqualsWithDelta(1800, $n['sacas_contratadas'], 0.01);
     }
 
@@ -182,7 +199,7 @@ class PainelInicialTest extends TestCase
         $this->assertSame([], $painel->badgesMenu($this->admin));
 
         // Nova instância: os números são memoizados por requisição.
-        $this->novaCompra(['uts' => 'UTS SEM LOTE']);
+        $this->entregar($this->novaCompra(['uts' => 'UTS SEM LOTE']), 600, null);
         $this->novoContrato('5940');
 
         $badges = (new PainelInicial)->badgesMenu($this->admin);
@@ -205,17 +222,24 @@ class PainelInicialTest extends TestCase
     public function test_filtro_de_pendencia_em_compras_lancadas(): void
     {
         $this->compraCompleta();                       // UTS OK
-        $this->novaCompra(['uts' => 'UTS SEM LOTE']);  // sem lote
+        $this->entregar($this->novaCompra(['uts' => 'UTS SEM LOTE']), 600, null);
 
         $this->actingAs($this->admin)->get(route('compras.index', ['pendencia' => 'sem_lote']))
             ->assertOk()
             ->assertSee('UTS SEM LOTE')
             ->assertDontSee('UTS OK');
 
-        $this->actingAs($this->admin)->get(route('compras.index', ['pendencia' => 'sem_financeiro']))
+        $this->actingAs($this->admin)->get(route('compras.index', ['pendencia' => 'sem_preco']))
             ->assertOk()
             ->assertSee('UTS SEM LOTE')
             ->assertDontSee('UTS OK');
+
+        // Saldo a entregar: a UTS OK está completa, a outra também entregou
+        // tudo — nenhuma aparece.
+        $this->actingAs($this->admin)->get(route('compras.index', ['pendencia' => 'saldo_a_entregar']))
+            ->assertOk()
+            ->assertDontSee('UTS OK')
+            ->assertDontSee('UTS SEM LOTE');
 
         // Sem filtro, as duas aparecem.
         $this->actingAs($this->admin)->get(route('compras.index'))

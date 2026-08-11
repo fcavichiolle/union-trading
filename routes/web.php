@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Compras\ClassificacaoController;
 use App\Http\Controllers\Compras\CompraController;
+use App\Http\Controllers\Compras\EntregaController;
 use App\Http\Controllers\Compras\DashboardController as ComprasDashboardController;
 use App\Http\Controllers\Compras\FinanceiroController;
 use App\Http\Controllers\DashboardController;
@@ -152,8 +153,16 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::get('/', [CompraController::class, 'index'])->name('index');
             Route::get('/novo', [CompraController::class, 'create'])->name('create');
             Route::post('/', [CompraController::class, 'store'])->name('store');
+            // Busca a razão social pelo CNPJ (conveniência do formulário).
+            Route::get('/cnpj/{cnpj}', [CompraController::class, 'consultarCnpj'])->name('cnpj');
             Route::get('/{compra}', [CompraController::class, 'show'])->name('show');
-            Route::put('/{compra}/lote', [CompraController::class, 'atualizarLote'])->name('lote.update');
+            Route::get('/{compra}/editar', [CompraController::class, 'edit'])->name('edit');
+            Route::put('/{compra}', [CompraController::class, 'update'])->name('update');
+
+            // Entregas: o que realmente entrou no armazém (funcionário 3).
+            Route::post('/{compra}/entregas', [EntregaController::class, 'store'])->name('entregas.store');
+            Route::put('/{compra}/entregas/{entrega}', [EntregaController::class, 'update'])->name('entregas.update');
+            Route::delete('/{compra}/entregas/{entrega}', [EntregaController::class, 'destroy'])->name('entregas.destroy');
 
             Route::get('/{compra}/classificacao', [ClassificacaoController::class, 'edit'])->name('classificacao.edit');
             Route::put('/{compra}/classificacao', [ClassificacaoController::class, 'update'])->name('classificacao.update');
