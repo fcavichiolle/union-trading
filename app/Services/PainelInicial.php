@@ -85,7 +85,7 @@ class PainelInicial
             [
                 'quantidade' => $n['compras_com_saldo'],
                 'titulo' => 'UTS com saldo a entregar',
-                'descricao' => 'Compras cujo volume contratado ainda não entrou todo no armazém.',
+                'descricao' => 'Volume contratado que ainda não entrou no armazém — liquide a compra se não vem mais.',
                 'url' => route('compras.index', ['pendencia' => 'saldo_a_entregar']),
                 'tom' => 'atencao',
                 'perfis' => ['admin', 'compras'],

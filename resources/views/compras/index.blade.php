@@ -50,6 +50,7 @@
                 <option value="qualquer" @selected(request('pendencia') === 'qualquer')>Qualquer pendência</option>
                 <option value="sem_lote" @selected(request('pendencia') === 'sem_lote')>Entrega sem nº do lote</option>
                 <option value="saldo_a_entregar" @selected(request('pendencia') === 'saldo_a_entregar')>Com saldo a entregar</option>
+                <option value="divergente" @selected(request('pendencia') === 'divergente')>Divergência a liquidar</option>
                 <option value="sem_classificacao" @selected(request('pendencia') === 'sem_classificacao')>Sem classificação</option>
                 <option value="sem_preco" @selected(request('pendencia') === 'sem_preco')>Sem preço</option>
                 <option value="sem_documento" @selected(request('pendencia') === 'sem_documento')>Vendedor a confirmar</option>
@@ -100,7 +101,10 @@
                         <td class="num" data-label="Contratado (sc)">{{ number_format((float) $compra->volume_contratado, 2, ',', '.') }}</td>
                         <td class="num" data-label="Entregue (sc)">
                             {{ number_format($entregues, 2, ',', '.') }}
-                            @if ($saldo > 0.01)
+                            {{-- Liquidada = o entregue é o final: nada de aviso. --}}
+                            @if ($compra->liquidada())
+                                <br><span class="badge badge--green" title="Liquidada em {{ $compra->liquidada_em->format('d/m/Y') }} — este volume é o final.">liquidada</span>
+                            @elseif ($saldo > 0.01)
                                 <br><span class="badge badge--amber">faltam {{ number_format($saldo, 0, ',', '.') }}</span>
                             @elseif ($saldo < -0.01)
                                 <br><span class="badge badge--amber">+{{ number_format(abs($saldo), 0, ',', '.') }} a mais</span>
