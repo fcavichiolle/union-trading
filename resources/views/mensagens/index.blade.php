@@ -80,13 +80,16 @@
             <button type="submit" class="btn btn-primary" id="chatEnviar">Enviar</button>
             @error('texto') <div class="field-error" style="flex-basis:100%;">{{ $message }}</div> @enderror
         </form>
-
-        <p class="chat__nota">
-            A tela busca mensagens novas a cada 10 segundos. Cite alguém com <strong>@</strong> — a pessoa
-            vê o aviso no menu até abrir o canal. As mensagens ficam <strong>criptografadas no banco</strong>;
-            quem apaga é o autor (ou um administrador, e nesse caso fica registrado quem apagou, sem o texto).
-        </p>
     </div>
+
+    {{-- Nota FORA do card, como nas telas de Estoque e Início: dentro dele
+         ela ficava sem recuo lateral e a primeira letra era cortada pela
+         borda (o card tem overflow: hidden). --}}
+    <p class="chat__nota">
+        A tela busca mensagens novas a cada 10 segundos. Cite alguém com <strong>@</strong> — a pessoa
+        vê o aviso no menu até abrir o canal. As mensagens ficam <strong>criptografadas no banco</strong>;
+        quem apaga é o autor (ou um administrador, e nesse caso fica registrado quem apagou, sem o texto).
+    </p>
 
     <script>
         (function () {

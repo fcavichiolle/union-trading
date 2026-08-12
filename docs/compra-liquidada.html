@@ -915,7 +915,9 @@
   .mencao-item__nome { font-size: 13.5px; font-weight: 600; color: var(--ink); }
   .mencao-item__perfil { font-size: 11.5px; color: var(--muted); margin-left: auto; }
   .mencao-item.is-sel, .mencao-item:hover { background: var(--primary-soft); }
-  .chat__nota { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+  /* Nota da tela: mora FORA do card (dentro dele a primeira letra era
+     cortada pela borda, porque o card usa overflow: hidden). */
+  .chat__nota { margin: 12px 2px 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
 
   :root[data-theme="dark"] .mencao { background: rgba(122,214,163,.16); color: #9BD8B3; }
   :root[data-theme="dark"] .mencao--eu, :root[data-theme="dark"] .msg__citacao { background: rgba(240,196,102,.16); color: #F0D9A8; }
