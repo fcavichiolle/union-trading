@@ -852,6 +852,57 @@
 
   @media (max-width: 720px) { .mkt-cambio { grid-template-columns: 1fr 1fr; } .mkt-more { margin-left: 0; width: 100%; } }
 
+  /* ---------- Mensagens (canal da equipe) ----------
+     Altura fixa com rolagem só no corpo: a conversa rola, o campo de
+     escrever fica sempre visível no rodapé da tela. */
+  .chat { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .chat__corpo { flex: 1; overflow-y: auto; padding: 18px 20px; min-height: 340px; max-height: calc(100vh - 330px); display: flex; flex-direction: column; gap: 12px; }
+  .chat__anteriores { text-align: center; }
+  .chat__anteriores .btn { padding: 5px 14px; font-size: 12.5px; }
+
+  .chat__dia { display: flex; align-items: center; gap: 12px; margin: 6px 0; color: var(--muted); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; }
+  .chat__dia::before, .chat__dia::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  .chat__novas { display: flex; align-items: center; gap: 12px; color: var(--accent); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .chat__novas::before, .chat__novas::after { content: ""; flex: 1; height: 1px; background: var(--accent); opacity: .5; }
+
+  .chat__vazio { margin: auto; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+  .chat__vazio strong { color: var(--ink); }
+
+  .msg { display: flex; gap: 10px; align-items: flex-start; }
+  .msg__avatar { flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+  .msg__bolha { background: var(--bg); border-radius: 10px; padding: 8px 12px; max-width: 68ch; }
+  .msg__topo { display: flex; align-items: baseline; gap: 8px; }
+  .msg__autor { font-size: 12.5px; font-weight: 700; color: var(--primary); }
+  .msg__hora { font-family: var(--font-data); font-size: 11px; color: var(--muted); }
+  .msg__texto { margin: 2px 0 0; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+
+  /* O X de apagar aparece no hover (no mobile fica sempre visível). */
+  .msg__apagar { margin: 0 0 0 auto; opacity: 0; }
+  .msg:hover .msg__apagar, .msg__apagar:focus-within { opacity: 1; }
+  .msg__apagar button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 15px; line-height: 1; padding: 0 2px; }
+  .msg__apagar button:hover { color: var(--danger-text); }
+
+  /* Minhas mensagens: espelhadas, com a cor da casa. */
+  .msg--minha { flex-direction: row-reverse; }
+  .msg--minha .msg__bolha { background: var(--primary-soft); }
+  .msg--minha .msg__topo { flex-direction: row-reverse; }
+  .msg--minha .msg__apagar { margin: 0 auto 0 0; }
+
+  .chat__form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; padding: 14px 20px; box-shadow: inset 0 1px 0 var(--border); }
+  .chat__form textarea { flex: 1; min-width: 200px; resize: none; overflow-y: auto; font: inherit; font-size: 14.5px; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; color: var(--ink); }
+  .chat__nota { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+  :root[data-theme="dark"] .msg__bolha { background: rgba(255,255,255,.05); }
+  :root[data-theme="dark"] .msg--minha .msg__bolha { background: rgba(122,214,163,.12); }
+  :root[data-theme="dark"] .msg__autor { color: #9BD8B3; }
+  :root[data-theme="dark"] .chat__form textarea { background: #12181B; color: #E7EFE9; }
+
+  @media (max-width: 720px) {
+    .chat__corpo { max-height: none; }
+    .msg__apagar { opacity: 1; }
+  }
+
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

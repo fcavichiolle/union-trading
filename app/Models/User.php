@@ -33,6 +33,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            // Marca de leitura do canal de mensagens (ver Mensagem::scopeNaoLidasPor).
+            'mensagens_lidas_em' => 'datetime',
             'force_password_change' => 'boolean',
             'active' => 'boolean',
             // Laravel faz o hash automaticamente ao atribuir texto puro a este

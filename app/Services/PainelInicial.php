@@ -7,6 +7,7 @@ use App\Models\Contrato;
 use App\Models\Entrega;
 use App\Models\Fixacao;
 use App\Models\Fornecedor;
+use App\Models\Mensagem;
 use App\Models\User;
 
 /**
@@ -143,6 +144,12 @@ class PainelInicial
     {
         $n = $this->numeros();
         $badges = [];
+
+        // Mensagens não lidas do canal geral. Fica fora de numeros() porque
+        // depende de QUEM está olhando — o resto ali é total do sistema.
+        if ($naoLidas = Mensagem::naoLidasPor($user)->count()) {
+            $badges['mensagens.index'] = $naoLidas;
+        }
 
         if ($user->hasRole('admin', 'compras') && $n['compras_com_pendencia'] > 0) {
             $badges['compras.index'] = $n['compras_com_pendencia'];
