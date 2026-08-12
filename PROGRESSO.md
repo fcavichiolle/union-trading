@@ -274,6 +274,25 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   "Jute Bags 59kg"); lotes = round(sacas ÷ 283,49 arábica | ÷ 166,66 conilon) — arredondamento
   normal (1,51→2); containers = ceil(kg ÷ capacidade), capacidade **20'=22.000 / 40'=25.000 kg**;
   peso/container = kg÷containers. **Arábica/Conilon é escolhido por contrato.**
+- **Posições de bolsa (telas) são CALCULADAS pela data** (12/ago/2026). Antes eram três
+  anos escritos à mão (`['6','7','8']`), o que deixava posição vencida na tela (H6, K6 e
+  N6 apareciam em agosto/2026) e obrigava a editar código todo janeiro. Agora
+  `Contrato::mesesFixacaoSantos()/Vitoria()` geram do mês corrente até **3 anos à frente**,
+  e a posição sai da lista quando o **mês de entrega** passa (dentro do próprio mês ela
+  continua, porque ainda se negocia nela). O código usa o **último dígito do ano** (H7 =
+  março/2027), como na bolsa.
+  **Existem DUAS listas de propósito**: as `mesesFixacao*()` (em aberto) alimentam os
+  formulários; as `mesesFixacao*Todas()` (janela larga, 4 anos para trás) alimentam a
+  **validação** e o **rótulo** — sem elas, editar um contrato fixado numa posição vencida
+  passaria a dar "mês inválido", e a Tela NY perderia o rótulo do histórico. Onde a
+  posição vencida ainda precisa aparecer, ela entra na lista marcada **"— já vencida"**:
+  no formulário do contrato que está fixado nela e na Tela NY para os contratos em aberto
+  (senão não haveria como fixar contra ela). `Contrato::rotuloDaTela()` resolve o rótulo de
+  qualquer código e `telaEhDeLondres()` diz a qual bolsa ele pertence (antes isso era um
+  `array_key_exists` na lista de Londres, que classificaria posição vencida como Santos).
+  Guardado por `tests/Feature/PosicoesDeBolsaTest.php`, que **congela o tempo** — teste de
+  calendário sem tempo congelado passa hoje e falha no ano que vem, que é justamente o
+  problema que estávamos resolvendo.
 - **PRICE muda conforme o porto**: **Santos** → `... cents/pounds under N lot(s) <cod> NY ICE ...`
   (meses NY ICE tipo `Z6`); **Vitória** → `... USD/MT of ICE ROBUSTA CF LONDON, N lot(s) x <mês> ...`
   (meses de Londres tipo `Sep_2026`). O formulário troca as opções de mês e a unidade do diferencial

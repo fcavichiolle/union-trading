@@ -78,7 +78,10 @@ class FixacaoController extends Controller
             ->get();
 
         foreach ($fixadas as $f) {
-            $porto = array_key_exists($f->tela, Contrato::mesesFixacaoVitoria()) ? 'VITORIA' : 'SANTOS';
+            // Janela larga: fixação antiga pode estar numa posição vencida, e
+            // com a lista "em aberto" ela seria classificada como Santos por
+            // engano (o `else` do array_key_exists).
+            $porto = Contrato::telaEhDeLondres($f->tela) ? 'VITORIA' : 'SANTOS';
             $linhas[$f->tela] ??= $this->linhaVazia($f->tela, $porto);
             $linhas[$f->tela]['fixado_lotes'] = (int) $f->lotes;
             $linhas[$f->tela]['level_medio'] = $f->lotes > 0 ? round($f->soma_level / $f->lotes, 2) : null;
@@ -86,7 +89,12 @@ class FixacaoController extends Controller
 
         // Ordena na sequência dos vencimentos (NY primeiro, depois Londres);
         // "sem tela definida" por último.
-        $ordem = array_merge(array_keys(Contrato::mesesFixacaoSantos()), array_keys(Contrato::mesesFixacaoVitoria()));
+        // Janela larga na ordenação também, senão posição vencida cai no
+        // fim da lista em vez de ficar na sequência dos vencimentos.
+        $ordem = array_merge(
+            array_keys(Contrato::mesesFixacaoSantosTodas()),
+            array_keys(Contrato::mesesFixacaoVitoriaTodas())
+        );
         $posicaoNaOrdem = function (string $tela) use ($ordem): int {
             if ($tela === 'SEM_TELA') {
                 return PHP_INT_MAX;

@@ -213,36 +213,151 @@ class Contrato extends Model
         return ['SANTOS' => 'Santos', 'VITORIA' => 'Vitória'];
     }
 
-    /** Meses NY ICE (arábica) — usados quando o porto é Santos. Valor = código (ex.: Z6). */
+    /* ==================================================================
+     * Posições de bolsa (telas)
+     * ==================================================================
+     *
+     * As listas são CALCULADAS a partir da data, não escritas à mão: a
+     * posição que já venceu sai sozinha e o ano novo entra sozinho. Antes
+     * eram três anos fixos ('6','7','8'), o que obrigava a editar código
+     * todo janeiro — e deixava H6/K6/N6 na tela depois de vencidas.
+     *
+     * São DUAS listas de propósito:
+     *  - `mesesFixacao*()`      → posições EM ABERTO, para os formulários;
+     *  - `mesesFixacao*Todas()` → janela larga (anos para trás também),
+     *    para VALIDAÇÃO e para exibir rótulo de contrato antigo. Sem isso,
+     *    editar um contrato fixado numa posição vencida passaria a dar
+     *    "mês inválido", e a Tela NY perderia o rótulo do histórico.
+     */
+
+    /** Meses de entrega na NY ICE (arábica): letra do código => nº do mês. */
+    private const MESES_NY = ['H' => 3, 'K' => 5, 'N' => 7, 'U' => 9, 'Z' => 12];
+
+    /**
+     * Meses da ICE Robusta (Londres). Não existe dezembro no robusta — os
+     * vencimentos são F/H/K/N/U/X (X = novembro).
+     */
+    private const MESES_LONDRES = ['Jan' => 1, 'Mar' => 3, 'May' => 5, 'Jul' => 7, 'Sep' => 9, 'Nov' => 11];
+
+    /** Quantos anos de posições futuras oferecer nos formulários. */
+    private const ANOS_A_FRENTE = 3;
+
+    /** Quantos anos para trás continuar aceitando (contratos e fixações antigas). */
+    private const ANOS_ATRAS = 4;
+
+    /** Meses NY ICE em aberto — usados quando o porto é Santos (ex.: Z6). */
     public static function mesesFixacaoSantos(): array
     {
-        $letras = ['H' => 'Março', 'K' => 'Maio', 'N' => 'Julho', 'U' => 'Setembro', 'Z' => 'Dezembro'];
-        $opcoes = [];
-        foreach (['6', '7', '8'] as $ano) {
-            foreach ($letras as $cod => $mes) {
-                $opcoes["{$cod}{$ano}"] = "{$cod}{$ano} ({$mes}/202{$ano}) · NY ICE";
-            }
-        }
-        return $opcoes;
+        return self::posicoesSantos(now()->year, self::ANOS_A_FRENTE, apenasEmAberto: true);
     }
 
-    /** Meses ICE Robusta de Londres — usados quando o porto é Vitória. Valor = texto do contrato (ex.: Sep_2026). */
+    /** Janela larga da NY, para validação e rótulo de posição vencida. */
+    public static function mesesFixacaoSantosTodas(): array
+    {
+        return self::posicoesSantos(now()->year - self::ANOS_ATRAS, self::ANOS_ATRAS + self::ANOS_A_FRENTE, apenasEmAberto: false);
+    }
+
+    /** Meses ICE Robusta em aberto — porto Vitória (ex.: Sep_2026). */
     public static function mesesFixacaoVitoria(): array
     {
-        $meses = ['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov'];
-        $opcoes = [];
-        foreach (['2026', '2027', '2028'] as $ano) {
-            foreach ($meses as $m) {
-                $opcoes["{$m}_{$ano}"] = "{$m}/{$ano} · Londres";
-            }
-        }
-        return $opcoes;
+        return self::posicoesVitoria(now()->year, self::ANOS_A_FRENTE, apenasEmAberto: true);
     }
 
-    /** União das duas listas (usada na validação). */
+    /** Janela larga de Londres, para validação e rótulo. */
+    public static function mesesFixacaoVitoriaTodas(): array
+    {
+        return self::posicoesVitoria(now()->year - self::ANOS_ATRAS, self::ANOS_ATRAS + self::ANOS_A_FRENTE, apenasEmAberto: false);
+    }
+
+    /** União das listas em aberto (formulários). */
     public static function mesesFixacao(): array
     {
         return self::mesesFixacaoSantos() + self::mesesFixacaoVitoria();
+    }
+
+    /** União da janela larga (VALIDAÇÃO — aceita o histórico). */
+    public static function mesesFixacaoTodas(): array
+    {
+        return self::mesesFixacaoSantosTodas() + self::mesesFixacaoVitoriaTodas();
+    }
+
+    /**
+     * Rótulo de uma tela ("Z6" => "Z6 (Dezembro/2026) · NY ICE"), servindo
+     * também para posição vencida. Devolve o próprio código quando não
+     * reconhece — melhor mostrar o código do que uma linha vazia.
+     */
+    public static function rotuloDaTela(?string $codigo): ?string
+    {
+        if ($codigo === null || $codigo === '') {
+            return null;
+        }
+
+        return self::mesesFixacaoTodas()[$codigo] ?? $codigo;
+    }
+
+    /** A tela é de Londres? (o código de lá tem o ano inteiro: Sep_2026) */
+    public static function telaEhDeLondres(string $codigo): bool
+    {
+        return array_key_exists($codigo, self::mesesFixacaoVitoriaTodas());
+    }
+
+    /**
+     * @return array<string,string> código => rótulo, em ordem de vencimento
+     */
+    private static function posicoesSantos(int $anoInicial, int $anos, bool $apenasEmAberto): array
+    {
+        $nomes = [3 => 'Março', 5 => 'Maio', 7 => 'Julho', 9 => 'Setembro', 12 => 'Dezembro'];
+        $opcoes = [];
+
+        foreach (self::anos($anoInicial, $anos) as $ano) {
+            foreach (self::MESES_NY as $letra => $mes) {
+                if ($apenasEmAberto && self::venceu($ano, $mes)) {
+                    continue;
+                }
+
+                // O código da bolsa usa só o ÚLTIMO dígito do ano (H7 = 2027).
+                $codigo = $letra . substr((string) $ano, -1);
+                $opcoes[$codigo] = "{$codigo} ({$nomes[$mes]}/{$ano}) · NY ICE";
+            }
+        }
+
+        return $opcoes;
+    }
+
+    /** @return array<string,string> */
+    private static function posicoesVitoria(int $anoInicial, int $anos, bool $apenasEmAberto): array
+    {
+        $opcoes = [];
+
+        foreach (self::anos($anoInicial, $anos) as $ano) {
+            foreach (self::MESES_LONDRES as $sigla => $mes) {
+                if ($apenasEmAberto && self::venceu($ano, $mes)) {
+                    continue;
+                }
+
+                $opcoes["{$sigla}_{$ano}"] = "{$sigla}/{$ano} · Londres";
+            }
+        }
+
+        return $opcoes;
+    }
+
+    /** @return array<int,int> */
+    private static function anos(int $inicial, int $quantos): array
+    {
+        return range($inicial, $inicial + $quantos);
+    }
+
+    /**
+     * A posição já passou? Considera vencida quando o MÊS de entrega ficou
+     * para trás — dentro do próprio mês do vencimento a posição ainda
+     * aparece, porque ainda se negocia nela.
+     */
+    private static function venceu(int $ano, int $mes): bool
+    {
+        $hoje = now();
+
+        return $ano < $hoje->year || ($ano === $hoje->year && $mes < $hoje->month);
     }
 
     /**
