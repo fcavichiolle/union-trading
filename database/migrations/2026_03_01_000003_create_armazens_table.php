@@ -28,11 +28,10 @@ return new class extends Migration
     /**
      * Os três que existiam no ENUM.
      *
-     * ATENÇÃO: SAAG (Santana da Vargem/MG) e QUALITÉ (Espírito Santo do
-     * Pinhal/SP) foram confirmadas pela mesa. A de DÍNAMO MACHADO ainda é
-     * suposição (deduzida do nome) — se estiver errada, corrija AQUI
-     * também, e não só pela tela: senão um `migrate:fresh` traz o dado
-     * errado de volta.
+     * As três cidades foram confirmadas pela mesa (12/ago/2026). Armazém que
+     * mudar de cidade depois: corrija pela tela de Cadastros → Armazéns, que
+     * é o lugar dela. Esta lista só vale para banco novo — mas se ela ficar
+     * errada, um `migrate:fresh` traz o dado errado de volta.
      */
     private const INICIAIS = [
         'SAAG' => ['nome' => 'SAAG', 'cidade' => 'Santana da Vargem', 'estado' => 'MG'],
