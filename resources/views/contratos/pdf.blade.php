@@ -39,11 +39,13 @@
     <tr>
         <td class="logo"><img src="{{ $logo }}" alt="Union Trading"></td>
         <td class="company">
+            {{-- Cabeçalho conforme o texto passado pela mesa (12/ago/2026):
+                 saíram os underlines e o "nr."/":-", e o CEP passou a
+                 13.990-029. --}}
             <div class="nm">UNION TRADING COMÉRCIO IMPORTAÇÃO E EXPORTAÇÃO LTDA</div>
-            Rua Duque de Caxias, 238 _ Centro _<br>
-            Cep:- 13990-000 _ Espírito Santo do Pinhal _ SP – Brasil<br>
-            CNPJ nr. 11.881.236/0001-09 &nbsp; IE :- 530.055.829.118<br>
-            Phone:- +55 19 3651-8442 &nbsp;&nbsp; E-mail:- lhenrique@utrading.com.br
+            Cep: 13.990-029 / Espírito Santo do Pinhal - SP, Brasil<br>
+            CNPJ: 11.881.236/0001-09 &nbsp; IE: 530.055.829.118<br>
+            Phone: +55 19 3651-8442 &nbsp;&nbsp; Email: lhenrique@utrading.com.br
         </td>
     </tr>
 </table>
@@ -53,9 +55,12 @@
 
 <table class="body">
     <tr><td class="lbl">Seller Ref Nr</td><td class="val"><span class="b">UT {{ $utNum }}</span></td></tr>
+    {{-- Endereço do Seller conforme o texto passado pela mesa (12/ago/2026).
+         A classe "pre" preserva as quebras de linha, então o recuo aqui é
+         proposital: mexer nele muda o PDF. --}}
     <tr><td class="lbl">Seller</td><td class="val pre">UNION TRADING COMÉRCIO IMP E EXPORTAÇÃO LTDA
-Rua Duque de Caxias, 238 _ Centro _
-Cep:- 13990-000 _ Espírito Santo do Pinhal SP - Brasil</td></tr>
+Rua: Duque de Caxias, 238 - Centro.
+CEP: 13.990-029 / Espírito Santo do Pinhal - SP, Brasil</td></tr>
     <tr><td class="lbl">Shipper</td><td class="val">UNION TRADING COMÉRCIO IMP E EXPORTAÇÃO LTDA</td></tr>
     <tr><td class="lbl">Buyer</td><td class="val pre"><span class="b">{{ $contrato->cliente_nome }}</span>
 {{ $contrato->cliente_endereco }}</td></tr>
@@ -68,7 +73,9 @@ Cep:- 13990-000 _ Espírito Santo do Pinhal SP - Brasil</td></tr>
     <tr><td class="lbl">Shipment</td><td class="val">{{ $contrato->embarqueLinha() }}</td></tr>
     <tr><td class="lbl">Incoterms</td><td class="val">{{ $contrato->incotermsLinha() }}</td></tr>
     <tr><td class="lbl">Destination</td><td class="val">T.B.I</td></tr>
-    <tr><td class="lbl">Payment</td><td class="val">CAD _ Cash Against documents on first presentation.</td></tr>
+    {{-- Redação da cláusula palavra por palavra; só o separador mudou de
+         " _ " para " - " (pedido da mesa, 12/ago/2026). --}}
+    <tr><td class="lbl">Payment</td><td class="val">CAD - Cash Against documents on first presentation.</td></tr>
     <tr><td class="lbl">Arbitration</td><td class="val">In London, at the British Coffee Association Arbitration Service</td></tr>
     <tr><td class="lbl">Other Conditions</td><td class="val">European Coffee Contract, latest edition</td></tr>
     <tr><td class="lbl">Applicable Law</td><td class="val">The uniform law on the international sale of goods shall not apply to this contract.</td></tr>
