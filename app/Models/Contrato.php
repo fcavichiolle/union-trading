@@ -436,7 +436,11 @@ class Contrato extends Model
         $ini = $this->embarque_mes->copy()->startOfMonth();
         $fim = $this->embarque_mes->copy()->endOfMonth();
         $abrev = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        $mesTxt = $abrev[$ini->month - 1] . '_' . $ini->year;
+        // "Sep/2026". Era "Sep_2026" — o underline saiu por pedido da mesa
+        // (12/ago/2026), junto com os do cabeçalho. Atenção: NÃO confundir
+        // com o código da posição de Londres (`mes_fixacao`, tipo Sep_2026),
+        // que é formato de bolsa e continua com underline.
+        $mesTxt = $abrev[$ini->month - 1] . '/' . $ini->year;
 
         return "{$mesTxt} (Shipment from {$ini->format('d/m/Y')} to {$fim->format('d/m/Y')})";
     }
