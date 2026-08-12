@@ -44,7 +44,8 @@
             <div class="fields">
                 <label>
                     <span class="lbl">Nome</span>
-                    <input type="text" name="nome" value="{{ old('nome') }}" placeholder="Ex.: ICONA" required>
+                    {{-- Exemplo fictício: este placeholder aparece na demo pública. --}}
+                    <input type="text" name="nome" value="{{ old('nome') }}" placeholder="Ex.: NORTHBROOK COFFEE TRADING LLC" required>
                 </label>
                 <label>
                     <span class="lbl">Endereço (uma linha por linha)</span>

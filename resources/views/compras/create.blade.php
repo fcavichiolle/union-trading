@@ -53,10 +53,14 @@
                         <label for="fornecedor_nome">Vendedor (nome)</label>
                         <input type="text" id="fornecedor_nome" name="fornecedor_nome"
                                value="{{ old('fornecedor_nome', $editando ? $compra->fornecedor?->nome : '') }}"
-                               placeholder="Ex.: LUIZ PEREIRA DE BARROS" required>
+                               {{-- Exemplo genérico: este placeholder vai para a demo
+                                    pública, e nome de fornecedor real não vai ao ar. --}}
+                               placeholder="Ex.: FAZENDA SANTA CLARA LTDA" required>
                         @error('fornecedor_nome') <div class="field-error">{{ $message }}</div> @enderror
                     </div>
 
+                    {{-- Sacas e peso: preencher um calcula o outro (60 kg/saca).
+                         O armazém informa às vezes um, às vezes o outro. --}}
                     <div style="display:flex; gap:12px; margin-bottom:14px;">
                         <div class="field {{ $errors->has('volume_contratado') ? 'has-error' : '' }}" style="flex:1; margin-bottom:0;">
                             <label for="volume_contratado">Volume contratado (sacas)</label>
@@ -64,10 +68,51 @@
                                    value="{{ $valor('volume_contratado') }}" placeholder="Ex.: 500" required>
                             @error('volume_contratado') <div class="field-error">{{ $message }}</div> @enderror
                         </div>
-                        <div class="field" style="flex:1; margin-bottom:0;">
-                            <label for="tipo_entrada">Tipo padrão de entrada</label>
-                            <input type="text" id="tipo_entrada" name="tipo_entrada" value="{{ $valor('tipo_entrada', 'BICA') }}">
-                            <span class="hint">Assume "BICA" como entrada inicial.</span>
+                        <div class="field {{ $errors->has('peso_kg') ? 'has-error' : '' }}" style="flex:1; margin-bottom:0;">
+                            <label for="peso_kg">Peso (kg)</label>
+                            <input type="number" step="0.01" min="0.01" id="peso_kg" name="peso_kg"
+                                   value="{{ $valor('peso_kg') }}" placeholder="Ex.: 30000">
+                            <span class="hint">Um preenche o outro, a 60 kg por saca.</span>
+                            @error('peso_kg') <div class="field-error">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:12px; margin-bottom:14px;">
+                        <div class="field {{ $errors->has('tipo_entrada') ? 'has-error' : '' }}" style="flex:1; margin-bottom:0;">
+                            <label for="tipo_entrada">Tipo de café</label>
+                            <select id="tipo_entrada" name="tipo_entrada" required>
+                                @foreach (\App\Models\Compra::tiposEntrada() as $cod => $rotulo)
+                                    <option value="{{ $cod }}" @selected($valor('tipo_entrada', 'ARABICA') === $cod)>{{ $rotulo }}</option>
+                                @endforeach
+                            </select>
+                            <span class="hint">Conilon não usa padrão nem bebida.</span>
+                            @error('tipo_entrada') <div class="field-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="field" style="flex:1; margin-bottom:0;"></div>
+                    </div>
+
+                    {{-- Qualidade negociada. Some inteiro quando o café é
+                         conilon (JS abaixo), e o servidor grava nulo. --}}
+                    <div style="display:flex; gap:12px; margin-bottom:14px;" id="blocoQualidade">
+                        <div class="field {{ $errors->has('padrao_final') ? 'has-error' : '' }}" style="flex:1; margin-bottom:0;">
+                            <label for="padrao_final">Padrão final</label>
+                            <select id="padrao_final" name="padrao_final">
+                                <option value="">Selecione...</option>
+                                @foreach (\App\Models\Classificacao::padroes() as $cod => $rotulo)
+                                    <option value="{{ $cod }}" @selected($valor('padrao_final') === $cod)>{{ $rotulo }}</option>
+                                @endforeach
+                            </select>
+                            @error('padrao_final') <div class="field-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="field {{ $errors->has('tipo_bebida') ? 'has-error' : '' }}" style="flex:1; margin-bottom:0;">
+                            <label for="tipo_bebida">Tipo de bebida</label>
+                            <select id="tipo_bebida" name="tipo_bebida">
+                                <option value="">Selecione...</option>
+                                @foreach (\App\Models\Classificacao::tiposBebida() as $cod => $rotulo)
+                                    <option value="{{ $cod }}" @selected($valor('tipo_bebida') === $cod)>{{ $rotulo }}</option>
+                                @endforeach
+                            </select>
+                            @error('tipo_bebida') <div class="field-error">{{ $message }}</div> @enderror
                         </div>
                     </div>
 
@@ -112,7 +157,7 @@
                     <div style="display:flex; gap:12px; margin-bottom:14px;">
                         <div class="field" style="flex:1; margin-bottom:0;">
                             <label for="corretor_nome">Corretor</label>
-                            <input type="text" id="corretor_nome" name="corretor_nome" value="{{ $valor('corretor_nome') }}" placeholder="Ex.: LEANDRO">
+                            <input type="text" id="corretor_nome" name="corretor_nome" value="{{ $valor('corretor_nome') }}" placeholder="Ex.: Corretora Aurora">
                         </div>
                         <div class="field {{ $errors->has('comissao_pct') ? 'has-error' : '' }}" style="width:130px; margin-bottom:0;">
                             <label for="comissao_pct">Comissão (%)</label>
@@ -217,6 +262,45 @@
         }
         [valorEl, volumeEl].forEach(function (el) { el.addEventListener('input', previewTotal); });
         previewTotal();
+
+        // ---- Sacas <-> peso (60 kg/saca) ----
+        // Só completa o campo que o usuário NÃO está preenchendo; quem digita
+        // manda. O servidor faz a mesma conta, então funciona sem JS também.
+        var KG_POR_SACA = {{ \App\Models\Compra::KG_POR_SACA }},
+            pesoEl = document.getElementById('peso_kg');
+
+        function arredonda(n) { return Math.round(n * 100) / 100; }
+
+        volumeEl.addEventListener('input', function () {
+            var sacas = parseFloat(volumeEl.value);
+            pesoEl.value = sacas > 0 ? arredonda(sacas * KG_POR_SACA) : '';
+        });
+
+        pesoEl.addEventListener('input', function () {
+            var kg = parseFloat(pesoEl.value);
+            volumeEl.value = kg > 0 ? arredonda(kg / KG_POR_SACA) : '';
+            previewTotal();
+        });
+
+        // ---- Conilon não tem padrão/bebida ----
+        var tipoEl = document.getElementById('tipo_entrada'),
+            qualidade = document.getElementById('blocoQualidade');
+
+        function sincronizarQualidade() {
+            var conilon = tipoEl.value === 'CONILON';
+            qualidade.style.display = conilon ? 'none' : 'flex';
+
+            // Escondido e desabilitado: sem isso o navegador ainda enviaria
+            // o padrão de um arábica que virou conilon no meio do
+            // preenchimento.
+            qualidade.querySelectorAll('select').forEach(function (el) {
+                el.disabled = conilon;
+                if (conilon) el.value = '';
+            });
+        }
+
+        tipoEl.addEventListener('change', sincronizarQualidade);
+        sincronizarQualidade();
     })();
 </script>
 @endsection

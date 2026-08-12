@@ -184,13 +184,14 @@ return [
         'fornecedor_documento' => 'CNPJ/CPF do vendedor',
         'certificacao' => 'certificação',
         'logistica' => 'logística',
-        'tipo_entrada' => 'tipo padrão de entrada',
+        'tipo_entrada' => 'tipo de café',
         'volume_contratado' => 'volume contratado (sacas)',
+        'peso_kg' => 'peso (kg)',
         'pagamento_previsto' => 'pagamento previsto',
         'pagamento_obs' => 'observação do pagamento',
 
         // Entregas (o que entrou no armazém)
-        'mes_ano' => 'mês/ano da entrega',
+        'data_entrega' => 'data da entrega',
         'armazem' => 'armazém',
         'volume_sacas' => 'sacas entregues',
         'numero_lote' => 'número do lote',
@@ -198,6 +199,10 @@ return [
         // Classificação
         'padrao_final' => 'padrão final',
         'tipo_bebida' => 'tipo de bebida',
+        'peneira_12up_pct' => '% da peneira 12 UP',
+        'peneira_12up_sacas' => 'sacas da peneira 12 UP',
+        'peneira_13up_pct' => '% da peneira 13 UP',
+        'peneira_13up_sacas' => 'sacas da peneira 13 UP',
         'peneira_1718_pct' => '% da peneira 17/18',
         'peneira_1718_sacas' => 'sacas da peneira 17/18',
         'peneira_1416_pct' => '% da peneira 14/16',

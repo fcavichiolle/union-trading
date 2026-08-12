@@ -19,14 +19,17 @@ class Entrega extends Model
     protected $table = 'entregas';
 
     protected $fillable = [
-        'compra_id', 'mes_ano', 'armazem', 'volume_sacas', 'numero_lote', 'created_by',
+        'compra_id', 'data_entrega', 'armazem', 'volume_sacas', 'peso_kg', 'numero_lote', 'created_by',
     ];
 
     protected function casts(): array
     {
         return [
-            'mes_ano' => 'date',
+            // Data completa (dia/mês/ano): a auditoria precisa saber o DIA
+            // em que o café entrou, não só o mês.
+            'data_entrega' => 'date',
             'volume_sacas' => 'decimal:2',
+            'peso_kg' => 'decimal:2',
         ];
     }
 
@@ -52,6 +55,17 @@ class Entrega extends Model
     public function armazemLabel(): string
     {
         return Compra::armazens()[$this->armazem] ?? $this->armazem;
+    }
+
+    /**
+     * Peso que o armazém informou; quando só vieram as sacas, o
+     * equivalente em quilos (60 kg/saca).
+     */
+    public function pesoOuEquivalente(): float
+    {
+        return $this->peso_kg !== null
+            ? (float) $this->peso_kg
+            : Compra::pesoDeSacas((float) $this->volume_sacas);
     }
 
     /* ---------- Scopes ---------- */

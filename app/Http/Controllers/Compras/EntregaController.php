@@ -44,14 +44,16 @@ class EntregaController extends Controller
             ->with('status', 'Entrega removida — o saldo a entregar da UTS foi recalculado.');
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * A data é gravada como o funcionário informou — com o DIA. Antes ela
+     * era normalizada para o dia 01 do mês, o que apagava exatamente a
+     * informação que a auditoria procura: quando o café entrou.
+     *
+     * @return array<string, mixed>
+     */
     private function dados(StoreEntregaRequest $request): array
     {
-        $dados = $request->validated();
-        // Guardado sempre no dia 01, como o resto do sistema faz com mês/ano.
-        $dados['mes_ano'] = date('Y-m-01', strtotime($dados['mes_ano']));
-
-        return $dados;
+        return $request->validated();
     }
 
     /**

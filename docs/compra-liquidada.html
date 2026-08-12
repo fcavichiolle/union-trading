@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy">
-    <title>Clientes</title>
+    <meta name="csrf-token" content="">
+    <title>Compra UTS 7322</title>
     <style>
   :root {
     --bg: #F6F2EA;
@@ -178,6 +178,61 @@
   .home-foot { margin-top: auto; padding-top: 28px; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: rgba(11,61,36,.42); }
   .home-foot .mono { font-family: var(--font-data); letter-spacing: .05em; }
 
+  /* ---------- Painel inicial (pendências + posição) ---------- */
+  .painel-titulo {
+    margin: 0 0 14px; font-family: var(--font-data); font-size: 11px; font-weight: 600;
+    letter-spacing: .13em; text-transform: uppercase; color: var(--muted);
+  }
+  .painel-titulo:not(:first-child) { margin-top: 30px; }
+
+  /* cards de pendência: número grande + o que é + link direto p/ a tela filtrada */
+  .pend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+  .pend-card {
+    display: flex; flex-direction: column; gap: 3px; padding: 16px 18px;
+    border-radius: 12px; text-decoration: none; background: var(--surface);
+    box-shadow: var(--shadow); border-left: 4px solid var(--border);
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .pend-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(11,61,36,.08), 0 16px 32px -14px rgba(11,61,36,.34); }
+  .pend-card__num { font-family: var(--font-data); font-size: 30px; font-weight: 700; line-height: 1.05; color: var(--ink); }
+  .pend-card__titulo { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .pend-card__desc { font-size: 12px; line-height: 1.45; color: var(--muted); }
+  .pend-card--alerta { border-left-color: var(--accent); }
+  .pend-card--alerta .pend-card__num { color: var(--danger-text); }
+  .pend-card--atencao { border-left-color: #D9A227; }
+  .pend-card--neutro { border-left-color: var(--primary-light); }
+
+  /* estado "sem pendência alguma" */
+  .painel-ok {
+    display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+    background: var(--success-bg); border-radius: var(--radius); color: var(--success-text);
+  }
+  .painel-ok__dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: none; }
+  .painel-ok strong { display: block; font-size: 14px; }
+  .painel-ok span:last-child { font-size: 12.5px; opacity: .85; }
+
+  /* números de posição */
+  .num-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+  .num-tile { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .num-tile__lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .num-tile__val { font-family: var(--font-data); font-size: 26px; font-weight: 700; line-height: 1.1; color: var(--ink); }
+  .num-tile__val.is-neg { color: var(--danger-text); }
+  .num-tile__val.is-alerta { color: #8A6116; }
+  .num-tile__sub { font-size: 11.5px; color: var(--muted); }
+  .painel-nota { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+  .painel-nota a { color: var(--primary); }
+
+  /* badge de pendência no menu lateral */
+  .sb-badge {
+    margin-left: auto; min-width: 20px; padding: 1px 6px; border-radius: 99px;
+    background: #E8322C; color: #fff; text-align: center;
+    font-family: var(--font-data); font-size: 10.5px; font-weight: 700; line-height: 17px;
+  }
+
+  :root[data-theme="dark"] .painel-ok { background: rgba(122,214,163,.12); color: #9BD8B3; }
+  :root[data-theme="dark"] .num-tile__val.is-alerta { color: #F0D9A8; }
+  :root[data-theme="dark"] .pend-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 16px 32px -14px rgba(0,0,0,.7); }
+
   /* ---------- Gestão de usuários ---------- */
   .notice-danger {
     display: flex; align-items: center; gap: 14px; padding: 15px 18px; border-radius: 12px; margin-bottom: 22px;
@@ -317,6 +372,58 @@
   .alert { padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 18px; font-size: 14px; }
   .alert-success { background: var(--success-bg); color: var(--success-text); border: 1px solid #BFE0C9; }
   .alert-error { background: var(--danger-bg); color: var(--danger-text); border: 1px solid #F0C4BE; }
+  .alert__hint { display: block; margin-top: 8px; font-size: 12.5px; opacity: .8; }
+
+  /* Tabela de entregas: campos editáveis dentro das células. Sem altura
+     fixa — o `height` que estava aqui cortava o nome do armazém no select,
+     porque brigava com o padding herdado dos inputs globais. */
+  .tabela-entregas td { vertical-align: middle; }
+  .tabela-entregas input, .tabela-entregas select {
+    padding: 6px 9px; font-size: 13.5px; line-height: 1.35; min-width: 0;
+  }
+  .tabela-entregas select { min-width: 150px; }
+  .tabela-entregas .campo-sacas { width: 110px; text-align: right; }
+  .tabela-entregas .campo-lote { width: 150px; }
+  @media (max-width: 980px) {
+    .tabela-entregas select { min-width: 120px; }
+  }
+
+  /* reativar contrato cancelado, dentro do próprio aviso vermelho */
+  .reativar { margin-top: 12px; }
+  .reativar > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; }
+  .reativar form { margin-top: 10px; max-width: 520px; }
+  .reativar textarea { width: 100%; resize: vertical; }
+
+  /* "zona de risco": ações destrutivas, fechadas por padrão (<details>) */
+  .zona-risco { margin-top: 26px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  .zona-risco > summary {
+    padding: 14px 20px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--danger-text);
+    list-style: none;
+  }
+  .zona-risco > summary::-webkit-details-marker { display: none; }
+  .zona-risco > summary::before { content: "▸ "; }
+  .zona-risco[open] > summary::before { content: "▾ "; }
+  .zona-risco[open] > summary { box-shadow: inset 0 -1px 0 var(--border); }
+  .zona-risco__corpo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px; }
+  .zona-risco__corpo h3 { margin: 0 0 6px; font-size: 15px; color: var(--ink); }
+  .zona-risco__corpo p { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+  .zona-risco__corpo textarea { width: 100%; resize: vertical; }
+  .zona-risco__corpo .btn { margin-top: 10px; }
+  @media (max-width: 860px) { .zona-risco__corpo { grid-template-columns: 1fr; } }
+
+  /* contrato cancelado: linha apagada, sem sumir da lista */
+  tr.linha-cancelada td { opacity: .55; }
+  tr.linha-cancelada td:first-child strong { text-decoration: line-through; }
+
+  /* faixa do link compartilhável, com botão de copiar */
+  .link-share { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .link-share__lbl { flex: none; font-weight: 600; }
+  .link-share__url { flex: 1; min-width: 240px; word-break: break-all; font-family: var(--font-data); font-size: 12px; }
+  .link-share .btn { flex: none; padding: 6px 14px; font-size: 13px; }
+
+  /* subtotal por armazém na tabela de estoque */
+  tr.linha-subtotal td { background: var(--primary-soft); font-weight: 600; }
+  :root[data-theme="dark"] tr.linha-subtotal td { background: rgba(122,214,163,.10); }
   .alert code { background: rgba(0,0,0,.06); padding: 1px 6px; border-radius: 4px; }
 
   .filter-bar { display: flex; gap: 12px; align-items: end; margin-bottom: 18px; flex-wrap: wrap; }
@@ -681,110 +788,79 @@
   .calc-lbl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
   .calc-val { font-size: 20px; font-weight: 700; color: var(--primary); font-family: var(--font-data); }
   .calc-note { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+  /* diferença entre contratado e entregue esperando decisão (liquidação):
+     a tela da compra já marcava o número com .is-alerta, mas só existia
+     regra para .num-tile__val — o destaque nunca aparecia. */
+  .calc-val.is-alerta { color: #8A6116; }
   :root[data-theme="dark"] .calc-val { color: #BFE6CE; }
+  :root[data-theme="dark"] .calc-val.is-alerta { color: #F0D9A8; }
   :root[data-theme="dark"] .calc-lbl, :root[data-theme="dark"] .calc-note { color: rgba(231,239,233,.6); }
 
-  /* checkbox simples com rotulo (ex.: "Contrato ja fixado") */
+  /* checkbox simples com rótulo (ex.: "Contrato já fixado") */
   .check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; }
   .check-row input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; margin: 0; }
   .check-row span { font-size: 13.5px; font-weight: 600; color: var(--ink); }
 
+  /* ---------- Mercado (Tela NY + Cotações) ---------- */
+  .badge--amber { background: #FCF3DC; color: #8A6116; }
+  :root[data-theme="dark"] .badge--amber { background: rgba(240,196,102,.16); color: #F0D9A8; }
+
+  /* régua de cotações no topo da Tela NY */
+  .mkt-strip {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 18px; padding: 10px 16px;
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    font-family: var(--font-data); font-size: 12.5px;
+  }
+  .mkt-chip { display: inline-flex; align-items: baseline; gap: 7px; }
+  .mkt-lbl { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .mkt-val { font-weight: 700; color: var(--ink); }
+  .mkt-more { margin-left: auto; font-family: var(--font-body); font-size: 12.5px; color: var(--primary); }
+  .mkt-up { color: var(--success-text); }
+  .mkt-down { color: var(--danger-text); }
+
+  /* lista de contratos com checkbox no form da Tela NY */
+  .fix-list {
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: 260px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px; background: #fff;
+  }
+  .fix-item { display: flex; align-items: center; gap: 8px; padding: 3px 2px; }
+  .fix-item label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer; font-size: 12.5px; font-weight: 500; }
+  .fix-item label span:first-of-type { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fix-item input[type=checkbox] { width: 15px; height: 15px; flex: none; accent-color: var(--primary); margin: 0; }
+  .fix-item input[type=checkbox]:disabled + span { opacity: .45; }
+  .fix-item__meta { color: var(--muted); font-size: 11px; flex: none; margin-left: auto; }
+  .fix-item .fix-dif { width: 78px; flex: none; padding: 5px 8px; font-size: 12.5px; text-align: right; }
+  .fix-item .fix-dif:disabled { opacity: .4; background: transparent; }
+  :root[data-theme="dark"] .fix-list { background: var(--surface); }
+
+  /* página de cotações */
+  .mkt-meta { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+  .mkt-status { font-size: 12.5px; font-weight: 600; }
+  .mkt-status--ok { color: var(--success-text); }
+  .mkt-status--off { color: var(--danger-text); }
+  .mkt-cambio { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 20px; margin-bottom: 20px; }
+  .mkt-tile { padding: 16px 20px; }
+  .mkt-tile__lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .mkt-tile__val { font-family: var(--font-data); font-size: 24px; font-weight: 700; color: var(--ink); }
+  .mkt-tile__dif { font-family: var(--font-data); font-size: 13px; margin-top: 3px; }
+  .mkt-table td.num { font-family: var(--font-data); font-size: 13px; }
+  .mkt-table .mkt-flag { font-size: 11px; color: var(--muted); margin-left: 6px; }
+  tr.mkt-indisp td { color: var(--muted); }
+  tr.mkt-indisp .mkt-flag { font-style: italic; }
+
+  :root[data-theme="dark"] .mkt-strip { background: var(--surface); }
+  :root[data-theme="dark"] .mkt-up { color: #8FD9AC; }
+  :root[data-theme="dark"] .mkt-down { color: #F0A099; }
+  :root[data-theme="dark"] .mkt-status--ok { color: #8FD9AC; }
+  :root[data-theme="dark"] .mkt-status--off { color: #F0A099; }
+
+  @media (max-width: 720px) { .mkt-cambio { grid-template-columns: 1fr 1fr; } .mkt-more { margin-left: 0; width: 100%; } }
+
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
-
-  /* ---------- Painel inicial (pendências + posição) ---------- */
-  .painel-titulo {
-    margin: 0 0 14px; font-family: var(--font-data); font-size: 11px; font-weight: 600;
-    letter-spacing: .13em; text-transform: uppercase; color: var(--muted);
-  }
-  .painel-titulo:not(:first-child) { margin-top: 30px; }
-
-  /* cards de pendência: número grande + o que é + link direto p/ a tela filtrada */
-  .pend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
-  .pend-card {
-    display: flex; flex-direction: column; gap: 3px; padding: 16px 18px;
-    border-radius: 12px; text-decoration: none; background: var(--surface);
-    box-shadow: var(--shadow); border-left: 4px solid var(--border);
-    transition: transform .16s ease, box-shadow .16s ease;
-  }
-  .pend-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(11,61,36,.08), 0 16px 32px -14px rgba(11,61,36,.34); }
-  .pend-card__num { font-family: var(--font-data); font-size: 30px; font-weight: 700; line-height: 1.05; color: var(--ink); }
-  .pend-card__titulo { font-size: 13.5px; font-weight: 600; color: var(--ink); }
-  .pend-card__desc { font-size: 12px; line-height: 1.45; color: var(--muted); }
-  .pend-card--alerta { border-left-color: var(--accent); }
-  .pend-card--alerta .pend-card__num { color: var(--danger-text); }
-  .pend-card--atencao { border-left-color: #D9A227; }
-  .pend-card--neutro { border-left-color: var(--primary-light); }
-
-  /* estado "sem pendência alguma" */
-  .painel-ok {
-    display: flex; align-items: center; gap: 12px; padding: 16px 20px;
-    background: var(--success-bg); border-radius: var(--radius); color: var(--success-text);
-  }
-  .painel-ok__dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: none; }
-  .painel-ok strong { display: block; font-size: 14px; }
-  .painel-ok span:last-child { font-size: 12.5px; opacity: .85; }
-
-  /* números de posição */
-  .num-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
-  .num-tile { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
-  .num-tile__lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  .num-tile__val { font-family: var(--font-data); font-size: 26px; font-weight: 700; line-height: 1.1; color: var(--ink); }
-  .num-tile__val.is-neg { color: var(--danger-text); }
-  .num-tile__val.is-alerta { color: #8A6116; }
-  .num-tile__sub { font-size: 11.5px; color: var(--muted); }
-  .painel-nota { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
-  .painel-nota a { color: var(--primary); }
-
-  /* badge de pendência no menu lateral */
-  .sb-badge {
-    margin-left: auto; min-width: 20px; padding: 1px 6px; border-radius: 99px;
-    background: #E8322C; color: #fff; text-align: center;
-    font-family: var(--font-data); font-size: 10.5px; font-weight: 700; line-height: 17px;
-  }
-
-  :root[data-theme="dark"] .painel-ok { background: rgba(122,214,163,.12); color: #9BD8B3; }
-  :root[data-theme="dark"] .num-tile__val.is-alerta { color: #F0D9A8; }
-  :root[data-theme="dark"] .pend-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 16px 32px -14px rgba(0,0,0,.7); }
-
-  .alert__hint { display: block; margin-top: 8px; font-size: 12.5px; opacity: .8; }
-
-  /* reativar contrato cancelado, dentro do próprio aviso vermelho */
-  .reativar { margin-top: 12px; }
-  .reativar > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; }
-  .reativar form { margin-top: 10px; max-width: 520px; }
-  .reativar textarea { width: 100%; resize: vertical; }
-
-  /* "zona de risco": ações destrutivas, fechadas por padrão (<details>) */
-  .zona-risco { margin-top: 26px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-  .zona-risco > summary {
-    padding: 14px 20px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--danger-text);
-    list-style: none;
-  }
-  .zona-risco > summary::-webkit-details-marker { display: none; }
-  .zona-risco > summary::before { content: "▸ "; }
-  .zona-risco[open] > summary::before { content: "▾ "; }
-  .zona-risco[open] > summary { box-shadow: inset 0 -1px 0 var(--border); }
-  .zona-risco__corpo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px; }
-  .zona-risco__corpo h3 { margin: 0 0 6px; font-size: 15px; color: var(--ink); }
-  .zona-risco__corpo p { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
-  .zona-risco__corpo textarea { width: 100%; resize: vertical; }
-  .zona-risco__corpo .btn { margin-top: 10px; }
-  @media (max-width: 860px) { .zona-risco__corpo { grid-template-columns: 1fr; } }
-
-  /* contrato cancelado: linha apagada, sem sumir da lista */
-  tr.linha-cancelada td { opacity: .55; }
-  tr.linha-cancelada td:first-child strong { text-decoration: line-through; }
-
-  /* faixa do link compartilhável, com botão de copiar */
-  .link-share { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .link-share__lbl { flex: none; font-weight: 600; }
-  .link-share__url { flex: 1; min-width: 240px; word-break: break-all; font-family: var(--font-data); font-size: 12px; }
-  .link-share .btn { flex: none; padding: 6px 14px; font-size: 13px; }
-
-  /* subtotal por armazém na tabela de estoque */
-  tr.linha-subtotal td { background: var(--primary-soft); font-weight: 600; }
-  :root[data-theme="dark"] tr.linha-subtotal td { background: rgba(122,214,163,.10); }
 </style>
     
     <script>(function(){try{if(localStorage.getItem('ut-theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}})();</script>
@@ -808,11 +884,11 @@
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"></path></svg>
                             <span>Nova compra</span>
                         </a>
-                        <a href="compras.html" class="sb-link ">
+                        <a href="compras.html" class="sb-link is-active">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="17" rx="2"></rect><path d="M8.5 8h7M8.5 12h7M8.5 16h4"></path></svg>
                             <span>Compras lançadas</span>
-                            <span class="sb-badge" title="Compras com etapa pendente">8</span>
-                        </a>
+                                                            <span class="sb-badge" title="Compras com etapa pendente">8</span>
+                                                    </a>
                                         <a href="relatorio.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"></path><rect x="6" y="11" width="3.2" height="6"></rect><rect x="11.4" y="7" width="3.2" height="10"></rect><rect x="16.8" y="13.5" width="3.2" height="3.5"></rect></svg>
                         <span>Estoque</span>
@@ -831,26 +907,26 @@
                     </a>
                 </div>
             
-                            <div class="sb-group">
-                    <div class="sb-group__label">Mercado</div>
-                    <a href="tela-ny.html" class="sb-link ">
+            <div class="sb-group">
+                <div class="sb-group__label">Mercado</div>
+                                    <a href="tela-ny.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v4M7 14v6M7 8h0a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2Z"></path><path d="M17 4v2M17 16v4M17 6h0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path></svg>
                         <span>Tela NY (fixações)</span>
-                        <span class="sb-badge" title="Lotes a fixar">7</span>
-                    </a>
-                    <a href="cotacoes.html" class="sb-link ">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"></path><path d="m5 14 4-4 3.5 3L18 7"></path><path d="M14.5 7H18v3.5"></path></svg>
-                        <span>Cotações</span>
-                    </a>
-                </div>
-            
+                                                    <span class="sb-badge" title="Lotes a fixar">7</span>
+                                            </a>
+                                <a href="cotacoes.html" class="sb-link ">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"></path><path d="m5 14 4-4 3.5 3L18 7"></path><path d="M14.5 7H18v3.5"></path></svg>
+                    <span>Cotações</span>
+                </a>
+            </div>
+
                             <div class="sb-group">
                     <div class="sb-group__label">Administração</div>
                     <a href="usuarios.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5.5 19.5c1.3-3.2 3.8-4.8 6.5-4.8s5.2 1.6 6.5 4.8"></path></svg>
                         <span>Usuários</span>
                     </a>
-                    <a href="clientes.html" class="sb-link is-active">
+                    <a href="clientes.html" class="sb-link ">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"></path><path d="M9 20v-6h6v6"></path></svg>
                         <span>Clientes</span>
                     </a>
@@ -874,7 +950,9 @@
     <div class="main">
         <header class="appbar">
             <div class="appbar__crumb">
-                                        <span>Administração</span><span class="sep">/</span><b>Clientes</b>
+                                        <span>Compras &amp; Classificação</span><span class="sep">/</span>
+    <a href="compras.html" style="color:inherit;">Compras lançadas</a><span class="sep">/</span>
+    <b>UTS 7322</b>
                             </div>
             <div class="appbar__user">
                 <button type="button" class="theme-toggle" id="themeToggle" aria-label="Alternar modo escuro" title="Alternar modo escuro">
@@ -889,7 +967,7 @@
                 <div class="appbar__acts">
                     <a href="#" title="Trocar senha">Trocar senha</a>
                     <form method="POST" action="index.html">
-                        <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off">                        <button type="submit" title="Sair">Sair</button>
+                        <input type="hidden" name="_token" value="" autocomplete="off">                        <button type="submit" title="Sair">Sair</button>
                     </form>
                 </div>
             </div>
@@ -898,72 +976,372 @@
         <div class="content">
             <div class="page-head">
                 <div>
-                    <h1>Clientes</h1>
-                    <p class="page-sub">Compradores (BUYER) usados nos contratos de exportação.</p>                </div>
+                    <h1>Compra UTS 7322</h1>
+                    <p class="page-sub">COOPERATIVA VALE DO RIO VERDE · 06/08/2026</p>                </div>
+                                    <div class="page-actions">    <a href="#" class="btn btn-ghost">Editar compra</a>
+</div>
                             </div>
 
-                            <div class="admin-grid">
-        <div class="usercard">
-            <div class="utable__head" style="grid-template-columns: 1fr 1.4fr 150px;">
-                <span>Nome</span><span>Endereço</span><span class="r">Ações</span>
-            </div>
-
-                            <div class="utable__row" style="grid-template-columns: 1fr 1.4fr 150px; position:static;">
-                    <span class="utable__name">CAFÉ DEL PUERTO</span>
-                    <span style="font-size:12.5px; color:var(--muted); white-space:pre-line; line-height:1.45;">INICIATIVAS COMERCIALES NAVARRAS S.A
-Principe de Vergara, 136 – of 9 y 10
-Madrid – Spain Zipcode 28002</span>
-                    <span style="justify-self:end; display:flex; gap:6px;">
-                        <a href="clientes.html/1/editar" class="mini">Editar</a>
-                        <form method="POST" action="clientes.html/1" onsubmit="return confirm('Remover o cliente CAFÉ DEL PUERTO?');" style="margin:0;">
-                            <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                            <button type="submit" class="mini mini--danger">Excluir</button>
-                        </form>
-                    </span>
-                </div>
-                            <div class="utable__row" style="grid-template-columns: 1fr 1.4fr 150px; position:static;">
-                    <span class="utable__name">NORTHBROOK COFFEE TRADING LLC</span>
-                    <span style="font-size:12.5px; color:var(--muted); white-space:pre-line; line-height:1.45;">OFFICE 201,15, 1-ST MIKRORAYON
-SVERDLOV URBAN SETTLEMENT, VSEVOLOZHSK
-DISTRICT, LENINGRAD OBLAST, 188682,
-RUSSIAN FEDERATION</span>
-                    <span style="justify-self:end; display:flex; gap:6px;">
-                        <a href="clientes.html/2/editar" class="mini">Editar</a>
-                        <form method="POST" action="clientes.html/2" onsubmit="return confirm('Remover o cliente NORTHBROOK COFFEE TRADING LLC?');" style="margin:0;">
-                            <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                            <button type="submit" class="mini mini--danger">Excluir</button>
-                        </form>
-                    </span>
-                </div>
-            
-            <div class="usercard__foot">
-                <span>2 clientes</span>
-            </div>
+                            
+    
+    <div class="calc-grid" style="margin-bottom:20px;">
+        <div class="calc-item">
+            <span class="calc-lbl">Contratado</span>
+            <span class="calc-val">600,00 sc</span>
         </div>
-
-        <form method="POST" action="clientes.html" class="userform">
-            <input type="hidden" name="_token" value="Nx14jF9svdcm7PsYo7uFYrNay1Akip8F1j0xSDXy" autocomplete="off">            <div>
-                <h2>Adicionar cliente</h2>
-                <p class="userform__lead">O nome vira a 1ª linha (em negrito) e o endereço o bloco abaixo, no campo BUYER do contrato.</p>
-            </div>
-            <div class="fields">
-                <label>
-                    <span class="lbl">Nome</span>
-                    <input type="text" name="nome" value="" placeholder="Ex.: CAFÉ DEL PUERTO" required>
-                </label>
-                <label>
-                    <span class="lbl">Endereço (uma linha por linha)</span>
-                    <textarea name="endereco" rows="4" placeholder="INICIATIVAS COMERCIALES NAVARRAS S.A&#10;Principe de Vergara, 136 – of 9 y 10&#10;Madrid – Spain Zipcode 28002" required style="width:100%; resize:vertical;"></textarea>
-                </label>
-                <label>
-                    <span class="lbl">Ref. padrão do comprador (opcional)</span>
-                    <input type="text" name="ref_padrao" value="" placeholder="Ex.: CONTRACT NO. 26-003 DD. 17.02.2026">
-                    <span class="hint">Se preenchido, é lançado automaticamente no "Ref. Comprador" ao escolher este cliente.</span>
-                </label>
-            </div>
-            <button type="submit" class="btn-coffee" style="margin-top:2px;">Adicionar cliente</button>
-        </form>
+        <div class="calc-item">
+            <span class="calc-lbl">Entregue</span>
+            <span class="calc-val">590,00 sc</span>
+        </div>
+        <div class="calc-item">
+            <span class="calc-lbl">
+                                    Liquidada
+                            </span>
+            <span class="calc-val ">
+                                    590,00 sc
+                            </span>
+        </div>
+        <div class="calc-item">
+            <span class="calc-lbl">Valor efetivo</span>
+            <span class="calc-val">
+                R$ 646.050,00
+            </span>
+        </div>
     </div>
 
+    
+    
+            <div class="alert alert-success" style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+            <strong>Compra liquidada com 590,00 sc.</strong>
+            <span>
+                Encerrada em 10/08/2026 às 16:20
+                 por QA Teste Union  —
+                
+                                o sistema reconhece este volume como final (contratado era 600,00 sc).
+            </span>
+            <form method="POST" action="#" style="margin-left:auto;"
+                  onsubmit="return confirm('Reabrir a UTS UTS 7322? A diferença entre contratado e entregue volta a aparecer como pendência.');">
+                <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="PATCH">                <button type="submit" class="mini">Reabrir</button>
+            </form>
+        </div>
+    
+    
+    <div class="card">
+        <div class="card__header"><h2>Dados da compra</h2></div>
+        <div class="card__body">
+            <div class="form-grid">
+                <div class="field"><label>UTS</label><div>UTS 7322</div></div>
+                <div class="field"><label>Data da compra</label><div>06/08/2026</div></div>
+                <div class="field"><label>Vendedor</label><div>COOPERATIVA VALE DO RIO VERDE</div></div>
+                <div class="field">
+                    <label>CNPJ / CPF</label>
+                    <div>
+                        
+                                                    <span class="badge badge--amber">a confirmar</span>
+                                            </div>
+                </div>
+                <div class="field"><label>Certificação</label><div>4C</div></div>
+                <div class="field"><label>Logística</label><div>Posto</div></div>
+                <div class="field"><label>Tipo de café</label><div>Arábica</div></div>
+                <div class="field">
+                    <label>Volume contratado</label>
+                    <div>
+                        600,00 sacas
+                                                    <br><span style="color:var(--muted); font-size:12.5px;">36.000,00 kg</span>
+                                            </div>
+                </div>
+                
+                                    <div class="field"><label>Padrão final</label><div>Good Cup</div></div>
+                    <div class="field"><label>Tipo de bebida</label><div>Duro + 2RY</div></div>
+                            </div>
+            <p style="color:var(--muted); font-size:12.5px; margin-top:14px; margin-bottom:0;">
+                Lançada por QA Teste Union em 11/08/2026 09:30.
+            </p>
+        </div>
+    </div>
+
+    
+    <div class="card">
+        <div class="card__header"><h2>Entregas no armazém</h2></div>
+        <div class="card__body" style="padding:0;">
+            <div class="table-wrap" style="border:0; border-radius:0;">
+                <table class="data tabela-entregas">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Armazém</th>
+                            <th class="num">Sacas</th>
+                            <th class="num">Peso (kg)</th>
+                            <th class="num">Valor da entrega</th>
+                            <th>Nº do lote</th>
+                            <th>Lançada por</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                                                                                <tr>
+                                <form method="POST" action="#" id="e-9">
+                                    <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="PUT">                                </form>
+                                <td><input type="date" form="e-9" name="data_entrega" value="2026-07-24" required></td>
+                                <td>
+                                    <select form="e-9" name="armazem" required>
+                                                                                    <option value="SAAG" selected>SAAG</option>
+                                                                                    <option value="QUALITE" >QUALITÉ</option>
+                                                                                    <option value="DINAMO_MACHADO" >DÍNAMO MACHADO</option>
+                                                                            </select>
+                                </td>
+                                
+                                <td class="num">
+                                    <input type="number" step="0.01" min="0.01" form="e-9" name="volume_sacas"
+                                           value="300" required
+                                           class="campo-sacas js-sacas">
+                                </td>
+                                <td class="num">
+                                    <input type="number" step="0.01" min="0.01" form="e-9" name="peso_kg"
+                                           value="18000"
+                                           class="campo-peso js-peso">
+                                </td>
+                                <td class="num" style="font-family:var(--font-data); font-size:13px;">
+                                    R$ 328.500,00
+                                </td>
+                                <td>
+                                    <input type="text" form="e-9" name="numero_lote" value="L-2026-0421"
+                                           placeholder="Ex.: L-2026-0451" class="campo-lote">
+                                </td>
+                                <td style="font-size:12.5px; color:var(--muted);">
+                                    QA Teste Union<br>24/07/2026
+                                </td>
+                                <td class="cell-action" style="display:flex; gap:6px; justify-content:flex-end;">
+                                    <button type="submit" form="e-9" class="mini">Salvar</button>
+                                    <form method="POST" action="#"
+                                          onsubmit="return confirm('Remover esta entrega? O saldo da UTS será recalculado.');" style="margin:0;">
+                                        <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                                        <button type="submit" class="mini mini--danger">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                                                                                <tr>
+                                <form method="POST" action="#" id="e-10">
+                                    <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="PUT">                                </form>
+                                <td><input type="date" form="e-10" name="data_entrega" value="2026-08-18" required></td>
+                                <td>
+                                    <select form="e-10" name="armazem" required>
+                                                                                    <option value="SAAG" selected>SAAG</option>
+                                                                                    <option value="QUALITE" >QUALITÉ</option>
+                                                                                    <option value="DINAMO_MACHADO" >DÍNAMO MACHADO</option>
+                                                                            </select>
+                                </td>
+                                
+                                <td class="num">
+                                    <input type="number" step="0.01" min="0.01" form="e-10" name="volume_sacas"
+                                           value="290" required
+                                           class="campo-sacas js-sacas">
+                                </td>
+                                <td class="num">
+                                    <input type="number" step="0.01" min="0.01" form="e-10" name="peso_kg"
+                                           value="17400"
+                                           class="campo-peso js-peso">
+                                </td>
+                                <td class="num" style="font-family:var(--font-data); font-size:13px;">
+                                    R$ 317.550,00
+                                </td>
+                                <td>
+                                    <input type="text" form="e-10" name="numero_lote" value="L-2026-0422"
+                                           placeholder="Ex.: L-2026-0451" class="campo-lote">
+                                </td>
+                                <td style="font-size:12.5px; color:var(--muted);">
+                                    QA Teste Union<br>18/08/2026
+                                </td>
+                                <td class="cell-action" style="display:flex; gap:6px; justify-content:flex-end;">
+                                    <button type="submit" form="e-10" class="mini">Salvar</button>
+                                    <form method="POST" action="#"
+                                          onsubmit="return confirm('Remover esta entrega? O saldo da UTS será recalculado.');" style="margin:0;">
+                                        <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                                        <button type="submit" class="mini mini--danger">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                                            </tbody>
+                                            <tfoot>
+                            <tr>
+                                <td colspan="2">Total entregue</td>
+                                <td class="num"><strong>590,00</strong></td>
+                                <td class="num"><strong>35.400,00</strong></td>
+                                <td class="num" style="font-family:var(--font-data); font-size:13px;">
+                                    <strong>R$ 646.050,00</strong>
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </tfoot>
+                                    </table>
             </div>
+
+            
+            <div style="padding:16px 20px; box-shadow: inset 0 1px 0 var(--border);">
+                <form method="POST" action="#"
+                      style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+                    <input type="hidden" name="_token" value="" autocomplete="off">                    <div class="field " style="margin-bottom:0;">
+                        <label for="data_entrega">Data da entrega</label>
+                        <input type="date" id="data_entrega" name="data_entrega" value="2026-08-12" required>
+                                            </div>
+                    <div class="field " style="margin-bottom:0;">
+                        <label for="armazem">Armazém</label>
+                        <select id="armazem" name="armazem" required>
+                                                            <option value="SAAG" >SAAG</option>
+                                                            <option value="QUALITE" >QUALITÉ</option>
+                                                            <option value="DINAMO_MACHADO" >DÍNAMO MACHADO</option>
+                                                    </select>
+                                            </div>
+                    
+                    <div class="field " style="margin-bottom:0;">
+                        <label for="volume_sacas">Sacas que entraram</label>
+                        <input type="number" step="0.01" min="0.01" id="volume_sacas" name="volume_sacas"
+                               value="10"
+                               style="width:140px;" class="js-sacas" required>
+                                            </div>
+                    <div class="field " style="margin-bottom:0;">
+                        <label for="peso_kg">Peso (kg)</label>
+                        <input type="number" step="0.01" min="0.01" id="peso_kg" name="peso_kg"
+                               value="600"
+                               style="width:150px;" class="js-peso">
+                                            </div>
+                    <div class="field" style="margin-bottom:0;">
+                        <label for="numero_lote">Nº do lote <span class="hint">(quando o armazém informar)</span></label>
+                        <input type="text" id="numero_lote" name="numero_lote" value="" placeholder="Ex.: L-2026-0451">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Lançar entrega</button>
+                </form>
+                <p style="margin:12px 0 0; font-size:12.5px; color:var(--muted);">
+                    Lance o que <strong>realmente entrou</strong>: o volume pode ficar acima ou abaixo do contratado,
+                    e é ele que vale para o estoque e para o pagamento. Informe <strong>sacas ou peso</strong> —
+                    o outro campo se completa a 60 kg por saca.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+    <script>
+        (function () {
+            var KG_POR_SACA = 60;
+
+            function arredonda(n) { return Math.round(n * 100) / 100; }
+
+            // O par de campos da MESMA entrega: dentro da linha da tabela ou,
+            // no formulário de baixo, dentro do próprio form.
+            function irmao(el, seletor) {
+                var escopo = el.closest('tr') || el.closest('form') || document;
+                return escopo.querySelector(seletor);
+            }
+
+            document.addEventListener('input', function (ev) {
+                var el = ev.target;
+
+                if (el.classList.contains('js-sacas')) {
+                    var peso = irmao(el, '.js-peso');
+                    if (!peso) return;
+                    var sacas = parseFloat(el.value);
+                    peso.value = sacas > 0 ? arredonda(sacas * KG_POR_SACA) : '';
+                    return;
+                }
+
+                if (el.classList.contains('js-peso')) {
+                    var sacasEl = irmao(el, '.js-sacas');
+                    if (!sacasEl) return;
+                    var kg = parseFloat(el.value);
+                    sacasEl.value = kg > 0 ? arredonda(kg / KG_POR_SACA) : '';
+                }
+            });
+        })();
+    </script>
+
+    <div class="card">
+        <div class="card__header">
+            <h2>Seleção e classificação</h2>
+            <a href="compra-classificacao.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">
+                Editar
+            </a>
+        </div>
+        <div class="card__body">
+                                            <div class="table-wrap">
+                    
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th>Padrão final</th>
+                                <th>Tipo de bebida</th>
+                                                                    <th class="num">SCS 12 UP</th>
+                                                                    <th class="num">SCS 13 UP</th>
+                                                                    <th class="num">SCS 17/18</th>
+                                                                    <th class="num">SCS 14/16</th>
+                                                                    <th class="num">Mercado interno</th>
+                                                                    <th class="num">Grinders</th>
+                                                                    <th class="num">Moka</th>
+                                                                <th class="num">Qtd. lotes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Good Cup</td>
+                                <td>Duro + 2RY</td>
+                                                                    <td class="num">
+                                        59,00
+                                        (10,0%)
+                                    </td>
+                                                                    <td class="num">
+                                        59,00
+                                        (10,0%)
+                                    </td>
+                                                                    <td class="num">
+                                        206,50
+                                        (35,0%)
+                                    </td>
+                                                                    <td class="num">
+                                        147,50
+                                        (25,0%)
+                                    </td>
+                                                                    <td class="num">
+                                        59,00
+                                        (10,0%)
+                                    </td>
+                                                                    <td class="num">
+                                        29,50
+                                        (5,0%)
+                                    </td>
+                                                                    <td class="num">
+                                        29,50
+                                        (5,0%)
+                                    </td>
+                                                                <td class="num">2,0812</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                                    </div>
+    </div>
+
+    <div class="card">
+        <div class="card__header">
+            <h2>Financeiro</h2>
+            <a href="#" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">
+                Editar
+            </a>
+        </div>
+        <div class="card__body">
+                            <div class="form-grid">
+                    <div class="field"><label>Valor da saca</label><div>R$ 1.095,00</div></div>
+                    <div class="field"><label>Valor contratado</label><div>R$ 657.000,00</div></div>
+                    <div class="field"><label>Valor efetivo (entregue)</label><div>R$ 646.050,00</div></div>
+                    <div class="field"><label>Corretor</label><div>Corretora Aurora</div></div>
+                    <div class="field"><label>Comissão</label><div>0,50%</div></div>
+                    <div class="field"><label>Pagamento</label>
+                        <div>
+                            26/08/2026
+                                                            <br><span style="color:var(--muted); font-size:12.5px;">Pagamento contra romaneio do armazém</span>
+                                                    </div>
+                    </div>
+                </div>
+                    </div>
+    </div>
+        </div>
     </div>
 </div>
 
@@ -1017,5 +1395,5 @@ RUSSIAN FEDERATION</span>
         });
     })();
 </script>
-<script>document.addEventListener("submit",function(e){e.preventDefault();var a=(e.target.getAttribute("action")||"");if(a.indexOf("index.html")>-1)window.location.href="index.html";},true);</script></body>
+<script>document.addEventListener("submit",function(e){e.preventDefault();var a=(e.target.getAttribute("action")||"");if(a.indexOf("index.html")>-1)window.location.href="index.html";},true);</script><script src="demo-compras.js"></script></body>
 </html>

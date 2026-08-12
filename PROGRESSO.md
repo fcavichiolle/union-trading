@@ -127,8 +127,33 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 > que entrou). A tabela `financeiro_compras` foi **removida**: preço,
 > corretor e comissão são dados da negociação e vivem na compra — a tela do
 > perfil financeiro continua existindo, editando essas colunas.
-- **Cadastro de compra**: UTS, mês/ano (rotulado "Mês/ano da entrega"), fornecedor + CNPJ
-  validado, armazém, certificação, tipo de entrada (padrão "BICA"), volume em sacas.
+> **ARÁBICA × CONILON, PESO E DATA DA ENTREGA (ago/2026).** Três mudanças
+> pedidas pela mesa, todas com efeito em cadeia:
+> - **`compras.tipo_entrada`** deixou de ser texto livre com "BICA" (que não
+>   era espécie de nada) e virou **ARABICA** (pré-selecionado) ou **CONILON**,
+>   em dropdown. `Compra::tiposEntrada()`.
+> - **Padrão final e tipo de bebida** passaram a ser informados **já no
+>   lançamento da compra** — são parte do negócio fechado. Ficam em
+>   `compras.padrao_final` / `compras.tipo_bebida` (nullable). Quando o café é
+>   **conilon, os dois campos desaparecem da tela** (JS) e são gravados como
+>   nulos no servidor, inclusive na classificação e inclusive quando a compra
+>   muda de espécie depois de classificada. A classificação continua sendo a
+>   dona das **peneiras**, e ao salvar ela a compra acompanha o padrão
+>   corrigido (uma verdade só, não duas telas divergindo).
+> - **PESO ao lado das sacas**, na compra e na entrega: preencher um calcula o
+>   outro a **60 kg/saca** (`Compra::KG_POR_SACA`, `pesoDeSacas()`,
+>   `sacasDePeso()`, `completarSacasEPeso()`), no navegador **e** no servidor
+>   (`prepareForValidation`), porque o armazém às vezes informa quilos e às
+>   vezes sacas. Os dois valores são gravados **como informados**: 200 sacas
+>   pesando 12.010 kg é realidade de armazém, e "corrigir" apagaria informação.
+> - **A entrega guarda o DIA** (`entregas.data_entrega`, antes `mes_ano`, que
+>   era normalizado para o dia 01): a auditoria precisa saber quando o café
+>   entrou. Por isso o filtro de mês do Estoque passou a fechar o **fim do
+>   mês** no limite de cima — com `mes_ate . '-01'` tudo que entrasse depois
+>   do dia 1º ficava fora do recorte.
+- **Cadastro de compra**: UTS, data, fornecedor + CNPJ/CPF opcional, certificação,
+  **tipo de café (arábica/conilon)**, **padrão final + tipo de bebida** (só arábica),
+  volume em **sacas e/ou peso**, logística, preço e pagamento.
 - **Número do lote** (`compras.numero_lote`, coluna nova): preenchido **depois** do lançamento
   (não faz parte do formulário de criação — é adicionado quando o armazém/controle de estoque
   informa o número). Enquanto estiver em branco (`Compra::precisaDeNumeroLote()`), a compra
@@ -144,8 +169,25 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   `certificacao` exigem (GOTCHA 3). Nullable no banco (classificações antigas não têm o
   dado), obrigatório no formulário. Aparece na tela da compra e sob o padrão em
   "Compras lançadas".
-- **Classificação**: Fine Cup / Good Cup, distribuição nas peneiras 17/18, 14/16, mercado
-  interno, grinders e **moka** (% e sacas). **Cálculo de lotes** (total de sacas ÷ 283,49) feito
+- **Faixas de peneira em UMA lista** (`Classificacao::faixas()`, ago/2026): o PROGRESSO
+  avisava que faixa nova precisava ser somada **em 4 lugares** (model, request, SQL do
+  estoque e tabelas de exibição) — e esquecer um deles dava número errado calado. Agora
+  todos leem a mesma lista: model (`getFillable`, casts, `totalSacas`, `totalPct`),
+  `StoreClassificacaoRequest`, `DashboardController::distribuicao()` (uma coluna somada
+  por faixa, com o **prefixo como apelido** — a view lê `$linha->peneira_1718`) e as
+  tabelas (`compras/show`, `dashboard/_tabela-estoque`, `_tabela-classificacao`). Faixa
+  nova = uma linha em `faixas()`. **Acrescentadas SCS 12 UP e SCS 13 UP**, acima da 17/18.
+- **Padrões novos**: Very Good Cup, Bica Fine Cup, Bica Good Cup e Bica Very Good Cup.
+  Foi possível porque `classificacoes.padrao_final` **deixou de ser ENUM e virou VARCHAR
+  NULL** (migration `..._padroes_novos_e_peneiras_12up_13up`): com ENUM, cada padrão novo
+  exigia migration de `ALTER` que só rodava no MySQL e o SQLite dos testes **recusava** o
+  código novo — era impossível testar um padrão recém-criado (o antigo GOTCHA 3). A lista
+  agora vive só em `Classificacao::padroes()` e alimenta dropdowns, validação e filtros.
+- **Classificação**: padrão final + tipo de bebida (herdados da compra, corrigíveis aqui),
+  distribuição nas peneiras 12 UP, 13 UP, 17/18, 14/16, mercado interno, grinders e
+  **moka** (% e sacas). O erro de soma (100% e teto de sacas) tem **chave própria**
+  (`soma_pct`/`soma_sacas`) e aparece acima da tabela — antes era pendurado na primeira
+  peneira, o que virava mensagem no campo errado. **Cálculo de lotes** (total de sacas ÷ 283,49) feito
   sempre no servidor. A linha "Moka" foi adicionada depois das demais (colunas `moka_pct`/
   `moka_sacas` em `classificacoes`, via migration de `ALTER` — mesma lógica do ENUM de
   certificação: nunca editar a migration de criação já rodada). A view do formulário
@@ -168,6 +210,11 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   autor (`liquidada_em`/`liquidada_por` + AuditLog), não um apagamento. **Reabrir** desfaz.
   Só é possível liquidar UTS com ao menos uma entrega. Filtro novo em "Compras lançadas":
   **Divergência a liquidar**. Ver `Compra::divergenciaPendente()` e `volumeReconhecido()`.
+  Dois acertos de acabamento (11/ago): o número da diferença já vinha marcado com
+  `.is-alerta` na tela da compra, mas só existia regra CSS para `.num-tile__val` —
+  o destaque âmbar **nunca aparecia** (corrigido em `styles.blade.php`, claro e
+  escuro); e o aviso de liquidada saía com espaço antes do ponto
+  ("(contratado era 600,00 sc) .", ver GOTCHA 8).
 - **Fornecedor com CNPJ ou CPF, e opcional**: a coluna virou `documento` (só dígitos) +
   `tipo_documento`. Pode ficar em branco ("vendedor a confirmar", como na planilha da mesa)
   e vira pendência no painel — exigir o documento empurrava a funcionária 2 de volta para o
@@ -342,6 +389,58 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   chamadas sucessivas de `Http::fake` NÃO substituem a anterior (stubs se acumulam e o
   primeiro match vence) — para simular queda use um fake único com closure + flag.
 
+### Demo pública (GitHub Pages) — agora GERADA, não escrita à mão
+- As páginas estáticas de `docs/` eram editadas na mão e por isso **atrasavam**
+  em relação ao sistema (chegaram a mostrar o modelo antigo de compras, sem
+  entregas nem liquidação). Agora existe um **gerador**:
+  `tests/Feature/GerarDemoTest.php`. Ele monta um cenário fictício, renderiza as
+  **views de verdade** com um admin logado e troca as URLs de rota por nomes de
+  arquivo. Rodar assim (fora disso o teste é **pulado**, porque escreve em
+  arquivo publicado):
+  ```
+  GERAR_DEMO=1 php artisan test --filter=GerarDemo
+  ```
+- **Geradas** (não editar à mão — a próxima rodada sobrescreve): `inicio.html`,
+  `compras.html`, `compra.html` (UTS com divergência: entrou mais que o
+  contratado, duas entregas, uma sem lote, botão **Liquidar compra**),
+  `compra-liquidada.html` (aviso verde + **Reabrir**), `compra-nova.html`,
+  `compra-classificacao.html` e `relatorio.html`.
+- **A demo FUNCIONA de verdade no módulo de compras** (`docs/demo-compras.js`,
+  ago/2026): quem abre o link consegue **lançar uma compra**, vê-la aparecer na
+  lista (marcada como "sua"), **lançar/editar/excluir entregas** com a conversão
+  peso↔sacas, **classificar** e **liquidar/reabrir**. O estado vive em
+  **`sessionStorage`** — fecha a aba, acaba (é o que a demo promete a quem
+  entra, e evita guardar dado de visitante). As UTS de exemplo continuam
+  **somente leitura**; o que o visitante cria é totalmente editável. O motor
+  repete as regras do servidor (60 kg/saca, saldo = contratado − entregue,
+  lotes ÷ 283,49, "sem nº de lote não entra em estoque"). **A consulta de CNPJ
+  não funciona** (não há backend): o campo aceita digitação e o aviso explica
+  isso em vez de dar erro de rede. Como as páginas são renderizadas das views,
+  o JS do próprio app (conversão de peso, % da classificação, esconder
+  qualidade no conilon) já vem junto — o motor só cuida da persistência.
+- **Mantidas à mão**: `index.html` (login), `tela-ny.html`, `cotacoes.html` e os
+  cadastros (`clientes`, `corretoras`, `qualidades`, `usuarios`, `contratos`,
+  `contrato-novo`). A Tela NY e as Cotações têm **JS de demonstração escrito na
+  unha** (fixação em grupo funcionando, cotações de exemplo) que uma
+  renderização crua apagaria.
+- **Dados são fictícios e SEM DOCUMENTO NENHUM**: a demo é pública, então nem
+  CNPJ de exemplo entra — todos os vendedores ficam "a confirmar", que é um
+  estado real do sistema. Os nomes reais que ainda existiam nas páginas
+  mantidas à mão (fornecedores e clientes) **foram trocados por fictícios**, e
+  os `placeholder` do próprio app que citavam nomes reais também — eles vazavam
+  para a demo a cada geração. O cenário foi calibrado para
+  os badges do menu darem **8** (compras com pendência) e **7** (lotes a fixar),
+  que são os números das páginas mantidas à mão — assim a barra lateral não
+  muda de valor ao navegar. E os totais fecham entre telas:
+  3.254 (estoque) + 970 (aguardando lote) + 1.020 (sem classificação) = 5.244
+  sacas compradas do painel.
+- Varredura de segurança da pasta publicada (roteiro para repetir antes de cada
+  push): procurar CNPJ/CPF formatado (`\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}` e
+  `\d{3}\.\d{3}\.\d{3}-\d{2}`) e os nomes reais conhecidos. Hoje só sobra o
+  `00.000.000/0000-00` do placeholder do campo.
+- Para ver a demo local: `php -S 127.0.0.1:8181 -t docs` (já existe a
+  configuração `demo` no `.claude/launch.json`, que é local e não vai para o Git).
+
 ### Interface — modo escuro
 - Botão sol/lua no header alterna o tema; escolha persiste em `localStorage` (`ut-theme`) e é
   aplicada antes da pintura (sem "flash"). CSS do tema escuro em `partials/styles.blade.php`
@@ -372,7 +471,10 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
    Laravel "chuta" o nome em inglês. Os models `Fornecedor` (→ `fornecedores`) e
    `Classificacao` (→ `classificacoes`) precisam de `protected $table = '...'` explícito,
    senão o Laravel procura por `fornecedors`/`classificacaos`. `FinanceiroCompra` já tinha.
-3. **Coluna ENUM `certificacao`.** Para adicionar uma opção de certificação é preciso mexer
+3. **Coluna ENUM `certificacao`** (e o fim do ENUM em `padrao_final`).
+   **`classificacoes.padrao_final` NÃO é mais ENUM** (virou VARCHAR NULL em
+   ago/2026, ver Módulo 1): acrescentar padrão é só editar
+   `Classificacao::padroes()`. O que segue valendo para `certificacao`: Para adicionar uma opção de certificação é preciso mexer
    em **dois lugares**: o método `Compra::certificacoes()` (dropdown + validação) **e** a
    lista do ENUM na migration `..._create_compras_table.php`. Se só o model mudar, o MySQL
    trunca o valor. Já adicionamos o código `SEM_CERT` ("Sem certificação").
@@ -406,7 +508,42 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
    + `actingAs()` migrando a sessão). Para conferir o que o usuário vê depois de um POST
    inválido, use `->from(rota)->followingRedirects()->post(...)`, que renderiza o destino no
    mesmo ciclo — não faça `post()` e depois um `get()` esperando achar as mensagens.
-8. **Página do relatório renderizava tudo duas vezes.** O arquivo
+8. **`@if` colado numa palavra não é compilado pelo Blade.** Para tirar o espaço
+   antes do ponto final, `...como final@if (...) (contratado era ...)@endif.` foi
+   escrito numa linha só — e o Blade **não reconheceu** o `@if` grudado em
+   "final", só o `@endif`, que então fechou o `@if` de fora. Resultado: erro de
+   sintaxe PHP ("unexpected token elseif") na tela inteira. Quando precisar de
+   texto condicional sem quebra de linha, monte a string num `@php` e imprima
+   com `{{ }}`.
+9. **Na demo, nunca escreva "localhost" na mão num regex.** O `APP_URL` é
+   `http://localhost:8000`: um padrão `https?://localhost/compras/...` passa
+   batido por causa da porta, e o link sai meio-convertido
+   (`compra.html/editar`). O gerador deriva a base de `url('/')` e tem duas
+   asserções de guarda: nenhuma URL de rota sobrando e nenhum `href`/`action`
+   com sufixo colado (atenção: `formaction` também casa com `action="`).
+10. **O gerador da demo roda em SQLite e só conhece os ENUMs originais.**
+   `GOOD_CUP_2R` e `RIO_MINAS` entram por migration de `ALTER` que só roda no
+   MySQL (GOTCHA 3), então no SQLite o CHECK da coluna recusa esses códigos —
+   o cenário da demo usa apenas `FINE_CUP`/`GOOD_CUP`.
+11. **`padrao_final` ficou AMBÍGUO no SQL do Estoque.** A coluna passou a existir
+   nas duas tabelas do join (`compras` e `classificacoes`) quando a compra
+   ganhou a qualidade negociada — e o `select`/`group by` sem prefixo derrubou a
+   tela inteira com "ambiguous column name" (SQLite) em 15 testes de uma vez.
+   Vale a da **classificação** (a conferência), qualificada como
+   `classificacoes.padrao_final as padrao_final`. Lição: coluna com o mesmo nome
+   em duas tabelas de um join precisa de prefixo em TODO lugar, inclusive
+   `groupBy`/`orderBy`.
+12. **`@dataProvider` em docblock não roda mais.** No PHPUnit deste projeto o
+   provider só é reconhecido pelo **atributo** `#[DataProvider('metodo')]`
+   (`use PHPUnit\Framework\Attributes\DataProvider;`). Com a anotação antiga o
+   teste falha com "Too few arguments" — parece erro do teste, mas é o provider
+   que nunca foi chamado.
+13. **Erro de validação de SOMA não deve morar num campo.** A soma das
+   porcentagens era reportada em `peneira_1718_pct` (a "primeira" faixa) — e ao
+   inserir SCS 12 UP no topo, a mensagem mudou de campo sozinha, quebrando
+   testes e confundindo a tela. Agora tem chave própria (`soma_pct`,
+   `soma_sacas`) exibida acima da tabela.
+14. **Página do relatório renderizava tudo duas vezes.** O arquivo
    `dashboard/compras.blade.php` tinha o conteúdo inteiro **colado duas vezes dentro do próprio
    arquivo** (resíduo de uma edição anterior), então o form/tabela apareciam repetidos na tela.
    Corrigido reescrevendo o arquivo do zero. Fica como lembrete: depois de editar uma view,
@@ -448,6 +585,15 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   (ver `partials/styles.blade.php`, seção "Tabela em cards"). No desktop continua tabela normal.
   Padrão reaproveitável em outras tabelas largas: basta a classe `data--cards` e `data-label`.
 - **Opcional**: acrescentar colunas de peneira na quebra por certificação, se fizer sentido.
+- ~~**Demo do GitHub Pages usável pelo cliente**~~ **FEITO (12/ago/2026)** para o módulo de
+  compras (ver "Demo pública" na seção 3). **Contratos, Tela NY e cadastros seguem como
+  demonstração fixa** — se for para valer também neles, o caminho é o mesmo
+  (`docs/demo-compras.js` como modelo), mas é trabalho de outra sessão.
+- **Usuário de demonstração** (12/ago/2026): `demo.ut@utrading.com.br`, perfil **admin**,
+  criado direto no banco com senha aleatória e **sem** troca obrigatória no primeiro acesso
+  (forçar a troca travaria justamente quem recebe a conta). A senha foi entregue no chat e
+  não é recuperável — o banco guarda só o hash; para trocar, use "Resetar senha" na tela de
+  usuários.
 - **Cotações do robusta (Londres)**: Yahoo Finance não cobre — encontrar outra fonte
   (Barchart, Investing, ou dados oficiais ICE, que são pagos) e trocar os símbolos em
   `MercadoCafe::ROBUSTA`.
@@ -457,6 +603,12 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   grupo "Mercado" adicionado ao menu de todas as páginas da demo. Gerado por script
   Python a partir de `contratos.html` (o CSS novo é copiado do bloco "Mercado" de
   `styles.blade.php` automaticamente).
+- ~~**Demo desatualizada**: mostrava o modelo antigo de compras, sem entregas nem
+  liquidação.~~ **FEITO (11/ago/2026)**: a demo passou a ser **gerada das views**
+  (ver "Demo pública (GitHub Pages)" na seção 3). Entraram as telas de compra com
+  entregas, divergência/liquidação, reabertura e o formulário de nova compra; o
+  Estoque saiu do mesmo cenário, então os números fecham entre as telas. Ainda
+  falta trocar os **nomes reais** que sobraram nas páginas mantidas à mão.
 - **Ideias da planilha de posição da mesa** (analisada em 10/ago/2026 —
   `Z:\1-1_PLANILHAS NOVO SERVIDOR\3-2026-POSIÇAO\...\01-AGOSTO_10.08.2026.xlsx`), em
   ordem de aderência ao sistema:
@@ -488,6 +640,11 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
 - **Config de segurança**: `bootstrap/app.php` (middlewares), `app/Providers/AppServiceProvider.php`
   (HTTPS em produção), `SECURITY.md` (detalhes das proteções e checklist de deploy).
 - **Rotas**: `routes/web.php`.
+- **Demo (GitHub Pages)**: páginas em `docs/`; gerador em `tests/Feature/GerarDemoTest.php`;
+  motor interativo em `docs/demo-compras.js`.
+- **Listas centrais** (mexer aqui, não nas telas): `Classificacao::faixas()` (peneiras),
+  `Classificacao::padroes()`, `Classificacao::tiposBebida()`, `Compra::tiposEntrada()`,
+  `Compra::armazens()`, `Compra::certificacoes()`, `Compra::logisticas()`.
 
 ## 8. Como retomar no Claude Code
 

@@ -46,7 +46,7 @@ class PainelInicialTest extends TestCase
     {
         return Compra::create(array_merge([
             'uts' => 'UTS 100', 'data_compra' => '2026-08-01', 'fornecedor_id' => $this->fornecedor->id,
-            'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
+            'certificacao' => 'RFA', 'tipo_entrada' => 'ARABICA',
             'volume_contratado' => 600, 'created_by' => $this->admin->id,
         ], $overrides));
     }
@@ -69,7 +69,7 @@ class PainelInicialTest extends TestCase
     private function entregar(Compra $compra, float $sacas, ?string $lote = 'L-1'): void
     {
         $compra->entregas()->create([
-            'mes_ano' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => $sacas,
+            'data_entrega' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => $sacas,
             'numero_lote' => $lote, 'created_by' => $this->admin->id,
         ]);
     }

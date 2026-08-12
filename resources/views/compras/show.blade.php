@@ -68,10 +68,14 @@
             <span>
                 Encerrada em {{ $compra->liquidada_em->format('d/m/Y \à\s H:i') }}
                 @if ($compra->liquidadaPor) por {{ $compra->liquidadaPor->name }} @endif —
-                o sistema reconhece este volume como final
-                @if (abs($saldo) > 0.01)
-                    (contratado era {{ number_format((float) $compra->volume_contratado, 2, ',', '.') }} sc)
-                @endif.
+                {{-- Montado em PHP, não com @if inline: a quebra de linha do
+                     Blade entrava como espaço antes do ponto final ("sc) ."). --}}
+                @php
+                    $notaContratado = abs($saldo) > 0.01
+                        ? ' (contratado era ' . number_format((float) $compra->volume_contratado, 2, ',', '.') . ' sc)'
+                        : '';
+                @endphp
+                o sistema reconhece este volume como final{{ $notaContratado }}.
             </span>
             <form method="POST" action="{{ route('compras.reabrir', $compra) }}" style="margin-left:auto;"
                   onsubmit="return confirm('Reabrir a UTS {{ $compra->uts }}? A diferença entre contratado e entregue volta a aparecer como pendência.');">
@@ -127,8 +131,21 @@
                 </div>
                 <div class="field"><label>Certificação</label><div>{{ \App\Models\Compra::certificacoes()[$compra->certificacao] ?? $compra->certificacao }}</div></div>
                 <div class="field"><label>Logística</label><div>{{ $compra->logisticaLabel() ?? '—' }}</div></div>
-                <div class="field"><label>Tipo de entrada</label><div>{{ $compra->tipo_entrada }}</div></div>
-                <div class="field"><label>Volume contratado</label><div>{{ number_format((float) $compra->volume_contratado, 2, ',', '.') }} sacas</div></div>
+                <div class="field"><label>Tipo de café</label><div>{{ $compra->tipoEntradaLabel() }}</div></div>
+                <div class="field">
+                    <label>Volume contratado</label>
+                    <div>
+                        {{ number_format((float) $compra->volume_contratado, 2, ',', '.') }} sacas
+                        @if ($compra->peso_kg !== null)
+                            <br><span style="color:var(--muted); font-size:12.5px;">{{ number_format((float) $compra->peso_kg, 2, ',', '.') }} kg</span>
+                        @endif
+                    </div>
+                </div>
+                {{-- Conilon não tem padrão/bebida: os campos nem aparecem. --}}
+                @unless ($compra->ehConilon())
+                    <div class="field"><label>Padrão final</label><div>{{ $compra->padraoFinalLabel() ?? '—' }}</div></div>
+                    <div class="field"><label>Tipo de bebida</label><div>{{ $compra->tipoBebidaLabel() ?? '—' }}</div></div>
+                @endunless
             </div>
             <p style="color:var(--muted); font-size:12.5px; margin-top:14px; margin-bottom:0;">
                 Lançada por {{ $compra->criadoPor?->name ?? '—' }} em {{ $compra->created_at->format('d/m/Y H:i') }}.
@@ -144,9 +161,10 @@
                 <table class="data tabela-entregas">
                     <thead>
                         <tr>
-                            <th>Mês/Ano</th>
+                            <th>Data</th>
                             <th>Armazém</th>
                             <th class="num">Sacas</th>
+                            <th class="num">Peso (kg)</th>
                             <th class="num">Valor da entrega</th>
                             <th>Nº do lote</th>
                             <th>Lançada por</th>
@@ -154,7 +172,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($compra->entregas->sortBy('mes_ano') as $entrega)
+                        @forelse ($compra->entregas->sortBy('data_entrega') as $entrega)
                             @php
                                 $valorEntrega = $compra->valor_saca === null
                                     ? null
@@ -164,7 +182,7 @@
                                 <form method="POST" action="{{ route('compras.entregas.update', [$compra, $entrega]) }}" id="e-{{ $entrega->id }}">
                                     @csrf @method('PUT')
                                 </form>
-                                <td><input type="month" form="e-{{ $entrega->id }}" name="mes_ano" value="{{ $entrega->mes_ano->format('Y-m') }}" required></td>
+                                <td><input type="date" form="e-{{ $entrega->id }}" name="data_entrega" value="{{ $entrega->data_entrega->format('Y-m-d') }}" required></td>
                                 <td>
                                     <select form="e-{{ $entrega->id }}" name="armazem" required>
                                         @foreach (\App\Models\Compra::armazens() as $cod => $rotulo)
@@ -172,10 +190,18 @@
                                         @endforeach
                                     </select>
                                 </td>
+                                {{-- Sacas e peso andam juntos: mexer num recalcula o
+                                     outro (JS no fim da página, e o servidor repete a
+                                     conta). --}}
                                 <td class="num">
                                     <input type="number" step="0.01" min="0.01" form="e-{{ $entrega->id }}" name="volume_sacas"
                                            value="{{ rtrim(rtrim((string) $entrega->volume_sacas, '0'), '.') }}" required
-                                           class="campo-sacas">
+                                           class="campo-sacas js-sacas">
+                                </td>
+                                <td class="num">
+                                    <input type="number" step="0.01" min="0.01" form="e-{{ $entrega->id }}" name="peso_kg"
+                                           value="{{ $entrega->peso_kg === null ? '' : rtrim(rtrim((string) $entrega->peso_kg, '0'), '.') }}"
+                                           class="campo-peso js-peso">
                                 </td>
                                 <td class="num" style="font-family:var(--font-data); font-size:13px;">
                                     {{ $valorEntrega === null ? '—' : 'R$ ' . number_format($valorEntrega, 2, ',', '.') }}
@@ -198,7 +224,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">
+                                <td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">
                                     Nenhuma entrega lançada — o café desta UTS ainda não entrou no armazém.
                                 </td>
                             </tr>
@@ -209,6 +235,7 @@
                             <tr>
                                 <td colspan="2">Total entregue</td>
                                 <td class="num"><strong>{{ number_format($entregues, 2, ',', '.') }}</strong></td>
+                                <td class="num"><strong>{{ number_format($compra->entregas->sum(fn ($e) => $e->pesoOuEquivalente()), 2, ',', '.') }}</strong></td>
                                 <td class="num" style="font-family:var(--font-data); font-size:13px;">
                                     <strong>{{ $compra->valorEntregue() === null ? '—' : 'R$ ' . number_format($compra->valorEntregue(), 2, ',', '.') }}</strong>
                                 </td>
@@ -224,10 +251,10 @@
                 <form method="POST" action="{{ route('compras.entregas.store', $compra) }}"
                       style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
                     @csrf
-                    <div class="field {{ $errors->has('mes_ano') ? 'has-error' : '' }}" style="margin-bottom:0;">
-                        <label for="mes_ano">Mês/ano da entrega</label>
-                        <input type="month" id="mes_ano" name="mes_ano" value="{{ old('mes_ano', date('Y-m')) }}" required>
-                        @error('mes_ano') <div class="field-error">{{ $message }}</div> @enderror
+                    <div class="field {{ $errors->has('data_entrega') ? 'has-error' : '' }}" style="margin-bottom:0;">
+                        <label for="data_entrega">Data da entrega</label>
+                        <input type="date" id="data_entrega" name="data_entrega" value="{{ old('data_entrega', date('Y-m-d')) }}" required>
+                        @error('data_entrega') <div class="field-error">{{ $message }}</div> @enderror
                     </div>
                     <div class="field {{ $errors->has('armazem') ? 'has-error' : '' }}" style="margin-bottom:0;">
                         <label for="armazem">Armazém</label>
@@ -238,12 +265,21 @@
                         </select>
                         @error('armazem') <div class="field-error">{{ $message }}</div> @enderror
                     </div>
+                    {{-- Sacas OU peso: o funcionário preenche o que tem na mão
+                         e o outro campo se completa. --}}
                     <div class="field {{ $errors->has('volume_sacas') ? 'has-error' : '' }}" style="margin-bottom:0;">
                         <label for="volume_sacas">Sacas que entraram</label>
                         <input type="number" step="0.01" min="0.01" id="volume_sacas" name="volume_sacas"
                                value="{{ old('volume_sacas', $saldo > 0 ? rtrim(rtrim(number_format($saldo, 2, '.', ''), '0'), '.') : '') }}"
-                               style="width:140px;" required>
+                               style="width:140px;" class="js-sacas" required>
                         @error('volume_sacas') <div class="field-error">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="field {{ $errors->has('peso_kg') ? 'has-error' : '' }}" style="margin-bottom:0;">
+                        <label for="peso_kg">Peso (kg)</label>
+                        <input type="number" step="0.01" min="0.01" id="peso_kg" name="peso_kg"
+                               value="{{ old('peso_kg', $saldo > 0 ? rtrim(rtrim(number_format(\App\Models\Compra::pesoDeSacas($saldo), 2, '.', ''), '0'), '.') : '') }}"
+                               style="width:150px;" class="js-peso">
+                        @error('peso_kg') <div class="field-error">{{ $message }}</div> @enderror
                     </div>
                     <div class="field" style="margin-bottom:0;">
                         <label for="numero_lote">Nº do lote <span class="hint">(quando o armazém informar)</span></label>
@@ -253,11 +289,49 @@
                 </form>
                 <p style="margin:12px 0 0; font-size:12.5px; color:var(--muted);">
                     Lance o que <strong>realmente entrou</strong>: o volume pode ficar acima ou abaixo do contratado,
-                    e é ele que vale para o estoque e para o pagamento.
+                    e é ele que vale para o estoque e para o pagamento. Informe <strong>sacas ou peso</strong> —
+                    o outro campo se completa a {{ \App\Models\Compra::KG_POR_SACA }} kg por saca.
                 </p>
             </div>
         </div>
     </div>
+
+    {{-- Sacas <-> peso, nas linhas já lançadas e no formulário de nova
+         entrega. Delegado no documento porque as linhas são várias e o par
+         de campos é sempre irmão dentro da mesma linha/formulário. --}}
+    <script>
+        (function () {
+            var KG_POR_SACA = {{ \App\Models\Compra::KG_POR_SACA }};
+
+            function arredonda(n) { return Math.round(n * 100) / 100; }
+
+            // O par de campos da MESMA entrega: dentro da linha da tabela ou,
+            // no formulário de baixo, dentro do próprio form.
+            function irmao(el, seletor) {
+                var escopo = el.closest('tr') || el.closest('form') || document;
+                return escopo.querySelector(seletor);
+            }
+
+            document.addEventListener('input', function (ev) {
+                var el = ev.target;
+
+                if (el.classList.contains('js-sacas')) {
+                    var peso = irmao(el, '.js-peso');
+                    if (!peso) return;
+                    var sacas = parseFloat(el.value);
+                    peso.value = sacas > 0 ? arredonda(sacas * KG_POR_SACA) : '';
+                    return;
+                }
+
+                if (el.classList.contains('js-peso')) {
+                    var sacasEl = irmao(el, '.js-sacas');
+                    if (!sacasEl) return;
+                    var kg = parseFloat(el.value);
+                    sacasEl.value = kg > 0 ? arredonda(kg / KG_POR_SACA) : '';
+                }
+            });
+        })();
+    </script>
 
     <div class="card">
         <div class="card__header">
@@ -270,19 +344,29 @@
             @if ($compra->classificacao)
                 @php($c = $compra->classificacao)
                 <div class="table-wrap">
+                    {{-- Colunas geradas de Classificacao::faixas(): faixa nova
+                         aparece aqui sozinha, sem editar esta tabela. --}}
                     <table class="data">
                         <thead>
-                            <tr><th>Padrão final</th><th>Tipo de bebida</th><th class="num">SCS 17/18</th><th class="num">SCS 14/16</th><th class="num">Mercado interno</th><th class="num">Grinders</th><th class="num">Moka</th><th class="num">Qtd. lotes</th></tr>
+                            <tr>
+                                <th>Padrão final</th>
+                                <th>Tipo de bebida</th>
+                                @foreach (\App\Models\Classificacao::faixas() as $rotulo)
+                                    <th class="num">{{ $rotulo }}</th>
+                                @endforeach
+                                <th class="num">Qtd. lotes</th>
+                            </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>{{ \App\Models\Classificacao::padroes()[$c->padrao_final] ?? $c->padrao_final }}</td>
+                                <td>{{ $c->padrao_final === null ? '—' : $c->padraoLabel() }}</td>
                                 <td>{{ $c->tipoBebidaLabel() ?? '—' }}</td>
-                                <td class="num">{{ number_format($c->peneira_1718_sacas, 2, ',', '.') }} ({{ number_format($c->peneira_1718_pct, 1, ',', '.') }}%)</td>
-                                <td class="num">{{ number_format($c->peneira_1416_sacas, 2, ',', '.') }} ({{ number_format($c->peneira_1416_pct, 1, ',', '.') }}%)</td>
-                                <td class="num">{{ number_format($c->mercado_interno_sacas, 2, ',', '.') }} ({{ number_format($c->mercado_interno_pct, 1, ',', '.') }}%)</td>
-                                <td class="num">{{ number_format($c->grinders_sacas, 2, ',', '.') }} ({{ number_format($c->grinders_pct, 1, ',', '.') }}%)</td>
-                                <td class="num">{{ number_format($c->moka_sacas, 2, ',', '.') }} ({{ number_format($c->moka_pct, 1, ',', '.') }}%)</td>
+                                @foreach (array_keys(\App\Models\Classificacao::faixas()) as $faixa)
+                                    <td class="num">
+                                        {{ number_format((float) $c->{$faixa . '_sacas'}, 2, ',', '.') }}
+                                        ({{ number_format((float) $c->{$faixa . '_pct'}, 1, ',', '.') }}%)
+                                    </td>
+                                @endforeach
                                 <td class="num">{{ number_format($c->quantidade_lotes, 4, ',', '.') }}</td>
                             </tr>
                         </tbody>

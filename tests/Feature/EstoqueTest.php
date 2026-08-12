@@ -42,7 +42,7 @@ class EstoqueTest extends TestCase
     {
         $compra = Compra::create([
             'uts' => $uts, 'data_compra' => '2026-01-01', 'fornecedor_id' => $this->fornecedor->id,
-            'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'BICA',
+            'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'ARABICA',
             'volume_contratado' => $sacas, 'created_by' => $this->admin->id,
         ]);
 
@@ -54,7 +54,7 @@ class EstoqueTest extends TestCase
     private function entregar(Compra $compra, string $armazem, float $sacas, ?string $lote, string $mes = '2026-01-01'): Entrega
     {
         return $compra->entregas()->create([
-            'mes_ano' => $mes, 'armazem' => $armazem, 'volume_sacas' => $sacas,
+            'data_entrega' => $mes, 'armazem' => $armazem, 'volume_sacas' => $sacas,
             'numero_lote' => $lote, 'created_by' => $this->admin->id,
         ]);
     }
@@ -132,7 +132,7 @@ class EstoqueTest extends TestCase
     {
         $compra = Compra::create([
             'uts' => 'UTS 7312', 'data_compra' => '2026-01-01', 'fornecedor_id' => $this->fornecedor->id,
-            'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'BICA',
+            'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'ARABICA',
             'volume_contratado' => 500, 'created_by' => $this->admin->id,
         ]);
         $this->entregar($compra, 'QUALITE', 250, 'L-1');
@@ -143,8 +143,8 @@ class EstoqueTest extends TestCase
 
         // Metade das sacas em cada armazém => metade da peneira em cada um.
         $linhas = $resposta->viewData('linhas')->keyBy('armazem');
-        $this->assertEqualsWithDelta(250.0, (float) $linhas['QUALITE']->scs_1718, 0.01);
-        $this->assertEqualsWithDelta(250.0, (float) $linhas['SAAG']->scs_1718, 0.01);
+        $this->assertEqualsWithDelta(250.0, (float) $linhas['QUALITE']->peneira_1718, 0.01);
+        $this->assertEqualsWithDelta(250.0, (float) $linhas['SAAG']->peneira_1718, 0.01);
         $this->assertEqualsWithDelta(500.0, $resposta->viewData('totalGeral'), 0.01);
     }
 
@@ -153,7 +153,7 @@ class EstoqueTest extends TestCase
     {
         $compra = Compra::create([
             'uts' => 'UTS 7313', 'data_compra' => '2026-01-01', 'fornecedor_id' => $this->fornecedor->id,
-            'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'BICA',
+            'certificacao' => 'SEM_CERT', 'tipo_entrada' => 'ARABICA',
             'volume_contratado' => 500, 'created_by' => $this->admin->id,
         ]);
         $this->classificar($compra, 'FINE_CUP', 500); // classificou as 500 contratadas

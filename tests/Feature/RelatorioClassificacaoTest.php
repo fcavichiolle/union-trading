@@ -63,7 +63,7 @@ class RelatorioClassificacaoTest extends TestCase
         // A entrega é o que faz o café entrar em estoque — com lote, para
         // cair no recorte padrão da tela.
         $compra->entregas()->create([
-            'mes_ano' => $compra->data_compra,
+            'data_entrega' => $compra->data_compra,
             'armazem' => $compraOverrides['armazem'] ?? 'SAAG',
             'volume_sacas' => $compra->volume_contratado,
             'numero_lote' => 'L-' . fake()->unique()->numberBetween(1000, 999999),
@@ -96,8 +96,8 @@ class RelatorioClassificacaoTest extends TestCase
 
     public function test_filtro_de_intervalo_de_meses(): void
     {
-        $this->novaCompraClassificada(['mes_ano' => '2026-01-01']);
-        $this->novaCompraClassificada(['mes_ano' => '2026-06-01']);
+        $this->novaCompraClassificada(['data_compra' => '2026-01-01']);
+        $this->novaCompraClassificada(['data_compra' => '2026-06-01']);
 
         $resposta = $this->actingAs($this->admin)
             ->get(route('relatorio.index', ['mes_de' => '2026-01', 'mes_ate' => '2026-01']));

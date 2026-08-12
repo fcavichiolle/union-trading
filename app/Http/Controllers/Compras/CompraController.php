@@ -88,19 +88,7 @@ class CompraController extends Controller
                 $dados['fornecedor_documento'] ?? null
             );
 
-            return Compra::create([
-                'uts' => $dados['uts'],
-                'data_compra' => $dados['data_compra'],
-                'fornecedor_id' => $fornecedor->id,
-                'certificacao' => $dados['certificacao'],
-                'logistica' => $dados['logistica'] ?? null,
-                'tipo_entrada' => $dados['tipo_entrada'] ?: 'BICA',
-                'volume_contratado' => $dados['volume_contratado'],
-                'valor_saca' => $dados['valor_saca'] ?? null,
-                'corretor_nome' => $dados['corretor_nome'] ?? null,
-                'comissao_pct' => $dados['comissao_pct'] ?? null,
-                'pagamento_previsto' => $dados['pagamento_previsto'] ?? null,
-                'pagamento_obs' => $dados['pagamento_obs'] ?? null,
+            return Compra::create($this->camposDoNegocio($dados, $fornecedor->id) + [
                 'created_by' => Auth::id(),
             ]);
         });
@@ -124,23 +112,56 @@ class CompraController extends Controller
                 $dados['fornecedor_documento'] ?? null
             );
 
-            $compra->update([
-                'uts' => $dados['uts'],
-                'data_compra' => $dados['data_compra'],
-                'fornecedor_id' => $fornecedor->id,
-                'certificacao' => $dados['certificacao'],
-                'logistica' => $dados['logistica'] ?? null,
-                'tipo_entrada' => $dados['tipo_entrada'] ?: 'BICA',
-                'volume_contratado' => $dados['volume_contratado'],
-                'valor_saca' => $dados['valor_saca'] ?? null,
-                'corretor_nome' => $dados['corretor_nome'] ?? null,
-                'comissao_pct' => $dados['comissao_pct'] ?? null,
-                'pagamento_previsto' => $dados['pagamento_previsto'] ?? null,
-                'pagamento_obs' => $dados['pagamento_obs'] ?? null,
-            ]);
+            $compra->update($this->camposDoNegocio($dados, $fornecedor->id));
+
+            // A classificação já lançada acompanha a qualidade da compra —
+            // duas telas mostrando padrões diferentes é pior do que qualquer
+            // uma das duas estar errada. E se a compra virou conilon depois de
+            // classificada, o padrão de arábica sai de lá também: senão fica
+            // dado morto que a tela nem mostra mais.
+            if ($compra->classificacao) {
+                $compra->classificacao->update(
+                    $compra->ehConilon()
+                        ? ['padrao_final' => null, 'tipo_bebida' => null]
+                        : ['padrao_final' => $dados['padrao_final'], 'tipo_bebida' => $dados['tipo_bebida']]
+                );
+            }
         });
 
         return redirect()->route('compras.show', $compra)->with('status', 'Compra atualizada.');
+    }
+
+    /**
+     * Campos do negócio, comuns a criar e editar.
+     *
+     * Conilon não tem padrão/bebida: os campos saem da tela e são gravados
+     * como nulos, para não deixar dado morto de arábica numa compra que
+     * mudou de espécie.
+     *
+     * @param  array<string,mixed>  $dados
+     * @return array<string,mixed>
+     */
+    private function camposDoNegocio(array $dados, int $fornecedorId): array
+    {
+        $conilon = ($dados['tipo_entrada'] ?? 'ARABICA') === 'CONILON';
+
+        return [
+            'uts' => $dados['uts'],
+            'data_compra' => $dados['data_compra'],
+            'fornecedor_id' => $fornecedorId,
+            'certificacao' => $dados['certificacao'],
+            'logistica' => $dados['logistica'] ?? null,
+            'tipo_entrada' => $dados['tipo_entrada'] ?? 'ARABICA',
+            'padrao_final' => $conilon ? null : ($dados['padrao_final'] ?? null),
+            'tipo_bebida' => $conilon ? null : ($dados['tipo_bebida'] ?? null),
+            'volume_contratado' => $dados['volume_contratado'],
+            'peso_kg' => $dados['peso_kg'] ?? null,
+            'valor_saca' => $dados['valor_saca'] ?? null,
+            'corretor_nome' => $dados['corretor_nome'] ?? null,
+            'comissao_pct' => $dados['comissao_pct'] ?? null,
+            'pagamento_previsto' => $dados['pagamento_previsto'] ?? null,
+            'pagamento_obs' => $dados['pagamento_obs'] ?? null,
+        ];
     }
 
     public function show(Compra $compra): View

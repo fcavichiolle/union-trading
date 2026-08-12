@@ -125,7 +125,7 @@ class CalculosCriticosTest extends TestCase
         $this->assertEqualsWithDelta(0.0, $this->compra->valorEntregue(), 0.001);
 
         $this->compra->entregas()->create([
-            'mes_ano' => '2026-01-01', 'armazem' => 'SAAG', 'volume_sacas' => 280,
+            'data_entrega' => '2026-01-01', 'armazem' => 'SAAG', 'volume_sacas' => 280,
             'numero_lote' => 'L-1', 'created_by' => $this->user->id,
         ]);
 

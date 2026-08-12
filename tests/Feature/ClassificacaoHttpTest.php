@@ -46,16 +46,27 @@ class ClassificacaoHttpTest extends TestCase
         ]);
     }
 
+    /**
+     * Todas as faixas zeradas + as quatro que este teste usa. Zerar a partir
+     * de Classificacao::faixas() é de propósito: peneira nova no sistema não
+     * quebra estes testes por falta de campo no payload.
+     */
     private function payload(array $overrides = []): array
     {
-        return array_merge([
+        $zeradas = [];
+
+        foreach (array_keys(\App\Models\Classificacao::faixas()) as $faixa) {
+            $zeradas[$faixa . '_pct'] = 0;
+            $zeradas[$faixa . '_sacas'] = 0;
+        }
+
+        return array_merge($zeradas, [
             'padrao_final' => 'FINE_CUP',
             'tipo_bebida' => 'DURO',
             'peneira_1718_pct' => 50, 'peneira_1718_sacas' => 150,
             'peneira_1416_pct' => 30, 'peneira_1416_sacas' => 100,
             'mercado_interno_pct' => 10, 'mercado_interno_sacas' => 30,
             'grinders_pct' => 10, 'grinders_sacas' => 20,
-            'moka_pct' => 0, 'moka_sacas' => 0,
         ], $overrides);
     }
 
@@ -85,7 +96,7 @@ class ClassificacaoHttpTest extends TestCase
             $this->payload(['mercado_interno_pct' => 5, 'grinders_pct' => 5])
         );
 
-        $resposta->assertSessionHasErrors('peneira_1718_pct');
+        $resposta->assertSessionHasErrors('soma_pct');
         $this->assertDatabaseCount('classificacoes', 0);
     }
 
@@ -102,7 +113,7 @@ class ClassificacaoHttpTest extends TestCase
             ])
         );
 
-        $resposta->assertSessionHasErrors('peneira_1718_sacas');
+        $resposta->assertSessionHasErrors('soma_sacas');
         $this->assertDatabaseCount('classificacoes', 0);
     }
 
@@ -115,7 +126,7 @@ class ClassificacaoHttpTest extends TestCase
             $this->payload(['moka_pct' => 10])
         );
 
-        $resposta->assertSessionHasErrors('peneira_1718_pct');
+        $resposta->assertSessionHasErrors('soma_pct');
         $this->assertDatabaseCount('classificacoes', 0);
     }
 
@@ -128,7 +139,7 @@ class ClassificacaoHttpTest extends TestCase
             $this->payload(['moka_sacas' => 50])
         );
 
-        $resposta->assertSessionHasErrors('peneira_1718_sacas');
+        $resposta->assertSessionHasErrors('soma_sacas');
         $this->assertDatabaseCount('classificacoes', 0);
     }
 
