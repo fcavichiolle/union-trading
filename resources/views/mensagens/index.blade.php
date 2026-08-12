@@ -31,12 +31,15 @@
                         <div class="chat__novas" id="marcaNovas"><span>novas mensagens</span></div>
                     @endif
 
-                    <div class="msg {{ $m['minha'] ? 'msg--minha' : '' }}" data-id="{{ $m['id'] }}">
+                    <div class="msg {{ $m['minha'] ? 'msg--minha' : '' }} {{ $m['me_citou'] ? 'msg--citou' : '' }}" data-id="{{ $m['id'] }}">
                         <div class="msg__avatar">{{ $m['iniciais'] }}</div>
                         <div class="msg__bolha">
                             <div class="msg__topo">
                                 <span class="msg__autor">{{ $m['minha'] ? 'Você' : $m['autor'] }}</span>
                                 <span class="msg__hora">{{ $m['hora'] }}</span>
+                                @if ($m['me_citou'])
+                                    <span class="msg__citacao" title="Você foi citado nesta mensagem">citou você</span>
+                                @endif
                                 @if ($m['pode_apagar'])
                                     <form method="POST" action="{{ route('mensagens.destroy', $m['id']) }}"
                                           onsubmit="return confirm('Apagar esta mensagem?');" class="msg__apagar">
@@ -45,9 +48,16 @@
                                     </form>
                                 @endif
                             </div>
-                            {{-- Texto do usuário: escapado pelo Blade, e o JS das
-                                 mensagens novas usa textContent. Nunca innerHTML. --}}
-                            <p class="msg__texto">{{ $m['texto'] }}</p>
+                            {{-- Texto em pedaços: as menções ganham destaque, mas
+                                 cada pedaço sai ESCAPADO (Blade aqui, textContent
+                                 no JS). Nunca innerHTML com texto de usuário.
+
+                                 Um <span> por pedaço, SEM @if no meio: duas
+                                 diretivas colnadas (@endif@endforeach) não são
+                                 compiladas pelo Blade, e separá-las com espaço
+                                 meteria espaço dentro da mensagem (o texto usa
+                                 white-space: pre-wrap). --}}
+                            <p class="msg__texto">@foreach ($m['segmentos'] as $s)<span class="{{ $s['mencao'] ? 'mencao' . ($s['para_mim'] ? ' mencao--eu' : '') : '' }}">{{ $s['texto'] }}</span>@endforeach</p>
                         </div>
                     </div>
                 @empty
@@ -61,15 +71,20 @@
 
         <form class="chat__form" method="POST" action="{{ route('mensagens.store') }}" id="chatForm">
             @csrf
-            <textarea name="texto" id="chatTexto" rows="1" maxlength="2000" required
-                      placeholder="Escreva para a equipe… (Enter envia, Shift+Enter pula linha)"></textarea>
+            <div class="chat__campo">
+                {{-- Autocomplete de menção: aparece ao digitar "@". --}}
+                <div class="mencao-lista" id="mencaoLista" hidden></div>
+                <textarea name="texto" id="chatTexto" rows="1" maxlength="2000" required
+                          placeholder="Escreva para a equipe… use @ para citar alguém (Enter envia, Shift+Enter pula linha)"></textarea>
+            </div>
             <button type="submit" class="btn btn-primary" id="chatEnviar">Enviar</button>
             @error('texto') <div class="field-error" style="flex-basis:100%;">{{ $message }}</div> @enderror
         </form>
 
         <p class="chat__nota">
-            A tela busca mensagens novas a cada 10 segundos. Mensagem apagada sai para todos —
-            quando um administrador apaga a mensagem de outra pessoa, o texto fica registrado no log de auditoria.
+            A tela busca mensagens novas a cada 10 segundos. Cite alguém com <strong>@</strong> — a pessoa
+            vê o aviso no menu até abrir o canal. As mensagens ficam <strong>criptografadas no banco</strong>;
+            quem apaga é o autor (ou um administrador, e nesse caso fica registrado quem apagou, sem o texto).
         </p>
     </div>
 
@@ -105,7 +120,7 @@
             /** Monta a linha da mensagem. Texto SEMPRE por textContent. */
             function montar(m) {
                 var div = document.createElement('div');
-                div.className = 'msg' + (m.minha ? ' msg--minha' : '');
+                div.className = 'msg' + (m.minha ? ' msg--minha' : '') + (m.me_citou ? ' msg--citou' : '');
                 div.dataset.id = m.id;
 
                 var avatar = document.createElement('div');
@@ -129,11 +144,31 @@
                 topo.appendChild(autor);
                 topo.appendChild(hora);
 
+                if (m.me_citou) {
+                    var marca = document.createElement('span');
+                    marca.className = 'msg__citacao';
+                    marca.title = 'Você foi citado nesta mensagem';
+                    marca.textContent = 'citou você';
+                    topo.appendChild(marca);
+                }
+
                 if (m.pode_apagar) topo.appendChild(formDeApagar(m.id));
 
+                // Pedaços: menção ganha <span>, o TEXTO vai por textContent.
+                // Nunca innerHTML — é conteúdo escrito por usuário.
                 var texto = document.createElement('p');
                 texto.className = 'msg__texto';
-                texto.textContent = m.texto;
+
+                (m.segmentos || []).forEach(function (s) {
+                    if (s.mencao) {
+                        var span = document.createElement('span');
+                        span.className = 'mencao' + (s.para_mim ? ' mencao--eu' : '');
+                        span.textContent = s.texto;
+                        texto.appendChild(span);
+                    } else {
+                        texto.appendChild(document.createTextNode(s.texto));
+                    }
+                });
 
                 bolha.appendChild(topo);
                 bolha.appendChild(texto);
@@ -264,8 +299,141 @@
                 enviarMensagem();
             });
 
+            /* ---------------- menção com @ ---------------- */
+
+            var USUARIOS = @json($usuarios),
+                caixaMencao = document.getElementById('mencaoLista'),
+                sugestoes = [],
+                selecionada = -1,
+                inicioDoArroba = -1;
+
+            /** Texto entre o "@" mais próximo e o cursor, se houver. */
+            function trechoDaMencao() {
+                var pos = campo.selectionStart,
+                    antes = campo.value.slice(0, pos),
+                    arroba = antes.lastIndexOf('@');
+
+                if (arroba === -1) return null;
+
+                // O "@" tem de começar palavra (início do texto ou depois de espaço).
+                var anterior = arroba === 0 ? ' ' : antes.charAt(arroba - 1);
+                if (!/\s/.test(anterior)) return null;
+
+                var digitado = antes.slice(arroba + 1);
+
+                // Some depois de uma quebra de linha ou de nome longo demais.
+                if (/[\n]/.test(digitado) || digitado.length > 40) return null;
+
+                inicioDoArroba = arroba;
+
+                return digitado;
+            }
+
+            function fecharMencao() {
+                caixaMencao.hidden = true;
+                caixaMencao.textContent = '';
+                sugestoes = [];
+                selecionada = -1;
+            }
+
+            function abrirMencao(digitado) {
+                var busca = digitado.toLowerCase();
+
+                sugestoes = USUARIOS.filter(function (u) {
+                    return busca === '' || u.nome.toLowerCase().indexOf(busca) > -1;
+                }).slice(0, 6);
+
+                if (!sugestoes.length) { fecharMencao(); return; }
+
+                caixaMencao.textContent = '';
+                selecionada = 0;
+
+                sugestoes.forEach(function (u, i) {
+                    var item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'mencao-item' + (i === 0 ? ' is-sel' : '');
+                    item.dataset.indice = i;
+
+                    var nome = document.createElement('span');
+                    nome.className = 'mencao-item__nome';
+                    nome.textContent = u.nome;
+
+                    var perfil = document.createElement('span');
+                    perfil.className = 'mencao-item__perfil';
+                    perfil.textContent = u.perfil || '';
+
+                    item.appendChild(nome);
+                    item.appendChild(perfil);
+                    item.addEventListener('mousedown', function (ev) {
+                        ev.preventDefault();
+                        escolherMencao(i);
+                    });
+
+                    caixaMencao.appendChild(item);
+                });
+
+                caixaMencao.hidden = false;
+            }
+
+            function marcarSelecionada() {
+                Array.prototype.forEach.call(caixaMencao.children, function (el, i) {
+                    el.classList.toggle('is-sel', i === selecionada);
+                });
+            }
+
+            function escolherMencao(i) {
+                var u = sugestoes[i];
+                if (!u) return;
+
+                var pos = campo.selectionStart,
+                    antes = campo.value.slice(0, inicioDoArroba),
+                    depois = campo.value.slice(pos);
+
+                campo.value = antes + '@' + u.nome + ' ' + depois;
+
+                var novaPos = (antes + '@' + u.nome + ' ').length;
+                campo.setSelectionRange(novaPos, novaPos);
+                campo.focus();
+
+                fecharMencao();
+            }
+
+            campo.addEventListener('input', function () {
+                var digitado = trechoDaMencao();
+                if (digitado === null) { fecharMencao(); return; }
+                abrirMencao(digitado);
+            });
+
+            campo.addEventListener('blur', function () { setTimeout(fecharMencao, 120); });
+
             // Enter envia, Shift+Enter pula linha (comportamento de chat).
+            // Com a lista de menção aberta, as setas e o Enter são dela.
             campo.addEventListener('keydown', function (ev) {
+                if (!caixaMencao.hidden && sugestoes.length) {
+                    if (ev.key === 'ArrowDown') {
+                        ev.preventDefault();
+                        selecionada = (selecionada + 1) % sugestoes.length;
+                        marcarSelecionada();
+                        return;
+                    }
+                    if (ev.key === 'ArrowUp') {
+                        ev.preventDefault();
+                        selecionada = (selecionada - 1 + sugestoes.length) % sugestoes.length;
+                        marcarSelecionada();
+                        return;
+                    }
+                    if (ev.key === 'Enter' || ev.key === 'Tab') {
+                        ev.preventDefault();
+                        escolherMencao(selecionada);
+                        return;
+                    }
+                    if (ev.key === 'Escape') {
+                        ev.preventDefault();
+                        fecharMencao();
+                        return;
+                    }
+                }
+
                 if (ev.key === 'Enter' && !ev.shiftKey) {
                     ev.preventDefault();
                     enviarMensagem();

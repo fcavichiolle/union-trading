@@ -434,6 +434,38 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   no navegador com uma mensagem contendo `<img onerror=...>`: nenhuma tag é
   criada e o script não roda. Guardado também por teste
   (`MensagemTest::test_texto_do_usuario_nao_vira_html`).
+- **TEXTO CIFRADO NO BANCO** (cast `encrypted`, AES-256 com a `APP_KEY`).
+  Conferido no MySQL real: a coluna guarda o payload base64 (iv/value/mac) e não
+  contém nenhum trecho legível.
+  - **Protege**: dump/backup do banco e acesso só ao MySQL — que é por onde dado
+    vaza na prática.
+  - **Não protege**: quem tem servidor **e** chave lê tudo (a tela precisa
+    descriptografar), nem o **trânsito** — isso é papel do HTTPS, que segue como
+    item de deploy no `SECURITY.md`.
+  - **Duas consequências assumidas**: a `APP_KEY` fica **insubstituível** (perdê-la
+    ou trocá-la = perder as mensagens antigas — o backup dela deixa de ser
+    detalhe), e **não existe busca por conteúdo em SQL** (`LIKE` em cifrado não
+    acha nada; se um dia precisar de busca, tem de ser filtro em memória).
+  - Por isso a coluna virou `TEXT` (o cifrado de 2.000 caracteres não caberia em
+    `VARCHAR(2000)`) e o log de auditoria de exclusão **deixou de guardar o
+    texto**: cópia em claro no log seria porta dos fundos para o que a
+    criptografia veio proteger. O log registra quem apagou, de quem e quando.
+- **Menção com @nome** (`mensagem_mencoes`): citar alguém marca a mensagem
+  ("citou você"), destaca o nome no texto e troca o badge do menu por **`@n`** com
+  cor invertida — ser chamado pelo nome é aviso mais forte do que "tem mensagem
+  nova". O autocomplete abre ao digitar `@` (setas + Enter escolhem) e **não abre
+  no meio de palavra**, senão todo e-mail digitado abriria a lista.
+  - **Um algoritmo só** (`Mensagem::analisar()`) alimenta o destaque na tela e a
+    detecção de quem foi citado. Antes eram dois (um andava pelo texto
+    consumindo o trecho, o outro usava `str_contains`) e eles **discordavam**:
+    "@Ana Paula" destacava Ana Paula e avisava também a Ana. O teste
+    `test_mencao_casa_o_nome_mais_longo` guarda isso.
+  - A comparação é contra os **nomes cadastrados** (não um regex de "@palavra"),
+    porque nome de gente tem espaço: "@Luiz Henrique" é uma menção só, e "@luiz"
+    (primeiro nome) também acha. Usuário **suspenso** sai do autocomplete.
+  - As menções são gravadas pelo **model** (evento `saved`), não pelo controller:
+    assim mensagem criada por qualquer caminho (seeder, gerador da demo, import
+    futuro) já nasce com as menções certas.
 - Detalhes de tela: separador por dia, linha **"novas mensagens"** onde o usuário
   parou, minhas mensagens espelhadas, Enter envia / Shift+Enter pula linha,
   campo que cresce até 160px, "carregar mensagens anteriores" (50 por vez) e

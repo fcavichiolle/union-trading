@@ -62,10 +62,10 @@ class MensagemTest extends TestCase
             ->assertRedirect(route('mensagens.index'))
             ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('mensagens', [
-            'user_id' => $this->compras->id,
-            'texto' => 'Mercado abriu em alta hoje',
-        ]);
+        // A coluna e cifrada: a conferencia e pelo model (que decifra).
+        $mensagem = Mensagem::firstOrFail();
+        $this->assertSame($this->compras->id, $mensagem->user_id);
+        $this->assertSame('Mercado abriu em alta hoje', $mensagem->texto);
 
         // Outro usuário vê a mensagem e quem escreveu.
         $this->actingAs($this->admin)->get(route('mensagens.index'))->assertOk()
@@ -167,7 +167,7 @@ class MensagemTest extends TestCase
 
         $this->assertCount(1, $mensagens);
         $this->assertSame($segunda->id, $mensagens[0]['id']);
-        $this->assertSame('segunda', $mensagens[0]['texto']);
+        $this->assertSame('segunda', $this->textoDe($mensagens[0]));
         $this->assertFalse($mensagens[0]['minha']);
         // Admin pode apagar a de qualquer um.
         $this->assertTrue($mensagens[0]['pode_apagar']);
@@ -203,7 +203,7 @@ class MensagemTest extends TestCase
             ->postJson(route('mensagens.store'), ['texto' => 'via fetch'])
             ->assertOk();
 
-        $this->assertSame('via fetch', $resposta->json('mensagem.texto'));
+        $this->assertSame('via fetch', $this->textoDe($resposta->json('mensagem')));
         $this->assertTrue($resposta->json('mensagem.minha'));
         $this->assertSame('C', substr($resposta->json('mensagem.iniciais'), 0, 1));
     }
@@ -241,8 +241,10 @@ class MensagemTest extends TestCase
 
         $log = AuditLog::where('acao', 'mensagem.excluida')->firstOrFail();
         $this->assertSame($this->admin->id, $log->user_id);
-        $this->assertStringContainsString('mensagem fora de hora', $log->descricao);
+        // Registra QUEM e QUANDO, nunca o conteudo: com o texto cifrado no
+        // banco, uma copia em claro no log seria porta dos fundos.
         $this->assertStringContainsString('Compras', $log->descricao);
+        $this->assertStringNotContainsString('mensagem fora de hora', $log->descricao);
     }
 
     /** Apagar a própria não gera log — não é ação sobre outra pessoa. */
@@ -253,5 +255,148 @@ class MensagemTest extends TestCase
         $this->actingAs($this->admin)->delete(route('mensagens.destroy', $mensagem));
 
         $this->assertSame(0, AuditLog::where('acao', 'mensagem.excluida')->count());
+    }
+
+    /* ---------------- criptografia no banco ---------------- */
+
+    /**
+     * O que a criptografia entrega: quem lê a tabela (dump, backup, acesso
+     * só ao MySQL) não vê o texto.
+     */
+    public function test_texto_fica_cifrado_na_coluna(): void
+    {
+        $this->mensagem($this->compras, 'preço combinado com a fazenda: 1.180');
+
+        $bruto = \Illuminate\Support\Facades\DB::table('mensagens')->value('texto');
+
+        $this->assertNotSame('preço combinado com a fazenda: 1.180', $bruto);
+        $this->assertStringNotContainsString('1.180', $bruto);
+        $this->assertStringNotContainsString('fazenda', $bruto);
+        // O payload do Laravel é um JSON base64 com iv/value/mac.
+        $this->assertArrayHasKey('mac', json_decode(base64_decode($bruto), true) ?? []);
+
+        // E o sistema continua lendo normalmente.
+        $this->assertSame('preço combinado com a fazenda: 1.180', Mensagem::first()->texto);
+    }
+
+    /** Mensagem longa não estoura a coluna depois de cifrada. */
+    public function test_mensagem_no_limite_cabe_cifrada(): void
+    {
+        $longa = str_repeat('a', 2000);
+
+        $this->actingAs($this->compras)
+            ->post(route('mensagens.store'), ['texto' => $longa])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($longa, Mensagem::first()->texto);
+    }
+
+    /* ---------------- menção com @nome ---------------- */
+
+    public function test_mencao_pelo_nome_inteiro_e_pelo_primeiro_nome(): void
+    {
+        $marina = $this->usuario('compras', 'Marina Alves', 'marina@teste.com');
+
+        $m1 = $this->mensagem($this->compras, 'Bom dia @Marina Alves, confere a UTS 7311?');
+        $m2 = $this->mensagem($this->compras, 'obrigado @marina');
+
+        $this->assertSame([$marina->id], $m1->fresh()->mencionados->pluck('id')->all());
+        $this->assertSame([$marina->id], $m2->fresh()->mencionados->pluck('id')->all());
+    }
+
+    /** "@Ana" não pode capturar "@Ana Paula" (casa o nome mais longo). */
+    public function test_mencao_casa_o_nome_mais_longo(): void
+    {
+        $ana = $this->usuario('compras', 'Ana', 'ana@teste.com');
+        $anaPaula = $this->usuario('compras', 'Ana Paula', 'anapaula@teste.com');
+
+        $mensagem = $this->mensagem($this->compras, 'oi @Ana Paula');
+        $ids = $mensagem->fresh()->mencionados->pluck('id')->all();
+
+        $this->assertContains($anaPaula->id, $ids);
+        $this->assertNotContains($ana->id, $ids);
+    }
+
+    public function test_citar_a_si_mesmo_nao_gera_aviso(): void
+    {
+        $mensagem = $this->mensagem($this->compras, 'eu, @Compras, assumo isso');
+
+        $this->assertCount(0, $mensagem->fresh()->mencionados);
+    }
+
+    public function test_badge_marca_quando_alguem_me_cita(): void
+    {
+        // Mensagem comum: badge normal.
+        $this->mensagem($this->compras, 'bom dia a todos');
+        $badges = app(\App\Services\PainelInicial::class)->badgesMenu($this->admin->fresh());
+        $this->assertSame(1, $badges['mensagens.index']);
+        $this->assertArrayNotHasKey('mensagens.mencao', $badges);
+
+        // Citando o admin: badge de citação.
+        $this->mensagem($this->compras, '@Administrador consegue olhar?');
+        $badges = app(\App\Services\PainelInicial::class)->badgesMenu($this->admin->fresh());
+        $this->assertSame(2, $badges['mensagens.index']);
+        $this->assertTrue($badges['mensagens.mencao']);
+    }
+
+    public function test_citacao_lida_para_de_marcar(): void
+    {
+        $this->mensagem($this->compras, '@Administrador olha isso');
+
+        $this->actingAs($this->admin)->get(route('mensagens.index'))->assertOk();
+
+        $badges = app(\App\Services\PainelInicial::class)->badgesMenu($this->admin->fresh());
+        $this->assertArrayNotHasKey('mensagens.mencao', $badges);
+    }
+
+    /** A tela destaca a menção — e marca a mensagem que cita quem está lendo. */
+    public function test_tela_destaca_a_mencao_e_avisa_quem_foi_citado(): void
+    {
+        $this->mensagem($this->compras, 'Fala @Administrador, fechou?');
+
+        $resposta = $this->actingAs($this->admin)->get(route('mensagens.index'))->assertOk();
+
+        $resposta->assertSee('class="mencao mencao--eu"', false)
+            ->assertSee('citou você')
+            ->assertSee('msg--citou', false);
+    }
+
+    /** Menção a quem não existe fica texto comum, sem quebrar nada. */
+    public function test_arroba_de_quem_nao_existe_e_texto_comum(): void
+    {
+        $mensagem = $this->mensagem($this->compras, 'falei com @Fulano ontem');
+
+        $this->assertCount(0, $mensagem->fresh()->mencionados);
+
+        $this->actingAs($this->admin)->get(route('mensagens.index'))->assertOk()
+            ->assertSee('falei com @Fulano ontem');
+    }
+
+    /** O autocomplete recebe a lista de quem pode ser citado. */
+    public function test_tela_manda_os_usuarios_para_o_autocomplete(): void
+    {
+        $resposta = $this->actingAs($this->admin)->get(route('mensagens.index'))->assertOk();
+
+        $usuarios = $resposta->viewData('usuarios');
+
+        $this->assertCount(3, $usuarios);
+        $this->assertSame(['Administrador', 'Compras', 'Diretoria'], $usuarios->pluck('nome')->all());
+    }
+
+    /** Usuário suspenso sai do autocomplete: não entra mais no sistema. */
+    public function test_usuario_inativo_nao_aparece_para_citar(): void
+    {
+        $this->diretoria->forceFill(['active' => false])->save();
+
+        $usuarios = $this->actingAs($this->admin)->get(route('mensagens.index'))
+            ->assertOk()->viewData('usuarios');
+
+        $this->assertSame(['Administrador', 'Compras'], $usuarios->pluck('nome')->all());
+    }
+
+    /** Junta os pedacos do texto que a tela recebe. */
+    private function textoDe(array $mensagem): string
+    {
+        return collect($mensagem['segmentos'])->pluck('texto')->implode('');
     }
 }

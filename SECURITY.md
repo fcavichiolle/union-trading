@@ -100,6 +100,15 @@ tem uma explicação curta.
 
 - [ ] `APP_ENV=production` e `APP_DEBUG=false` no `.env` do servidor.
 - [ ] `APP_KEY` gerado (`php artisan key:generate`) e mantido em segredo.
+- [ ] **Guardar a `APP_KEY` em backup, separada do banco.** As mensagens do
+      canal da equipe são gravadas **cifradas** (AES-256 com essa chave):
+      perder ou trocar a chave torna as mensagens antigas ilegíveis, e
+      guardar a chave junto do dump anula a proteção. Backup do banco e
+      backup da chave em lugares diferentes.
+- [ ] **HTTPS não é opcional para o canal de mensagens.** A criptografia
+      protege o banco (dump, backup, acesso só ao MySQL); o trecho entre o
+      navegador e o servidor depende do HTTPS — sem ele a mensagem viaja em
+      claro na rede, e o que foi cifrado no banco vaza no caminho.
 - [ ] HTTPS obrigatório (o `AppServiceProvider` já força `https://` nas
       URLs geradas quando `APP_ENV=production`, mas o **servidor web**
       também precisa redirecionar HTTP → HTTPS).

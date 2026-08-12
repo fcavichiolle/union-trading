@@ -38,7 +38,15 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a7.5 7.5 0 0 1-7.5 7.5c-1.2 0-2.4-.3-3.4-.8L4.5 20l1.3-4.1A7.5 7.5 0 1 1 20 12Z"></path></svg>
                 <span>Mensagens</span>
                 @isset($badgesMenu['mensagens.index'])
-                    <span class="sb-badge" title="Mensagens não lidas">{{ $badgesMenu['mensagens.index'] }}</span>
+                    {{-- Citação vira "@n" e cor de alerta: ser chamado pelo nome
+                         é aviso mais forte do que "tem mensagem nova". --}}
+                    @if (! empty($badgesMenu['mensagens.mencao']))
+                        {{-- O "@" vem dentro do echo: "@{{ ... }}" é a sintaxe de
+                             ESCAPE do Blade e imprimiria as chaves literais. --}}
+                        <span class="sb-badge sb-badge--cita" title="Você foi citado">{{ '@' . $badgesMenu['mensagens.index'] }}</span>
+                    @else
+                        <span class="sb-badge" title="Mensagens não lidas">{{ $badgesMenu['mensagens.index'] }}</span>
+                    @endif
                 @endisset
             </a>
 
