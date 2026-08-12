@@ -28,13 +28,14 @@ return new class extends Migration
     /**
      * Os três que existiam no ENUM.
      *
-     * ATENÇÃO: a cidade da QUALITÉ foi confirmada pela mesa (Espírito Santo
-     * do Pinhal/SP). As de SAAG e DÍNAMO MACHADO ainda são suposição — se
-     * estiverem erradas, corrija AQUI também, e não só pela tela: senão um
-     * `migrate:fresh` traz o dado errado de volta.
+     * ATENÇÃO: SAAG (Santana da Vargem/MG) e QUALITÉ (Espírito Santo do
+     * Pinhal/SP) foram confirmadas pela mesa. A de DÍNAMO MACHADO ainda é
+     * suposição (deduzida do nome) — se estiver errada, corrija AQUI
+     * também, e não só pela tela: senão um `migrate:fresh` traz o dado
+     * errado de volta.
      */
     private const INICIAIS = [
-        'SAAG' => ['nome' => 'SAAG', 'cidade' => 'Santos', 'estado' => 'SP'],
+        'SAAG' => ['nome' => 'SAAG', 'cidade' => 'Santana da Vargem', 'estado' => 'MG'],
         'QUALITE' => ['nome' => 'QUALITÉ', 'cidade' => 'Espírito Santo do Pinhal', 'estado' => 'SP'],
         'DINAMO_MACHADO' => ['nome' => 'DÍNAMO MACHADO', 'cidade' => 'Machado', 'estado' => 'MG'],
     ];
