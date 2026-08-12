@@ -21,8 +21,8 @@
             <label for="armazem">Armazém</label>
             <select id="armazem" name="armazem">
                 <option value="">Todos</option>
-                @foreach (\App\Models\Compra::armazens() as $cod => $rotulo)
-                    <option value="{{ $cod }}" @selected($filtros['armazem'] === $cod)>{{ $rotulo }}</option>
+                @foreach (\App\Models\Armazem::lista() as $id => $nome)
+                    <option value="{{ $id }}" @selected((int) $filtros['armazem'] === $id)>{{ $nome }}</option>
                 @endforeach
             </select>
         </div>

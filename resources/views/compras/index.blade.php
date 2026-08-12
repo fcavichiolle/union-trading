@@ -28,8 +28,8 @@
             <label for="armazem">Armazém</label>
             <select id="armazem" name="armazem">
                 <option value="">Todos</option>
-                @foreach (\App\Models\Compra::armazens() as $cod => $rotulo)
-                    <option value="{{ $cod }}" @selected(request('armazem') === $cod)>{{ $rotulo }}</option>
+                @foreach (\App\Models\Armazem::lista() as $id => $nome)
+                    <option value="{{ $id }}" @selected((int) request('armazem') === $id)>{{ $nome }}</option>
                 @endforeach
             </select>
         </div>
@@ -122,7 +122,7 @@
                             @else
                                 {{ $compra->entregas->count() }}
                                 <span style="color:var(--muted); font-size:11.5px;">
-                                    ({{ $compra->entregas->pluck('armazem')->unique()->map(fn ($a) => \App\Models\Compra::armazens()[$a] ?? $a)->implode(', ') }})
+                                    ({{ $compra->entregas->map(fn ($e) => $e->armazemLabel())->unique()->implode(', ') }})
                                 </span>
                                 @if ($semLote > 0)
                                     <br><span class="badge badge--red" title="Sem o nº do lote, não entra no estoque definitivo.">⚠ {{ $semLote }} sem lote</span>

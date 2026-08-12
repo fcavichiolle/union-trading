@@ -205,7 +205,7 @@ class MensagensValidacaoTest extends TestCase
             ->post(route('compras.entregas.store', $compra), [])
             ->assertSessionHasErrors([
                 'data_entrega' => 'Informe a data da entrega.',
-                'armazem' => 'Selecione o armazém que recebeu o café.',
+                'armazem_id' => 'Selecione o armazém que recebeu o café.',
                 'volume_sacas' => 'Informe quantas sacas (ou quantos quilos) entraram no armazém.',
             ]);
     }

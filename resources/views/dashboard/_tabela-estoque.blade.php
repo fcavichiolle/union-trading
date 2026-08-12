@@ -22,8 +22,9 @@
             @forelse ($linhas->groupBy('armazem') as $armazem => $doArmazem)
                 @foreach ($doArmazem as $i => $linha)
                     <tr>
-                        {{-- O nome do armazém aparece só na primeira linha do grupo. --}}
-                        <td>{{ $i === 0 ? (\App\Models\Compra::armazens()[$armazem] ?? $armazem) : '' }}</td>
+                        {{-- O nome do armazém aparece só na primeira linha do grupo
+                             (o SQL já traz o nome do cadastro). --}}
+                        <td>{{ $i === 0 ? $armazem : '' }}</td>
                         <td>{{ \App\Models\Classificacao::padroes()[$linha->padrao_final] ?? ($linha->padrao_final ?? '—') }}</td>
                         @foreach (array_keys($faixas) as $faixa)
                             <td class="num">{{ number_format((float) $linha->{$faixa}, 2, ',', '.') }}</td>
@@ -36,7 +37,7 @@
                 @if ($doArmazem->count() > 1)
                     <tr class="linha-subtotal">
                         <td></td>
-                        <td>Subtotal {{ \App\Models\Compra::armazens()[$armazem] ?? $armazem }}</td>
+                        <td>Subtotal {{ $armazem }}</td>
                         @foreach (array_keys($faixas) as $faixa)
                             <td class="num">{{ number_format($doArmazem->sum($faixa), 2, ',', '.') }}</td>
                         @endforeach

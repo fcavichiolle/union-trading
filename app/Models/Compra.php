@@ -31,6 +31,7 @@ class Compra extends Model
         'fornecedor_id',
         'certificacao',
         'logistica',
+        'armazem_id',
         'tipo_entrada',
         'padrao_final',
         'tipo_bebida',
@@ -90,9 +91,22 @@ class Compra extends Model
         return $this->hasOne(Classificacao::class);
     }
 
-    public static function armazens(): array
+    /**
+     * Armazém PREVISTO no negócio (nullable). Quem manda no estoque é o
+     * armazém de cada entrega — o café pode chegar em outro lugar, e isso
+     * não é erro; este campo só adianta o combinado e já vem escolhido no
+     * formulário de entrega.
+     *
+     * A lista de armazéns virou cadastro: use Armazem::lista().
+     */
+    public function armazemPrevisto(): BelongsTo
     {
-        return ['SAAG' => 'SAAG', 'QUALITE' => 'QUALITÉ', 'DINAMO_MACHADO' => 'DÍNAMO MACHADO'];
+        return $this->belongsTo(Armazem::class, 'armazem_id');
+    }
+
+    public function armazemPrevistoLabel(): ?string
+    {
+        return Armazem::nomeDe($this->armazem_id);
     }
 
     public static function certificacoes(): array

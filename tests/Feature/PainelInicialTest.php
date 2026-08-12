@@ -69,7 +69,7 @@ class PainelInicialTest extends TestCase
     private function entregar(Compra $compra, float $sacas, ?string $lote = 'L-1'): void
     {
         $compra->entregas()->create([
-            'data_entrega' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => $sacas,
+            'data_entrega' => '2026-08-01', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => $sacas,
             'numero_lote' => $lote, 'created_by' => $this->admin->id,
         ]);
     }

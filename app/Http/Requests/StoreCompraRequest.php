@@ -42,6 +42,10 @@ class StoreCompraRequest extends FormRequest
             'fornecedor_documento' => ['nullable', 'string', new DocumentoValido()],
             'certificacao' => ['required', Rule::in(array_keys(Compra::certificacoes()))],
             'logistica' => ['nullable', Rule::in(array_keys(Compra::logisticas()))],
+            // Armazém PREVISTO: opcional, porque o destino às vezes só é
+            // definido na hora de entregar. Quem vale para o estoque é o
+            // armazém de cada entrega.
+            'armazem_id' => ['nullable', 'integer', Rule::exists('armazens', 'id')],
             'tipo_entrada' => ['required', Rule::in(array_keys(Compra::tiposEntrada()))],
             // Qualidade só se aplica ao arábica: conilon não passa pela
             // peneira, e o formulário esconde os dois campos.

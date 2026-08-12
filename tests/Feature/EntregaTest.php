@@ -51,23 +51,23 @@ class EntregaTest extends TestCase
     private function lancar(array $dados = [])
     {
         return $this->actingAs($this->admin)->post(route('compras.entregas.store', $this->compra), array_merge([
-            'data_entrega' => '2026-08-14', 'armazem' => 'QUALITE', 'volume_sacas' => 250, 'numero_lote' => '',
+            'data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('QUALITE'), 'volume_sacas' => 250, 'numero_lote' => '',
         ], $dados));
     }
 
     /** O caso que motivou tudo: 500 sacas, 250 hoje e 250 mês que vem. */
     public function test_a_mesma_uts_aceita_entregas_em_meses_e_armazens_diferentes(): void
     {
-        $this->lancar(['data_entrega' => '2026-08-14', 'armazem' => 'QUALITE', 'volume_sacas' => 250])
+        $this->lancar(['data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('QUALITE'), 'volume_sacas' => 250])
             ->assertRedirect(route('compras.show', $this->compra));
-        $this->lancar(['data_entrega' => '2026-09-14', 'armazem' => 'SAAG', 'volume_sacas' => 250]);
+        $this->lancar(['data_entrega' => '2026-09-14', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => 250]);
 
         $this->compra->refresh();
         $this->assertSame(2, $this->compra->entregas()->count());
         $this->assertEqualsWithDelta(500.0, $this->compra->sacasEntregues(), 0.01);
         $this->assertEqualsWithDelta(0.0, $this->compra->saldoAEntregar(), 0.01);
         $this->assertTrue($this->compra->totalmenteEntregue());
-        $this->assertSame(['QUALITE', 'SAAG'], $this->compra->entregas->pluck('armazem')->sort()->values()->all());
+        $this->assertSame(['QUALITÉ', 'SAAG'], $this->compra->entregas->map(fn ($e) => $e->armazemLabel())->sort()->values()->all());
     }
 
     public function test_saldo_a_entregar_aparece_enquanto_falta_volume(): void
@@ -130,7 +130,7 @@ class EntregaTest extends TestCase
         $this->assertTrue($entrega->precisaDeNumeroLote());
 
         $this->actingAs($this->admin)->put(route('compras.entregas.update', [$this->compra, $entrega]), [
-            'data_entrega' => '2026-08-14', 'armazem' => 'QUALITE', 'volume_sacas' => 245, 'numero_lote' => 'L-2026-77',
+            'data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('QUALITE'), 'volume_sacas' => 245, 'numero_lote' => 'L-2026-77',
         ])->assertRedirect(route('compras.show', $this->compra));
 
         $entrega->refresh();
@@ -174,7 +174,7 @@ class EntregaTest extends TestCase
             ->post(route('compras.entregas.store', $this->compra), [])
             ->assertSessionHasErrors([
                 'data_entrega' => 'Informe a data da entrega.',
-                'armazem' => 'Selecione o armazém que recebeu o café.',
+                'armazem_id' => 'Selecione o armazém que recebeu o café.',
                 'volume_sacas' => 'Informe quantas sacas (ou quantos quilos) entraram no armazém.',
             ]);
     }
@@ -183,7 +183,7 @@ class EntregaTest extends TestCase
     {
         $this->actingAs($this->diretoria)
             ->post(route('compras.entregas.store', $this->compra), [
-                'data_entrega' => '2026-08-14', 'armazem' => 'SAAG', 'volume_sacas' => 100,
+                'data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => 100,
             ])
             ->assertForbidden();
     }
@@ -208,12 +208,12 @@ class EntregaTest extends TestCase
         ]);
 
         $partes = [
-            ['data_entrega' => '2026-08-14', 'armazem' => 'SAAG', 'volume_sacas' => 200, 'numero_lote' => 'L-8001'],
-            ['data_entrega' => '2026-08-14', 'armazem' => 'QUALITE', 'volume_sacas' => 250, 'numero_lote' => 'L-8002'],
-            ['data_entrega' => '2026-09-14', 'armazem' => 'SAAG', 'volume_sacas' => 150, 'numero_lote' => 'L-8003'],
-            ['data_entrega' => '2026-09-14', 'armazem' => 'DINAMO_MACHADO', 'volume_sacas' => 300, 'numero_lote' => 'L-8004'],
+            ['data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => 200, 'numero_lote' => 'L-8001'],
+            ['data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('QUALITE'), 'volume_sacas' => 250, 'numero_lote' => 'L-8002'],
+            ['data_entrega' => '2026-09-14', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => 150, 'numero_lote' => 'L-8003'],
+            ['data_entrega' => '2026-09-14', 'armazem_id' => $this->armazem('DINAMO_MACHADO'), 'volume_sacas' => 300, 'numero_lote' => 'L-8004'],
             // A última chega sem o lote: o armazém ainda não informou.
-            ['data_entrega' => '2026-10-14', 'armazem' => 'QUALITE', 'volume_sacas' => 100, 'numero_lote' => ''],
+            ['data_entrega' => '2026-10-14', 'armazem_id' => $this->armazem('QUALITE'), 'volume_sacas' => 100, 'numero_lote' => ''],
         ];
 
         $acumulado = 0.0;
@@ -281,7 +281,7 @@ class EntregaTest extends TestCase
             ['2026-10', 'QUALITE', 100, null], // sem lote: fora do estoque
         ] as [$mes, $armazem, $sacas, $lote]) {
             $compra->entregas()->create([
-                'data_entrega' => $mes . '-01', 'armazem' => $armazem, 'volume_sacas' => $sacas,
+                'data_entrega' => $mes . '-01', 'armazem_id' => $this->armazem($armazem), 'volume_sacas' => $sacas,
                 'numero_lote' => $lote, 'created_by' => $this->admin->id,
             ]);
         }
@@ -302,8 +302,8 @@ class EntregaTest extends TestCase
 
         // SAAG recebeu duas vezes (200 + 150) e vira uma linha de 350.
         $this->assertEqualsWithDelta(350.0, (float) $linhas['SAAG']->peneira_1718, 0.01);
-        $this->assertEqualsWithDelta(250.0, (float) $linhas['QUALITE']->peneira_1718, 0.01);
-        $this->assertEqualsWithDelta(300.0, (float) $linhas['DINAMO_MACHADO']->peneira_1718, 0.01);
+        $this->assertEqualsWithDelta(250.0, (float) $linhas['QUALITÉ']->peneira_1718, 0.01);
+        $this->assertEqualsWithDelta(300.0, (float) $linhas['DÍNAMO MACHADO']->peneira_1718, 0.01);
 
         // 900 em estoque; as 100 sem lote ficam de fora — mas avisadas.
         $this->assertEqualsWithDelta(900.0, $resposta->viewData('totalGeral'), 0.01);
@@ -326,7 +326,7 @@ class EntregaTest extends TestCase
 
         foreach ([200, 250, 150, 300, 80] as $i => $sacas) {
             $this->actingAs($this->admin)->post(route('compras.entregas.store', $compra), [
-                'data_entrega' => '2026-08-14', 'armazem' => 'SAAG',
+                'data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('SAAG'),
                 'volume_sacas' => $sacas, 'numero_lote' => 'L-80' . $i,
             ])->assertSessionHasNoErrors();
         }
@@ -351,7 +351,7 @@ class EntregaTest extends TestCase
 
     public function test_tela_da_compra_mostra_contratado_entregue_e_saldo(): void
     {
-        $this->lancar(['volume_sacas' => 250, 'armazem' => 'QUALITE']);
+        $this->lancar(['volume_sacas' => 250, 'armazem_id' => $this->armazem('QUALITE')]);
 
         $this->actingAs($this->admin)->get(route('compras.show', $this->compra))
             ->assertOk()

@@ -53,7 +53,7 @@ class LiquidacaoCompraTest extends TestCase
     private function entregar(float $sacas, ?string $lote = 'L-1'): void
     {
         $this->compra->entregas()->create([
-            'data_entrega' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => $sacas,
+            'data_entrega' => '2026-08-01', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => $sacas,
             'numero_lote' => $lote, 'created_by' => $this->admin->id,
         ]);
         $this->compra->refresh();
@@ -155,7 +155,7 @@ class LiquidacaoCompraTest extends TestCase
             'created_by' => $this->admin->id,
         ]);
         $outra->entregas()->create([
-            'data_entrega' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => 100,
+            'data_entrega' => '2026-08-01', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => 100,
             'numero_lote' => 'L-2', 'created_by' => $this->admin->id,
         ]);
 

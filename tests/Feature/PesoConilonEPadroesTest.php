@@ -118,7 +118,7 @@ class PesoConilonEPadroesTest extends TestCase
 
         $this->actingAs($this->admin)
             ->post(route('compras.entregas.store', $compra), [
-                'data_entrega' => '2026-08-14', 'armazem' => 'SAAG',
+                'data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('SAAG'),
                 'volume_sacas' => '', 'peso_kg' => 12000,
             ])
             ->assertSessionHasNoErrors();
@@ -134,7 +134,7 @@ class PesoConilonEPadroesTest extends TestCase
 
         $this->actingAs($this->admin)
             ->post(route('compras.entregas.store', $compra), [
-                'data_entrega' => '2026-08-14', 'armazem' => 'SAAG', 'volume_sacas' => 480,
+                'data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => 480,
             ])
             ->assertSessionHasNoErrors();
 
@@ -148,7 +148,7 @@ class PesoConilonEPadroesTest extends TestCase
 
         $this->actingAs($this->admin)
             ->post(route('compras.entregas.store', $compra), [
-                'data_entrega' => '2026-08-14', 'armazem' => 'SAAG',
+                'data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('SAAG'),
             ])
             ->assertSessionHasErrors('volume_sacas');
 
@@ -165,7 +165,7 @@ class PesoConilonEPadroesTest extends TestCase
 
         $this->actingAs($this->admin)
             ->post(route('compras.entregas.store', $compra), [
-                'data_entrega' => '2026-08-27', 'armazem' => 'SAAG', 'volume_sacas' => 100,
+                'data_entrega' => '2026-08-27', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => 100,
             ])
             ->assertSessionHasNoErrors();
 
@@ -178,7 +178,7 @@ class PesoConilonEPadroesTest extends TestCase
     {
         $compra = $this->compraCrua(['volume_contratado' => 100]);
         $compra->entregas()->create([
-            'data_entrega' => '2026-08-31', 'armazem' => 'SAAG', 'volume_sacas' => 100,
+            'data_entrega' => '2026-08-31', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => 100,
             'numero_lote' => 'L-1', 'created_by' => $this->admin->id,
         ]);
         Classificacao::create($this->classificacaoZerada($compra->id, [
@@ -337,7 +337,7 @@ class PesoConilonEPadroesTest extends TestCase
     {
         $compra = $this->compraCrua(['volume_contratado' => 400]);
         $compra->entregas()->create([
-            'data_entrega' => '2026-08-14', 'armazem' => 'SAAG', 'volume_sacas' => 400,
+            'data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('SAAG'), 'volume_sacas' => 400,
             'numero_lote' => 'L-1', 'created_by' => $this->admin->id,
         ]);
 

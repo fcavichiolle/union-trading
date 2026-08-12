@@ -86,16 +86,20 @@
                 </a>
             </div>
 
+            {{-- Dois grupos de propósito: CADASTROS são coisas do negócio que
+                 alimentam os formulários; ADMINISTRAÇÃO mexe em quem entra no
+                 sistema. Misturar "Usuários" com "Qualidades" fazia a lista
+                 parecer um saco de coisas soltas. --}}
             @if ($u->hasRole('admin'))
                 <div class="sb-group">
-                    <div class="sb-group__label">Administração</div>
-                    <a href="{{ route('admin.users.index') }}" class="sb-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5.5 19.5c1.3-3.2 3.8-4.8 6.5-4.8s5.2 1.6 6.5 4.8"></path></svg>
-                        <span>Usuários</span>
-                    </a>
+                    <div class="sb-group__label">Cadastros</div>
                     <a href="{{ route('admin.clientes.index') }}" class="sb-link {{ request()->routeIs('admin.clientes.*') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"></path><path d="M9 20v-6h6v6"></path></svg>
                         <span>Clientes</span>
+                    </a>
+                    <a href="{{ route('admin.armazens.index') }}" class="sb-link {{ request()->routeIs('admin.armazens.*') ? 'is-active' : '' }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"></path><path d="M5 9.5V20h14V9.5"></path><path d="M8.5 20v-6h7v6"></path><path d="M8.5 14h7"></path></svg>
+                        <span>Armazéns</span>
                     </a>
                     <a href="{{ route('admin.corretoras.index') }}" class="sb-link {{ request()->routeIs('admin.corretoras.*') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5v-13l5-3.5 5 3.5v13"></path><path d="M13.5 20.5h7v-8.5l-3.5-2.5-3.5 2.5"></path><path d="M6.5 11h2M6.5 14.5h2M6.5 18h2M16.5 14.5h1.5M16.5 18h1.5"></path></svg>
@@ -104,6 +108,14 @@
                     <a href="{{ route('admin.qualidades.index') }}" class="sb-link {{ request()->routeIs('admin.qualidades.*') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 9.7l5.4-.8Z"></path></svg>
                         <span>Qualidades</span>
+                    </a>
+                </div>
+
+                <div class="sb-group">
+                    <div class="sb-group__label">Administração</div>
+                    <a href="{{ route('admin.users.index') }}" class="sb-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5.5 19.5c1.3-3.2 3.8-4.8 6.5-4.8s5.2 1.6 6.5 4.8"></path></svg>
+                        <span>Usuários</span>
                     </a>
                 </div>
             @endif
