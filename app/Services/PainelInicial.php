@@ -149,6 +149,12 @@ class PainelInicial
         // depende de QUEM está olhando — o resto ali é total do sistema.
         if ($naoLidas = Mensagem::naoLidasPor($user)->count()) {
             $badges['mensagens.index'] = $naoLidas;
+
+            // Citação é aviso mais forte do que "tem mensagem nova": o menu
+            // marca em vermelho quando alguém chamou a pessoa pelo nome.
+            if (Mensagem::mencionandoNaoLidas($user)->exists()) {
+                $badges['mensagens.mencao'] = true;
+            }
         }
 
         if ($user->hasRole('admin', 'compras') && $n['compras_com_pendencia'] > 0) {

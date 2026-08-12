@@ -324,12 +324,14 @@ class GerarDemoTest extends TestCase
             'active' => true,
         ]);
 
+        // Uma das mensagens cita o usuário da demo pelo nome, para a tela
+        // mostrar o destaque da menção e a marca "citou você".
         $conversa = [
             ['2026-08-11 08:12:00', $colega, 'Bom dia. NY abriu em alta, +2,15 na Z6.'],
             ['2026-08-11 08:20:00', $this->admin, 'Recebido. Vou segurar a fixação da UT 6013 até a tarde.'],
             ['2026-08-11 15:47:00', $colega, 'SAAG confirmou que não vem mais café da UTS 7322 — dá para liquidar com as 590.'],
             ['2026-08-12 07:58:00', $this->admin, 'Liquidei a 7322. Falta o lote da entrega do DÍNAMO na 7311.'],
-            ['2026-08-12 09:05:00', $colega, 'Cobrei o armazém, prometeram passar o número hoje.'],
+            ['2026-08-12 09:05:00', $colega, '@QA Teste Union cobrei o armazém, prometeram passar o número do lote hoje.'],
         ];
 
         foreach ($conversa as [$quando, $autor, $texto]) {

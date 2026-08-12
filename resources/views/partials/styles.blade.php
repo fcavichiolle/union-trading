@@ -221,6 +221,9 @@
     background: #E8322C; color: #fff; text-align: center;
     font-family: var(--font-data); font-size: 10.5px; font-weight: 700; line-height: 17px;
   }
+  /* Citação ("@3"): invertido, para não virar mais um badge vermelho igual
+     aos outros — ser chamado pelo nome merece destaque próprio. */
+  .sb-badge--cita { background: #fff; color: #E8322C; box-shadow: 0 0 0 2px rgba(232,50,44,.6); }
 
   :root[data-theme="dark"] .painel-ok { background: rgba(122,214,163,.12); color: #9BD8B3; }
   :root[data-theme="dark"] .num-tile__val.is-alerta { color: #F0D9A8; }
@@ -889,10 +892,26 @@
   .msg--minha .msg__topo { flex-direction: row-reverse; }
   .msg--minha .msg__apagar { margin: 0 auto 0 0; }
 
+  /* menção: destaque no texto (o conteúdo continua saindo escapado) */
+  .mencao { background: var(--primary-soft); color: var(--primary); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+  .mencao--eu { background: #FCF3DC; color: #8A6116; }
+  .msg--citou .msg__bolha { box-shadow: inset 0 0 0 1px #EBD9A8; }
+  .msg__citacao { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #8A6116; background: #FCF3DC; border-radius: 99px; padding: 1px 7px; }
+
   .chat__form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; padding: 14px 20px; box-shadow: inset 0 1px 0 var(--border); }
-  .chat__form textarea { flex: 1; min-width: 200px; resize: none; overflow-y: auto; font: inherit; font-size: 14.5px; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; color: var(--ink); }
+  .chat__campo { position: relative; flex: 1; min-width: 200px; display: flex; }
+  .chat__form textarea { flex: 1; min-width: 0; resize: none; overflow-y: auto; font: inherit; font-size: 14.5px; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; color: var(--ink); }
+
+  /* lista do autocomplete de "@", ancorada acima do campo */
+  .mencao-lista { position: absolute; bottom: calc(100% + 6px); left: 0; min-width: 240px; max-width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 10px 24px -12px rgba(18,61,42,.4); overflow: hidden; z-index: 20; }
+  .mencao-item { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 8px 12px; border: 0; background: none; cursor: pointer; text-align: left; font: inherit; }
+  .mencao-item__nome { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .mencao-item__perfil { font-size: 11.5px; color: var(--muted); margin-left: auto; }
+  .mencao-item.is-sel, .mencao-item:hover { background: var(--primary-soft); }
   .chat__nota { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
 
+  :root[data-theme="dark"] .mencao { background: rgba(122,214,163,.16); color: #9BD8B3; }
+  :root[data-theme="dark"] .mencao--eu, :root[data-theme="dark"] .msg__citacao { background: rgba(240,196,102,.16); color: #F0D9A8; }
   :root[data-theme="dark"] .msg__bolha { background: rgba(255,255,255,.05); }
   :root[data-theme="dark"] .msg--minha .msg__bolha { background: rgba(122,214,163,.12); }
   :root[data-theme="dark"] .msg__autor { color: #9BD8B3; }

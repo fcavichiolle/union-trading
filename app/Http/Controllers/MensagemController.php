@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\Mensagem;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -19,11 +21,18 @@ use Illuminate\Support\Facades\Auth;
  * A tela busca mensagens novas de tempo em tempo (polling em `novas`), no
  * mesmo espírito da página de Cotações. Sem WebSocket: exigiria um processo
  * rodando sempre ao lado do PHP, e o ganho de 3 segundos não paga isso.
+ *
+ * O texto fica CIFRADO no banco (ver o cast em Mensagem) — por isso as
+ * menções vivem numa tabela própria: o MySQL não sabe procurar "@Fulano"
+ * dentro de conteúdo cifrado.
  */
 class MensagemController extends Controller
 {
     public function index(): View
     {
+        $usuario = Auth::user();
+        $usuarios = $this->usuariosDoCanal();
+
         $mensagens = Mensagem::with('autor')
             ->latest('id')
             ->limit(Mensagem::POR_PAGINA)
@@ -32,8 +41,6 @@ class MensagemController extends Controller
             ->sortBy('id')
             ->values();
 
-        $usuario = Auth::user();
-
         // Quantas estavam sem ler ANTES de marcar como lido — é o que a tela
         // usa para desenhar a linha "novas mensagens".
         $naoLidas = Mensagem::naoLidasPor($usuario)->count();
@@ -41,10 +48,16 @@ class MensagemController extends Controller
         $this->marcarComoLido();
 
         return view('mensagens.index', [
-            'mensagens' => $mensagens->map(fn (Mensagem $m) => $m->paraTela($usuario)),
+            'mensagens' => $mensagens->map(fn (Mensagem $m) => $m->paraTela($usuario, $usuarios)),
             'naoLidas' => $naoLidas,
             'temAnteriores' => $mensagens->isNotEmpty()
                 && Mensagem::where('id', '<', $mensagens->first()['id'] ?? 0)->exists(),
+            // Alimenta o autocomplete do "@".
+            'usuarios' => $usuarios->map(fn (User $u) => [
+                'id' => $u->id,
+                'nome' => $u->name,
+                'perfil' => $u->role?->nome,
+            ])->values(),
         ]);
     }
 
@@ -58,6 +71,10 @@ class MensagemController extends Controller
             ]
         );
 
+        $usuarios = $this->usuariosDoCanal();
+
+        // As menções são gravadas pelo próprio model (evento `saved`), então
+        // qualquer caminho que crie mensagem já sai com elas.
         $mensagem = Mensagem::create([
             'user_id' => Auth::id(),
             'texto' => $dados['texto'],
@@ -68,7 +85,9 @@ class MensagemController extends Controller
         $this->marcarComoLido();
 
         if ($request->expectsJson()) {
-            return response()->json(['mensagem' => $mensagem->load('autor')->paraTela(Auth::user())]);
+            return response()->json([
+                'mensagem' => $mensagem->load('autor')->paraTela(Auth::user(), $usuarios),
+            ]);
         }
 
         return redirect()->route('mensagens.index');
@@ -82,6 +101,7 @@ class MensagemController extends Controller
     public function novas(Request $request): JsonResponse
     {
         $usuario = Auth::user();
+        $usuarios = $this->usuariosDoCanal();
 
         if ($request->filled('antes')) {
             $mensagens = Mensagem::with('autor')
@@ -93,7 +113,7 @@ class MensagemController extends Controller
                 ->values();
 
             return response()->json([
-                'mensagens' => $mensagens->map(fn (Mensagem $m) => $m->paraTela($usuario))->all(),
+                'mensagens' => $mensagens->map(fn (Mensagem $m) => $m->paraTela($usuario, $usuarios))->all(),
                 'tem_anteriores' => $mensagens->isNotEmpty()
                     && Mensagem::where('id', '<', $mensagens->first()->id)->exists(),
             ]);
@@ -109,7 +129,7 @@ class MensagemController extends Controller
         $this->marcarComoLido();
 
         return response()->json([
-            'mensagens' => $mensagens->map(fn (Mensagem $m) => $m->paraTela($usuario))->all(),
+            'mensagens' => $mensagens->map(fn (Mensagem $m) => $m->paraTela($usuario, $usuarios))->all(),
         ]);
     }
 
@@ -119,15 +139,19 @@ class MensagemController extends Controller
 
         abort_unless($mensagem->podeSerApagadaPor($usuario), 403);
 
-        // Admin apagando mensagem de outra pessoa fica registrado: é o único
-        // lugar onde o conteúdo sobrevive depois que a linha sai do canal.
+        // Admin apagando mensagem de outra pessoa fica registrado — mas SEM o
+        // texto: com o conteúdo cifrado no banco, guardar uma cópia em claro
+        // no log de auditoria seria uma porta dos fundos para o que a
+        // criptografia veio proteger.
         if ($mensagem->user_id !== $usuario->id) {
             AuditLog::registrar(
                 'mensagem.excluida',
                 sprintf(
-                    'Mensagem de %s excluída pelo admin: "%s"',
+                    'Mensagem #%d de %s (escrita em %s) excluída por um administrador. '
+                        . 'O conteúdo não é registrado aqui de propósito.',
+                    $mensagem->id,
                     $mensagem->autor?->name ?? 'usuário removido',
-                    \Illuminate\Support\Str::limit($mensagem->texto, 200)
+                    $mensagem->created_at->format('d/m/Y H:i')
                 )
             );
         }
@@ -135,6 +159,17 @@ class MensagemController extends Controller
         $mensagem->delete();
 
         return redirect()->route('mensagens.index')->with('status', 'Mensagem removida.');
+    }
+
+    /**
+     * Quem pode ser citado: usuários ativos, que são os que entram no
+     * sistema. Ordenados por nome para o autocomplete ficar previsível.
+     *
+     * @return Collection<int, User>
+     */
+    private function usuariosDoCanal(): Collection
+    {
+        return User::with('role')->where('active', true)->orderBy('name')->get();
     }
 
     /** Marca o canal como lido para o usuário atual. */
