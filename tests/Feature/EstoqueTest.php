@@ -54,7 +54,7 @@ class EstoqueTest extends TestCase
     private function entregar(Compra $compra, string $armazem, float $sacas, ?string $lote, string $mes = '2026-01-01'): Entrega
     {
         return $compra->entregas()->create([
-            'data_entrega' => $mes, 'armazem' => $armazem, 'volume_sacas' => $sacas,
+            'data_entrega' => $mes, 'armazem_id' => $this->armazem($armazem), 'volume_sacas' => $sacas,
             'numero_lote' => $lote, 'created_by' => $this->admin->id,
         ]);
     }
@@ -143,7 +143,7 @@ class EstoqueTest extends TestCase
 
         // Metade das sacas em cada armazém => metade da peneira em cada um.
         $linhas = $resposta->viewData('linhas')->keyBy('armazem');
-        $this->assertEqualsWithDelta(250.0, (float) $linhas['QUALITE']->peneira_1718, 0.01);
+        $this->assertEqualsWithDelta(250.0, (float) $linhas['QUALITÉ']->peneira_1718, 0.01);
         $this->assertEqualsWithDelta(250.0, (float) $linhas['SAAG']->peneira_1718, 0.01);
         $this->assertEqualsWithDelta(500.0, $resposta->viewData('totalGeral'), 0.01);
     }
@@ -202,7 +202,7 @@ class EstoqueTest extends TestCase
         $linhas = $resposta->viewData('linhas');
         // 3 linhas: SAAG/Fine, SAAG/Good, QUALITÉ/Fine.
         $this->assertCount(3, $linhas);
-        $this->assertSame(['QUALITE', 'SAAG', 'SAAG'], $linhas->pluck('armazem')->all());
+        $this->assertSame(['QUALITÉ', 'SAAG', 'SAAG'], $linhas->pluck('armazem')->all());
 
         $resposta->assertSee('Armazém')
             ->assertSee('QUALITÉ')
@@ -217,11 +217,11 @@ class EstoqueTest extends TestCase
         $this->classificar($this->compra('QUAL-1', 'QUALITE', 'L-2', 400));
 
         $resposta = $this->actingAs($this->admin)
-            ->get(route('relatorio.index', ['armazem' => 'QUALITE']))
+            ->get(route('relatorio.index', ['armazem' => $this->armazem('QUALITE')]))
             ->assertOk();
 
         $this->assertEqualsWithDelta(400.0, $resposta->viewData('totalGeral'), 0.01);
-        $this->assertSame(['QUALITE'], $resposta->viewData('linhas')->pluck('armazem')->unique()->all());
+        $this->assertSame(['QUALITÉ'], $resposta->viewData('linhas')->pluck('armazem')->unique()->all());
     }
 
     public function test_aviso_de_pendencia_respeita_o_filtro_de_armazem(): void
@@ -230,7 +230,7 @@ class EstoqueTest extends TestCase
         $this->compra('QUAL-SEM-LOTE', 'QUALITE', null, 300);
 
         $resposta = $this->actingAs($this->admin)
-            ->get(route('relatorio.index', ['armazem' => 'SAAG']))
+            ->get(route('relatorio.index', ['armazem' => $this->armazem('SAAG')]))
             ->assertOk();
 
         $this->assertEqualsWithDelta(500.0, $resposta->viewData('pendentes')['aguardando_sacas'], 0.01);
@@ -264,7 +264,7 @@ class EstoqueTest extends TestCase
 
         // Assina COM o parâmetro para a assinatura continuar válida — mesmo
         // assim o controller descarta o recorte por armazém.
-        $url = URL::temporarySignedRoute('relatorio.publico', now()->addDays(7), ['armazem' => 'SAAG']);
+        $url = URL::temporarySignedRoute('relatorio.publico', now()->addDays(7), ['armazem' => $this->armazem('SAAG')]);
 
         $resposta = $this->get($url)->assertOk();
 

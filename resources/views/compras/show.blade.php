@@ -131,6 +131,10 @@
                 </div>
                 <div class="field"><label>Certificação</label><div>{{ \App\Models\Compra::certificacoes()[$compra->certificacao] ?? $compra->certificacao }}</div></div>
                 <div class="field"><label>Logística</label><div>{{ $compra->logisticaLabel() ?? '—' }}</div></div>
+                <div class="field">
+                    <label>Armazém previsto</label>
+                    <div>{{ $compra->armazemPrevistoLabel() ?? '—' }}</div>
+                </div>
                 <div class="field"><label>Tipo de café</label><div>{{ $compra->tipoEntradaLabel() }}</div></div>
                 <div class="field">
                     <label>Volume contratado</label>
@@ -184,9 +188,9 @@
                                 </form>
                                 <td><input type="date" form="e-{{ $entrega->id }}" name="data_entrega" value="{{ $entrega->data_entrega->format('Y-m-d') }}" required></td>
                                 <td>
-                                    <select form="e-{{ $entrega->id }}" name="armazem" required>
-                                        @foreach (\App\Models\Compra::armazens() as $cod => $rotulo)
-                                            <option value="{{ $cod }}" @selected($entrega->armazem === $cod)>{{ $rotulo }}</option>
+                                    <select form="e-{{ $entrega->id }}" name="armazem_id" required>
+                                        @foreach (\App\Models\Armazem::lista() as $id => $nome)
+                                            <option value="{{ $id }}" @selected((int) $entrega->armazem_id === $id)>{{ $nome }}</option>
                                         @endforeach
                                     </select>
                                 </td>
@@ -256,14 +260,16 @@
                         <input type="date" id="data_entrega" name="data_entrega" value="{{ old('data_entrega', date('Y-m-d')) }}" required>
                         @error('data_entrega') <div class="field-error">{{ $message }}</div> @enderror
                     </div>
-                    <div class="field {{ $errors->has('armazem') ? 'has-error' : '' }}" style="margin-bottom:0;">
-                        <label for="armazem">Armazém</label>
-                        <select id="armazem" name="armazem" required>
-                            @foreach (\App\Models\Compra::armazens() as $cod => $rotulo)
-                                <option value="{{ $cod }}" @selected(old('armazem') === $cod)>{{ $rotulo }}</option>
+                    {{-- Já vem no armazém previsto da compra, quando houver —
+                         o funcionário só troca se o café chegou em outro. --}}
+                    <div class="field {{ $errors->has('armazem_id') ? 'has-error' : '' }}" style="margin-bottom:0;">
+                        <label for="armazem_id">Armazém</label>
+                        <select id="armazem_id" name="armazem_id" required>
+                            @foreach (\App\Models\Armazem::lista() as $id => $nome)
+                                <option value="{{ $id }}" @selected((int) old('armazem_id', $compra->armazem_id) === $id)>{{ $nome }}</option>
                             @endforeach
                         </select>
-                        @error('armazem') <div class="field-error">{{ $message }}</div> @enderror
+                        @error('armazem_id') <div class="field-error">{{ $message }}</div> @enderror
                     </div>
                     {{-- Sacas OU peso: o funcionário preenche o que tem na mão
                          e o outro campo se completa. --}}

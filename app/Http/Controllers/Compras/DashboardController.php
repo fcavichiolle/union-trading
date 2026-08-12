@@ -131,7 +131,7 @@ class DashboardController extends Controller
                 $q->where('compras.certificacao', $filtros['certificado']);
             })
             ->when($filtros['armazem'] !== '', function ($q) use ($filtros) {
-                $q->where('entregas.armazem', $filtros['armazem']);
+                $q->where('entregas.armazem_id', $filtros['armazem']);
             })
             ->when($filtros['busca'] !== '', function ($q) use ($filtros) {
                 $busca = $filtros['busca'];
@@ -159,9 +159,13 @@ class DashboardController extends Controller
         $colunas = 'classificacoes.padrao_final as padrao_final, ' . implode(', ', $somas);
 
         if ($comArmazem) {
-            $query->selectRaw('entregas.armazem, ' . $colunas)
-                ->groupBy('entregas.armazem', 'classificacoes.padrao_final')
-                ->orderBy('entregas.armazem')->orderBy('classificacoes.padrao_final');
+            // Agrupa pelo CADASTRO do armazém (id) e traz o nome pelo join:
+            // renomear um armazém não parte o histórico em dois grupos, e a
+            // view/os testes continuam lendo `$linha->armazem` como texto.
+            $query->join('armazens', 'armazens.id', '=', 'entregas.armazem_id')
+                ->selectRaw('armazens.nome as armazem, ' . $colunas)
+                ->groupBy('armazens.id', 'armazens.nome', 'classificacoes.padrao_final')
+                ->orderBy('armazens.nome')->orderBy('classificacoes.padrao_final');
         } else {
             $query->selectRaw($colunas)->groupBy('classificacoes.padrao_final');
         }
@@ -230,7 +234,7 @@ class DashboardController extends Controller
             ->when($filtros['mes_de'] !== '', fn ($q) => $q->whereDate('entregas.data_entrega', '>=', self::primeiroDia($filtros['mes_de'])))
             ->when($filtros['mes_ate'] !== '', fn ($q) => $q->whereDate('entregas.data_entrega', '<=', self::ultimoDia($filtros['mes_ate'])))
             ->when($filtros['certificado'] !== '', fn ($q) => $q->where('compras.certificacao', $filtros['certificado']))
-            ->when($filtros['armazem'] !== '', fn ($q) => $q->where('entregas.armazem', $filtros['armazem']))
+            ->when($filtros['armazem'] !== '', fn ($q) => $q->where('entregas.armazem_id', $filtros['armazem']))
             ->when($filtros['busca'] !== '', function ($q) use ($filtros) {
                 $busca = $filtros['busca'];
                 $q->join('fornecedores', 'fornecedores.id', '=', 'compras.fornecedor_id')

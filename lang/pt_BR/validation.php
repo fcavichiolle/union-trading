@@ -193,6 +193,12 @@ return [
         // Entregas (o que entrou no armazém)
         'data_entrega' => 'data da entrega',
         'armazem' => 'armazém',
+        'armazem_id' => 'armazém',
+        // Cadastro de armazéns
+        'cidade' => 'cidade',
+        'estado' => 'estado (UF)',
+        'endereco' => 'endereço',
+        'documento' => 'CNPJ',
         'volume_sacas' => 'sacas entregues',
         'numero_lote' => 'número do lote',
 

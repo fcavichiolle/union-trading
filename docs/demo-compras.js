@@ -26,7 +26,30 @@
     var KG_POR_SACA = 60;
     var SACAS_POR_LOTE = 283.49;
 
-    var ARMAZENS = { SAAG: 'SAAG', QUALITE: 'QUALITÉ', DINAMO_MACHADO: 'DÍNAMO MACHADO' };
+    /**
+     * Armazéns viraram CADASTRO no sistema, então a demo não pode ter a
+     * lista fixa: ela é lida do próprio <select> que a página trouxe
+     * renderizado (value = id do cadastro, texto = nome). Assim, armazém
+     * novo cadastrado no app aparece aqui sozinho na próxima geração.
+     */
+    function armazens() {
+        var mapa = {};
+
+        // Dois seletores porque as páginas expõem a lista de formas
+        // diferentes: o formulário usa `armazem_id` e o filtro da lista/do
+        // Estoque usa `armazem` (mesmo conteúdo: value = id, texto = nome).
+        // Só com o primeiro, a coluna "Entregas" da lista saía "1 (—)".
+        document.querySelectorAll('select[name="armazem_id"] option, select[name="armazem"] option')
+            .forEach(function (opt) {
+                if (opt.value) mapa[opt.value] = opt.textContent.trim();
+            });
+
+        return mapa;
+    }
+
+    function nomeDoArmazem(id) {
+        return armazens()[String(id)] || '—';
+    }
 
     var CERTIFICACOES = {
         SEM_CERT: 'Sem certificação', '4C': '4C', RFA: 'RFA', EUDR: 'EUDR',
@@ -223,6 +246,9 @@
                 padrao: conilon ? '' : v('padrao_final'),
                 bebida: conilon ? '' : v('tipo_bebida'),
                 logistica: v('logistica'),
+                // Armazém previsto (opcional): serve para já vir escolhido no
+                // lançamento da entrega.
+                armazemPrevisto: v('armazem_id'),
                 sacas: sacas,
                 peso: peso,
                 valorSaca: parseFloat(v('valor_saca')) || null,
@@ -320,7 +346,7 @@
         } else {
             var armazens = [];
             compra.entregas.forEach(function (e) {
-                var nome = ARMAZENS[e.armazem] || e.armazem;
+                var nome = nomeDoArmazem(e.armazem);
                 if (armazens.indexOf(nome) === -1) armazens.push(nome);
             });
             celEntregas.appendChild(document.createTextNode(compra.entregas.length + ' (' + armazens.join(', ') + ')'));
@@ -507,6 +533,7 @@
             else if (texto === 'CNPJ / CPF') valor.textContent = compra.documento || 'a confirmar';
             else if (texto === 'Certificação') valor.textContent = CERTIFICACOES[compra.certificacao] || compra.certificacao;
             else if (texto === 'Logística') valor.textContent = compra.logistica === 'RETIRAR' ? 'Retirar' : (compra.logistica === 'POSTO' ? 'Posto' : '—');
+            else if (texto === 'Armazém previsto') valor.textContent = compra.armazemPrevisto ? nomeDoArmazem(compra.armazemPrevisto) : '—';
             else if (texto === 'Tipo de café') valor.textContent = compra.tipo === 'CONILON' ? 'Conilon' : 'Arábica';
             else if (texto === 'Volume contratado') valor.textContent = num(compra.sacas) + ' sacas · ' + num(compra.peso) + ' kg';
             else if (texto === 'Padrão final') valor.textContent = PADROES[compra.padrao] || '—';
@@ -560,10 +587,10 @@
         var data = el('input', { type: 'date', value: entrega.data });
         tr.appendChild(celula(data));
 
-        var armazem = el('select');
-        Object.keys(ARMAZENS).forEach(function (cod) {
-            var opt = el('option', { value: cod }, ARMAZENS[cod]);
-            if (entrega.armazem === cod) opt.selected = true;
+        var armazem = el('select'), lista = armazens();
+        Object.keys(lista).forEach(function (id) {
+            var opt = el('option', { value: id }, lista[id]);
+            if (String(entrega.armazem) === id) opt.selected = true;
             armazem.appendChild(opt);
         });
         tr.appendChild(celula(armazem));
@@ -630,9 +657,13 @@
         var s = saldo(compra);
         var campoSacas = form.querySelector('[name="volume_sacas"]'),
             campoPeso = form.querySelector('[name="peso_kg"]'),
-            campoData = form.querySelector('[name="data_entrega"]');
+            campoData = form.querySelector('[name="data_entrega"]'),
+            campoArmazem = form.querySelector('[name="armazem_id"]');
 
         if (campoData) campoData.value = hoje();
+
+        // Já vem no armazém previsto do negócio, como no sistema.
+        if (campoArmazem && compra.armazemPrevisto) campoArmazem.value = compra.armazemPrevisto;
         if (campoSacas) campoSacas.value = s > 0 ? s : '';
         if (campoPeso) campoPeso.value = s > 0 ? arredonda(s * KG_POR_SACA) : '';
 
@@ -652,7 +683,7 @@
 
             compra.entregas.push({
                 data: campoData.value || hoje(),
-                armazem: form.querySelector('[name="armazem"]').value,
+                armazem: form.querySelector('[name="armazem_id"]').value,
                 sacas: sacas,
                 peso: peso,
                 lote: (form.querySelector('[name="numero_lote"]').value || '').trim()

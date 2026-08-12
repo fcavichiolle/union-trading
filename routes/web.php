@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ArmazemController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\CorretoraController;
 use App\Http\Controllers\Admin\QualidadeController;
@@ -99,6 +100,13 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::post('/corretoras', [CorretoraController::class, 'store'])->name('corretoras.store');
             Route::put('/corretoras/{corretora}', [CorretoraController::class, 'update'])->name('corretoras.update');
             Route::delete('/corretoras/{corretora}', [CorretoraController::class, 'destroy'])->name('corretoras.destroy');
+
+            // Armazéns: deixaram de ser lista fixa no código e viraram
+            // cadastro (a entrega aponta para eles).
+            Route::get('/armazens', [ArmazemController::class, 'index'])->name('armazens.index');
+            Route::post('/armazens', [ArmazemController::class, 'store'])->name('armazens.store');
+            Route::put('/armazens/{armazem}', [ArmazemController::class, 'update'])->name('armazens.update');
+            Route::delete('/armazens/{armazem}', [ArmazemController::class, 'destroy'])->name('armazens.destroy');
 
             Route::get('/qualidades', [QualidadeController::class, 'index'])->name('qualidades.index');
             Route::post('/qualidades', [QualidadeController::class, 'store'])->name('qualidades.store');

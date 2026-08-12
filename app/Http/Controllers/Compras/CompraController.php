@@ -31,7 +31,9 @@ class CompraController extends Controller
                 $q->whereDate('data_compra', '<=', $request->string('mes_ate') . '-31');
             })
             ->when($request->filled('armazem'), function ($q) use ($request) {
-                $q->whereHas('entregas', fn ($e) => $e->where('armazem', $request->string('armazem')));
+                // O filtro é pelo armazém que RECEBEU (entrega), não pelo
+                // previsto da compra: é onde o café realmente está.
+                $q->whereHas('entregas', fn ($e) => $e->where('armazem_id', $request->integer('armazem')));
             })
             ->when($request->filled('padrao'), function ($q) use ($request) {
                 $padrao = $request->string('padrao')->toString();
@@ -151,6 +153,7 @@ class CompraController extends Controller
             'fornecedor_id' => $fornecedorId,
             'certificacao' => $dados['certificacao'],
             'logistica' => $dados['logistica'] ?? null,
+            'armazem_id' => $dados['armazem_id'] ?? null,
             'tipo_entrada' => $dados['tipo_entrada'] ?? 'ARABICA',
             'padrao_final' => $conilon ? null : ($dados['padrao_final'] ?? null),
             'tipo_bebida' => $conilon ? null : ($dados['tipo_bebida'] ?? null),

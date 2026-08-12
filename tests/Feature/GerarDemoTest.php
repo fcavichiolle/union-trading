@@ -258,7 +258,7 @@ class GerarDemoTest extends TestCase
     ): void {
         $entrega = $compra->entregas()->create([
             'data_entrega' => $data,
-            'armazem' => $armazem,
+            'armazem_id' => $this->armazem($armazem),
             'volume_sacas' => $sacas,
             'peso_kg' => $peso ?? Compra::pesoDeSacas($sacas),
             'numero_lote' => $lote,
@@ -473,6 +473,18 @@ class GerarDemoTest extends TestCase
 
         $selo = '<a class="demo-badge" href="https://github.com/fcavichiolle/union-trading">'
             . '<span class="dot"></span>Demo</a>';
+
+        // Favicon inline (grão de café). Sem ele, todas as páginas da demo
+        // pediam /favicon.ico e levavam 404 no console — ruído em cima do
+        // que a gente quer ver quando algo dá errado de verdade.
+        $favicon = '<link rel="icon" href="data:image/svg+xml,'
+            . '%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 32 32\'%3E'
+            . '%3Crect width=\'32\' height=\'32\' rx=\'6\' fill=\'%230C4028\'/%3E'
+            . '%3Cellipse cx=\'16\' cy=\'16\' rx=\'8\' ry=\'11.5\' fill=\'%23E9E2D1\'/%3E'
+            . '%3Cpath d=\'M16 5.5c3 6 3 15 0 21\' stroke=\'%230A3A22\' stroke-width=\'2.4\' fill=\'none\'/%3E'
+            . '%3C/svg%3E">';
+
+        $estilo = $favicon . $estilo;
 
         // Formulário sem tratamento do motor não tem para onde postar: só
         // "Sair" navega. O demo-compras.js trata os formulários do módulo de

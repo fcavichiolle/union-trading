@@ -389,6 +389,41 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   chamadas sucessivas de `Http::fake` NÃO substituem a anterior (stubs se acumulam e o
   primeiro match vence) — para simular queda use um fake único com closure + flag.
 
+### Cadastro de armazéns (ago/2026) e o armazém previsto na compra
+- **Armazéns deixaram de ser ENUM no código e viraram CADASTRO** (`armazens`:
+  nome único, cidade, estado, endereço opcional e **CNPJ opcional** — validado
+  pelo mesmo `DocumentoValido` do fornecedor quando preenchido). Tela em
+  **Cadastros → Armazéns** (`admin.armazens.*`), com edição na própria linha.
+- A entrega aponta para o **cadastro** (`entregas.armazem_id`), e não guarda o
+  nome como snapshot — ao contrário das corretoras. Motivo: renomear um armazém
+  deve atualizar o histórico, porque é o **mesmo galpão** com nome novo;
+  snapshot partiria o Estoque em dois grupos para o mesmo lugar. Consequência
+  assumida: **excluir armazém em uso é bloqueado** (FK `restrictOnDelete` + aviso
+  na tela, com o botão "Em uso" desabilitado); se o nome mudou, é para renomear.
+- A **compra** ganhou `armazem_id` como **armazém PREVISTO** (nullable, opcional
+  de propósito: às vezes o destino só se define na hora de entregar). Ele
+  **pré-seleciona** o armazém no lançamento da entrega e aparece na tela da
+  compra. Quem vale para o estoque continua sendo o armazém de **cada entrega** —
+  o café pode chegar em outro lugar, e isso não é erro.
+- O Estoque agrupa por `armazens.id` e traz `armazens.nome as armazem` pelo join,
+  então as views e os testes continuam lendo `$linha->armazem` como texto (agora
+  o **nome**, não o código: "QUALITÉ" em vez de "QUALITE").
+- O filtro de armazém (Compras lançadas e Estoque) passou a levar o **id**. O
+  link compartilhável do Estoque continua **sem** o armazém, como antes.
+- Nos testes há o helper `TestCase::armazem('SAAG'|'QUALITE'|'DINAMO_MACHADO')`,
+  que traduz o apelido curto para o id semeado pela migration.
+
+### Menu lateral: Cadastros × Administração
+Os cadastros ficavam num grupo só chamado "Administração", junto com Usuários —
+com Armazéns entrando, a lista virava um saco de coisas soltas. Agora são dois
+grupos: **Cadastros** (Clientes, Armazéns, Corretoras, Qualidades — coisas do
+negócio que alimentam formulários) e **Administração** (Usuários — controle de
+acesso, que é outra natureza). Optamos por **não** criar um menu "Configurações"
+com submenus: acrescentaria um clique e esconderia itens que hoje estão a um
+clique só. Se a lista crescer além de ~7 itens, o caminho combinado é uma
+**página inicial de Configurações** com cards (cabe descrição em cada cadastro),
+não submenu.
+
 ### Demo pública (GitHub Pages) — agora GERADA, não escrita à mão
 - As páginas estáticas de `docs/` eram editadas na mão e por isso **atrasavam**
   em relação ao sistema (chegaram a mostrar o modelo antigo de compras, sem
@@ -453,7 +488,8 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   `quantidade_lotes` (model `Classificacao`) são recalculados no evento `saving` do model,
   nunca aceitos do formulário. Não confiar em conta feita no navegador.
 - **Fornecedor reaproveitado por CNPJ** via `firstOrCreate` (evita duplicar).
-- **Listas centralizadas** em métodos estáticos dos models: `Compra::armazens()` /
+- **Listas centralizadas** em métodos estáticos dos models (armazéns saíram daqui e
+  viraram cadastro — ver `Armazem::lista()`): `Compra::certificacoes()` /
   `Compra::certificacoes()`, `Classificacao::padroes()` (padrão final da classificação) e
   as listas do `Contrato` (certificados, embalagens, incoterms, portos, meses). Código curto
   => rótulo bonito; alimentam formulário, validação e exibição.
@@ -644,7 +680,9 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   motor interativo em `docs/demo-compras.js`.
 - **Listas centrais** (mexer aqui, não nas telas): `Classificacao::faixas()` (peneiras),
   `Classificacao::padroes()`, `Classificacao::tiposBebida()`, `Compra::tiposEntrada()`,
-  `Compra::armazens()`, `Compra::certificacoes()`, `Compra::logisticas()`.
+  `Compra::certificacoes()`, `Compra::logisticas()`. **Armazéns não são mais lista no
+  código**: viraram cadastro (`Armazem`, tela em Cadastros → Armazéns); nas telas use
+  `Armazem::lista()` (id => nome, memorizado por requisição).
 
 ## 8. Como retomar no Claude Code
 

@@ -36,7 +36,7 @@ class StoreEntregaRequest extends FormRequest
         return [
             // Data completa: a auditoria precisa do dia da entrada.
             'data_entrega' => ['required', 'date'],
-            'armazem' => ['required', Rule::in(array_keys(Compra::armazens()))],
+            'armazem_id' => ['required', 'integer', Rule::exists('armazens', 'id')],
             'volume_sacas' => ['required', 'numeric', 'min:0.01', 'max:999999'],
             'peso_kg' => ['nullable', 'numeric', 'min:0.01', 'max:99999999'],
             'numero_lote' => ['nullable', 'string', 'max:60'],
@@ -48,7 +48,8 @@ class StoreEntregaRequest extends FormRequest
         return [
             'data_entrega.required' => 'Informe a data da entrega.',
             'data_entrega.date' => 'Informe uma data válida para a entrega.',
-            'armazem.required' => 'Selecione o armazém que recebeu o café.',
+            'armazem_id.required' => 'Selecione o armazém que recebeu o café.',
+            'armazem_id.exists' => 'O armazém selecionado não está mais no cadastro.',
             'volume_sacas.required' => 'Informe quantas sacas (ou quantos quilos) entraram no armazém.',
             'volume_sacas.numeric' => 'O volume entregue deve ser um número (ex.: 480 ou 480,50).',
             'volume_sacas.min' => 'O volume entregue deve ser maior que zero.',

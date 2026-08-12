@@ -76,7 +76,16 @@ class Fornecedor extends Model
     /** "12.345.678/0001-99" ou "123.456.789-01"; null quando pendente. */
     public function documentoFormatado(): ?string
     {
-        $d = $this->documento;
+        return self::formatarDocumento($this->documento);
+    }
+
+    /**
+     * Formatação pura, sem precisar de um model na mão — o cadastro de
+     * armazéns também guarda CNPJ e usa isto.
+     */
+    public static function formatarDocumento(?string $documento): ?string
+    {
+        $d = self::apenasDigitos($documento);
 
         if ($d === null) {
             return null;

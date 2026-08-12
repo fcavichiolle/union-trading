@@ -138,6 +138,25 @@
                             <span class="hint">Posto = o vendedor entrega. Retirar = nós buscamos.</span>
                         </div>
                     </div>
+
+                    {{-- Armazém combinado no negócio. Opcional: às vezes o destino
+                         só se define na hora de entregar. Serve para já vir
+                         escolhido no lançamento da entrega — quem vale para o
+                         estoque é o armazém de cada entrega. --}}
+                    <div style="display:flex; gap:12px; margin-top:14px; margin-bottom:0;">
+                        <div class="field {{ $errors->has('armazem_id') ? 'has-error' : '' }}" style="flex:1; margin-bottom:0;">
+                            <label for="armazem_id">Armazém previsto <span class="hint">(opcional)</span></label>
+                            <select id="armazem_id" name="armazem_id">
+                                <option value="">— a definir</option>
+                                @foreach (\App\Models\Armazem::lista() as $id => $nome)
+                                    <option value="{{ $id }}" @selected((int) $valor('armazem_id') === $id)>{{ $nome }}</option>
+                                @endforeach
+                            </select>
+                            <span class="hint">Vem pré-selecionado ao lançar a entrega; o café pode chegar em outro.</span>
+                            @error('armazem_id') <div class="field-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="field" style="flex:1; margin-bottom:0;"></div>
+                    </div>
                 </div>
             </div>
         </div>

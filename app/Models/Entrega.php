@@ -19,7 +19,7 @@ class Entrega extends Model
     protected $table = 'entregas';
 
     protected $fillable = [
-        'compra_id', 'data_entrega', 'armazem', 'volume_sacas', 'peso_kg', 'numero_lote', 'created_by',
+        'compra_id', 'data_entrega', 'armazem_id', 'volume_sacas', 'peso_kg', 'numero_lote', 'created_by',
     ];
 
     protected function casts(): array
@@ -43,6 +43,11 @@ class Entrega extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function armazem(): BelongsTo
+    {
+        return $this->belongsTo(Armazem::class);
+    }
+
     /**
      * Sem o número do lote (dado pelo armazém), a entrega não pode ser
      * considerada definitivamente em estoque.
@@ -52,9 +57,18 @@ class Entrega extends Model
         return blank($this->numero_lote);
     }
 
+    /**
+     * Nome do armazém. Usa a relação quando já carregada e cai na lista
+     * memorizada de Armazem::lista() quando não — evita uma query por linha
+     * nas telas que listam muitas entregas.
+     */
     public function armazemLabel(): string
     {
-        return Compra::armazens()[$this->armazem] ?? $this->armazem;
+        if ($this->relationLoaded('armazem') && $this->armazem) {
+            return $this->armazem->nome;
+        }
+
+        return Armazem::nomeDe($this->armazem_id) ?? '—';
     }
 
     /**

@@ -64,7 +64,7 @@ class RelatorioClassificacaoTest extends TestCase
         // cair no recorte padrão da tela.
         $compra->entregas()->create([
             'data_entrega' => $compra->data_compra,
-            'armazem' => $compraOverrides['armazem'] ?? 'SAAG',
+            'armazem_id' => $this->armazem($compraOverrides['armazem'] ?? 'SAAG'),
             'volume_sacas' => $compra->volume_contratado,
             'numero_lote' => 'L-' . fake()->unique()->numberBetween(1000, 999999),
             'created_by' => $this->admin->id,
