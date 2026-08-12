@@ -21,29 +21,45 @@
                 @csrf
                 @method('PUT')
 
-                <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:18px;">
-                    <div class="field {{ $errors->has('padrao_final') ? 'has-error' : '' }}" style="flex:1; min-width:250px; margin-bottom:0;">
-                        <label for="padrao_final">Padrão final</label>
-                        <select id="padrao_final" name="padrao_final" required>
-                            <option value="">Selecione...</option>
-                            @foreach (\App\Models\Classificacao::padroes() as $cod => $rotulo)
-                                <option value="{{ $cod }}" @selected(old('padrao_final', $classificacao?->padrao_final) === $cod)>{{ $rotulo }}</option>
-                            @endforeach
-                        </select>
-                        @error('padrao_final') <div class="field-error">{{ $message }}</div> @enderror
-                    </div>
+                {{-- Padrão e bebida já vêm do lançamento da compra: aqui eles
+                     aparecem preenchidos e podem ser corrigidos se a
+                     conferência discordar do que foi negociado. Conilon não
+                     tem nenhum dos dois. --}}
+                @unless ($compra->ehConilon())
+                    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:18px;">
+                        <div class="field {{ $errors->has('padrao_final') ? 'has-error' : '' }}" style="flex:1; min-width:250px; margin-bottom:0;">
+                            <label for="padrao_final">Padrão final</label>
+                            <select id="padrao_final" name="padrao_final" required>
+                                <option value="">Selecione...</option>
+                                @foreach (\App\Models\Classificacao::padroes() as $cod => $rotulo)
+                                    <option value="{{ $cod }}" @selected(old('padrao_final', $classificacao?->padrao_final ?? $compra->padrao_final) === $cod)>{{ $rotulo }}</option>
+                                @endforeach
+                            </select>
+                            @error('padrao_final') <div class="field-error">{{ $message }}</div> @enderror
+                        </div>
 
-                    <div class="field {{ $errors->has('tipo_bebida') ? 'has-error' : '' }}" style="flex:1; min-width:250px; margin-bottom:0;">
-                        <label for="tipo_bebida">Tipo de bebida</label>
-                        <select id="tipo_bebida" name="tipo_bebida" required>
-                            <option value="">Selecione...</option>
-                            @foreach (\App\Models\Classificacao::tiposBebida() as $cod => $rotulo)
-                                <option value="{{ $cod }}" @selected(old('tipo_bebida', $classificacao?->tipo_bebida) === $cod)>{{ $rotulo }}</option>
-                            @endforeach
-                        </select>
-                        @error('tipo_bebida') <div class="field-error">{{ $message }}</div> @enderror
+                        <div class="field {{ $errors->has('tipo_bebida') ? 'has-error' : '' }}" style="flex:1; min-width:250px; margin-bottom:0;">
+                            <label for="tipo_bebida">Tipo de bebida</label>
+                            <select id="tipo_bebida" name="tipo_bebida" required>
+                                <option value="">Selecione...</option>
+                                @foreach (\App\Models\Classificacao::tiposBebida() as $cod => $rotulo)
+                                    <option value="{{ $cod }}" @selected(old('tipo_bebida', $classificacao?->tipo_bebida ?? $compra->tipo_bebida) === $cod)>{{ $rotulo }}</option>
+                                @endforeach
+                            </select>
+                            @error('tipo_bebida') <div class="field-error">{{ $message }}</div> @enderror
+                        </div>
                     </div>
-                </div>
+                @else
+                    <p class="alert" style="background:var(--primary-soft); color:var(--primary); margin-bottom:18px;">
+                        Compra de <strong>conilon</strong>: não tem padrão final nem tipo de bebida —
+                        preencha só a distribuição abaixo.
+                    </p>
+                @endunless
+
+                {{-- Erros de soma (100% e teto de sacas): aparecem aqui, acima
+                     da tabela, porque são do conjunto e não de uma peneira. --}}
+                @error('soma_pct') <div class="alert alert-error">{{ $message }}</div> @enderror
+                @error('soma_sacas') <div class="alert alert-error">{{ $message }}</div> @enderror
 
                 <div class="table-wrap">
                     <table class="data" id="tabela-peneiras">
@@ -51,16 +67,10 @@
                             <tr><th>Peneira</th><th>%</th><th>Sacas</th></tr>
                         </thead>
                         <tbody>
-                            @php
-                                $linhas = [
-                                    ['peneira_1718', 'SCS 17/18'],
-                                    ['peneira_1416', 'SCS 14/16'],
-                                    ['mercado_interno', 'Mercado interno'],
-                                    ['grinders', 'Grinders'],
-                                    ['moka', 'Moka'],
-                                ];
-                            @endphp
-                            @foreach ($linhas as [$prefixo, $label])
+                            {{-- Lista central em Classificacao::faixas(): incluir
+                                 uma peneira lá já traz a linha para cá, com o
+                                 cálculo automático de sacas funcionando. --}}
+                            @foreach (\App\Models\Classificacao::faixas() as $prefixo => $label)
                                 <tr>
                                     <td>{{ $label }}</td>
                                     <td>

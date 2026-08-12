@@ -73,9 +73,11 @@
                     <th>UTS</th>
                     <th>Data</th>
                     <th>Vendedor</th>
+                    <th>Café</th>
                     <th>Certificação</th>
                     <th class="num">Contratado (sc)</th>
                     <th class="num">Entregue (sc)</th>
+                    <th class="num">Entregue (kg)</th>
                     <th>Entregas</th>
                     <th>Padrão</th>
                     <th></th>
@@ -97,6 +99,7 @@
                                 <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
                             @endunless
                         </td>
+                        <td data-label="Café">{{ $compra->tipoEntradaLabel() }}</td>
                         <td data-label="Certificação">{{ \App\Models\Compra::certificacoes()[$compra->certificacao] ?? $compra->certificacao }}</td>
                         <td class="num" data-label="Contratado (sc)">{{ number_format((float) $compra->volume_contratado, 2, ',', '.') }}</td>
                         <td class="num" data-label="Entregue (sc)">
@@ -109,6 +112,9 @@
                             @elseif ($saldo < -0.01)
                                 <br><span class="badge badge--amber">+{{ number_format(abs($saldo), 0, ',', '.') }} a mais</span>
                             @endif
+                        </td>
+                        <td class="num" data-label="Entregue (kg)">
+                            {{ $compra->entregas->isEmpty() ? '—' : number_format($compra->entregas->sum(fn ($e) => $e->pesoOuEquivalente()), 2, ',', '.') }}
                         </td>
                         <td data-label="Entregas">
                             @if ($compra->entregas->isEmpty())
@@ -123,12 +129,20 @@
                                 @endif
                             @endif
                         </td>
+                        {{-- Padrão vem do lançamento da compra; o badge verde é
+                             para quem já teve a distribuição de peneiras
+                             conferida. Conilon não tem padrão. --}}
                         <td data-label="Padrão">
-                            @if ($compra->classificacao)
-                                <span class="badge badge--green">{{ \App\Models\Classificacao::padroes()[$compra->classificacao->padrao_final] ?? $compra->classificacao->padrao_final }}</span>
+                            @if ($compra->ehConilon())
+                                <span style="color:var(--muted);">—</span>
+                            @elseif ($compra->classificacao)
+                                <span class="badge badge--green">{{ $compra->classificacao->padraoLabel() }}</span>
                                 @if ($compra->classificacao->tipoBebidaLabel())
                                     <br><span style="color:var(--muted); font-size:11.5px;">{{ $compra->classificacao->tipoBebidaLabel() }}</span>
                                 @endif
+                            @elseif ($compra->padrao_final)
+                                <span class="badge badge--muted">{{ $compra->padraoFinalLabel() }}</span>
+                                <br><span style="color:var(--muted); font-size:11.5px;">sem peneiras lançadas</span>
                             @else
                                 <span class="badge badge--muted">Não classificada</span>
                             @endif
@@ -136,7 +150,7 @@
                         <td class="cell-action"><a href="{{ route('compras.show', $compra) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
                     </tr>
                 @empty
-                    <tr><td class="cell-empty" colspan="9" style="text-align:center; color:var(--muted); padding:24px;">Nenhuma compra encontrada.</td></tr>
+                    <tr><td class="cell-empty" colspan="11" style="text-align:center; color:var(--muted); padding:24px;">Nenhuma compra encontrada.</td></tr>
                 @endforelse
             </tbody>
         </table>

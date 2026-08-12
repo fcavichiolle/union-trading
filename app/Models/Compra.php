@@ -18,6 +18,13 @@ class Compra extends Model
 {
     use HasFactory;
 
+    /**
+     * Quilos por saca. Fixo em 60 — é a saca do mercado interno
+     * brasileiro. (Contrato tem o caso especial de 59 kg da embalagem
+     * "Jute Bags 59kg", que é regra de exportação e vive lá.)
+     */
+    public const KG_POR_SACA = 60;
+
     protected $fillable = [
         'uts',
         'data_compra',
@@ -25,7 +32,10 @@ class Compra extends Model
         'certificacao',
         'logistica',
         'tipo_entrada',
+        'padrao_final',
+        'tipo_bebida',
         'volume_contratado',
+        'peso_kg',
         'valor_saca',
         'corretor_nome',
         'comissao_pct',
@@ -43,15 +53,16 @@ class Compra extends Model
             'data_compra' => 'date',
             'pagamento_previsto' => 'date',
             'volume_contratado' => 'decimal:2',
+            'peso_kg' => 'decimal:2',
             'valor_saca' => 'decimal:2',
             'comissao_pct' => 'decimal:2',
             'liquidada_em' => 'datetime',
         ];
     }
 
-    // Regra do enunciado: toda nova compra assume "BICA" como tipo de entrada.
+    // Quase todo o negócio da casa é arábica: é o que vem marcado.
     protected $attributes = [
-        'tipo_entrada' => 'BICA',
+        'tipo_entrada' => 'ARABICA',
     ];
 
     public function fornecedor(): BelongsTo
@@ -97,10 +108,79 @@ class Compra extends Model
         ];
     }
 
+    /**
+     * Espécie do café. Decide se a compra tem padrão/bebida: conilon não
+     * passa pela peneira de arábica, então esses campos saem da tela.
+     *
+     * @return array<string,string>
+     */
+    public static function tiposEntrada(): array
+    {
+        return ['ARABICA' => 'Arábica', 'CONILON' => 'Conilon'];
+    }
+
+    public function tipoEntradaLabel(): string
+    {
+        return self::tiposEntrada()[$this->tipo_entrada] ?? $this->tipo_entrada;
+    }
+
+    public function ehConilon(): bool
+    {
+        return $this->tipo_entrada === 'CONILON';
+    }
+
+    /* ---------- Sacas x peso (o armazém informa um ou o outro) ---------- */
+
+    public static function pesoDeSacas(float $sacas): float
+    {
+        return round($sacas * self::KG_POR_SACA, 2);
+    }
+
+    public static function sacasDePeso(float $kg): float
+    {
+        return round($kg / self::KG_POR_SACA, 2);
+    }
+
+    /**
+     * Completa o par sacas/peso a partir do que veio preenchido. Não é
+     * "conserto": os dois valores continuam podendo divergir (200 sacas
+     * podem pesar 12.010 kg), só não deixamos um dos lados vazio.
+     *
+     * @param  array<string,mixed>  $dados
+     * @return array<string,mixed>
+     */
+    public static function completarSacasEPeso(array $dados, string $campoSacas, string $campoPeso = 'peso_kg'): array
+    {
+        $sacas = $dados[$campoSacas] ?? null;
+        $peso = $dados[$campoPeso] ?? null;
+
+        if (($sacas === null || $sacas === '') && $peso !== null && $peso !== '') {
+            $dados[$campoSacas] = self::sacasDePeso((float) $peso);
+        } elseif (($peso === null || $peso === '') && $sacas !== null && $sacas !== '') {
+            $dados[$campoPeso] = self::pesoDeSacas((float) $sacas);
+        }
+
+        return $dados;
+    }
+
     /** POSTO = o vendedor entrega no armazém; RETIRAR = nós buscamos. */
     public static function logisticas(): array
     {
         return ['POSTO' => 'Posto', 'RETIRAR' => 'Retirar'];
+    }
+
+    public function padraoFinalLabel(): ?string
+    {
+        return $this->padrao_final === null
+            ? null
+            : (Classificacao::padroes()[$this->padrao_final] ?? $this->padrao_final);
+    }
+
+    public function tipoBebidaLabel(): ?string
+    {
+        return $this->tipo_bebida === null
+            ? null
+            : (Classificacao::tiposBebida()[$this->tipo_bebida] ?? $this->tipo_bebida);
     }
 
     public function logisticaLabel(): ?string

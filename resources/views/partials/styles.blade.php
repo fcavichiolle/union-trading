@@ -781,7 +781,12 @@
   .calc-lbl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
   .calc-val { font-size: 20px; font-weight: 700; color: var(--primary); font-family: var(--font-data); }
   .calc-note { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+  /* diferença entre contratado e entregue esperando decisão (liquidação):
+     a tela da compra já marcava o número com .is-alerta, mas só existia
+     regra para .num-tile__val — o destaque nunca aparecia. */
+  .calc-val.is-alerta { color: #8A6116; }
   :root[data-theme="dark"] .calc-val { color: #BFE6CE; }
+  :root[data-theme="dark"] .calc-val.is-alerta { color: #F0D9A8; }
   :root[data-theme="dark"] .calc-lbl, :root[data-theme="dark"] .calc-note { color: rgba(231,239,233,.6); }
 
   /* checkbox simples com rótulo (ex.: "Contrato já fixado") */

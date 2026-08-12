@@ -45,7 +45,7 @@ class LiquidacaoCompraTest extends TestCase
         $fornecedor = Fornecedor::create(['nome' => 'RENATO MARTINS RICCI', 'documento' => '12345678000199']);
         $this->compra = Compra::create([
             'uts' => 'UTS 7412', 'data_compra' => '2026-08-11', 'fornecedor_id' => $fornecedor->id,
-            'certificacao' => '4C', 'logistica' => 'POSTO', 'tipo_entrada' => 'BICA',
+            'certificacao' => '4C', 'logistica' => 'POSTO', 'tipo_entrada' => 'ARABICA',
             'volume_contratado' => 250, 'valor_saca' => 1322, 'created_by' => $this->admin->id,
         ]);
     }
@@ -53,7 +53,7 @@ class LiquidacaoCompraTest extends TestCase
     private function entregar(float $sacas, ?string $lote = 'L-1'): void
     {
         $this->compra->entregas()->create([
-            'mes_ano' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => $sacas,
+            'data_entrega' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => $sacas,
             'numero_lote' => $lote, 'created_by' => $this->admin->id,
         ]);
         $this->compra->refresh();
@@ -155,7 +155,7 @@ class LiquidacaoCompraTest extends TestCase
             'created_by' => $this->admin->id,
         ]);
         $outra->entregas()->create([
-            'mes_ano' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => 100,
+            'data_entrega' => '2026-08-01', 'armazem' => 'SAAG', 'volume_sacas' => 100,
             'numero_lote' => 'L-2', 'created_by' => $this->admin->id,
         ]);
 

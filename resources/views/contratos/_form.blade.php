@@ -181,9 +181,11 @@
                 </div>
                 <div class="field" style="margin-bottom:0;">
                     <label for="tipo_container">Tipo de container</label>
+                    {{-- TEUS (20') vem pré-selecionado por pedido da mesa. Ao
+                         editar um contrato, vale o que está gravado nele. --}}
                     <select id="tipo_container" name="tipo_container" required>
-                        <option value="20" @selected((string) $valor('tipo_container') === '20')>TEUS — Container de 20' (máx. 22.000 kg)</option>
-                        <option value="40" @selected((string) $valor('tipo_container', '40') === '40')>FEUS — Container de 40' (máx. 25.000 kg)</option>
+                        <option value="20" @selected((string) $valor('tipo_container', '20') === '20')>TEUS — Container de 20' (máx. 22.000 kg)</option>
+                        <option value="40" @selected((string) $valor('tipo_container') === '40')>FEUS — Container de 40' (máx. 25.000 kg)</option>
                     </select>
                 </div>
             </div>

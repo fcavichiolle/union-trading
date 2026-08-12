@@ -110,10 +110,7 @@ class DashboardController extends Controller
             ->join('compras', 'compras.id', '=', 'classificacoes.compra_id')
             ->join('entregas', 'entregas.compra_id', '=', 'compras.id')
             ->joinSub(
-                Classificacao::selectRaw(
-                    'compra_id, (peneira_1718_sacas + peneira_1416_sacas + mercado_interno_sacas'
-                    . ' + grinders_sacas + moka_sacas) as total_classificado'
-                ),
+                Classificacao::selectRaw('compra_id, (' . $this->somaDasFaixas() . ') as total_classificado'),
                 'cl',
                 'cl.compra_id',
                 '=',
@@ -122,10 +119,10 @@ class DashboardController extends Controller
             ->when($filtros['mes_de'] !== '', function ($q) use ($filtros) {
                 // Recorte pelo mês da ENTRADA em armazém, que é o que
                 // interessa para estoque.
-                $q->whereDate('entregas.mes_ano', '>=', $filtros['mes_de'] . '-01');
+                $q->whereDate('entregas.data_entrega', '>=', self::primeiroDia($filtros['mes_de']));
             })
             ->when($filtros['mes_ate'] !== '', function ($q) use ($filtros) {
-                $q->whereDate('entregas.mes_ano', '<=', $filtros['mes_ate'] . '-01');
+                $q->whereDate('entregas.data_entrega', '<=', self::ultimoDia($filtros['mes_ate']));
             })
             ->when($filtros['padrao'] !== '', function ($q) use ($filtros) {
                 $q->where('classificacoes.padrao_final', $filtros['padrao']);
@@ -147,27 +144,61 @@ class DashboardController extends Controller
 
         $this->aplicarSituacao($query, $filtros['situacao']);
 
-        $colunas = "padrao_final,
-            SUM(peneira_1718_sacas * {$fator}) as scs_1718,
-            SUM(peneira_1416_sacas * {$fator}) as scs_1416,
-            SUM(grinders_sacas * {$fator}) as grinders,
-            SUM(mercado_interno_sacas * {$fator}) as mercado_interno,
-            SUM(moka_sacas * {$fator}) as moka";
+        // Uma coluna somada por faixa de Classificacao::faixas(): peneira
+        // nova entra no estoque sem editar este SQL. O apelido é o próprio
+        // prefixo, então a view lê $linha->{$faixa}.
+        $somas = array_map(
+            fn (string $faixa) => "SUM({$faixa}_sacas * {$fator}) as {$faixa}",
+            array_keys(Classificacao::faixas())
+        );
+
+        // Qualificado: `padrao_final` existe nas DUAS tabelas do join desde
+        // que a compra passou a guardar a qualidade negociada — sem o prefixo
+        // o SQLite acusa "ambiguous column name" e a tela inteira cai. Aqui
+        // vale o da classificação, que é a conferência.
+        $colunas = 'classificacoes.padrao_final as padrao_final, ' . implode(', ', $somas);
 
         if ($comArmazem) {
-            $query->selectRaw('entregas.armazem, ' . $colunas)->groupBy('entregas.armazem', 'padrao_final')
-                ->orderBy('entregas.armazem')->orderBy('padrao_final');
+            $query->selectRaw('entregas.armazem, ' . $colunas)
+                ->groupBy('entregas.armazem', 'classificacoes.padrao_final')
+                ->orderBy('entregas.armazem')->orderBy('classificacoes.padrao_final');
         } else {
-            $query->selectRaw($colunas)->groupBy('padrao_final');
+            $query->selectRaw($colunas)->groupBy('classificacoes.padrao_final');
         }
 
         return $query->get()->map(function ($linha) {
-            $linha->total = (float) $linha->scs_1718 + (float) $linha->scs_1416
-                + (float) $linha->grinders + (float) $linha->mercado_interno
-                + (float) $linha->moka;
+            $linha->total = 0.0;
+
+            foreach (array_keys(Classificacao::faixas()) as $faixa) {
+                $linha->total += (float) $linha->{$faixa};
+            }
 
             return $linha;
         });
+    }
+
+    /** Soma das sacas de todas as faixas, para uso em SQL. */
+    private function somaDasFaixas(): string
+    {
+        return implode(' + ', array_map(
+            fn (string $faixa) => $faixa . '_sacas',
+            array_keys(Classificacao::faixas())
+        ));
+    }
+
+    /**
+     * Os filtros da tela são MESES ("2026-08"), mas a entrega agora tem dia.
+     * Sem fechar o mês inteiro no limite de cima, um filtro "até agosto"
+     * deixaria de fora tudo que entrou depois do dia 01.
+     */
+    private static function primeiroDia(string $mes): string
+    {
+        return $mes . '-01';
+    }
+
+    private static function ultimoDia(string $mes): string
+    {
+        return \Illuminate\Support\Carbon::parse($mes . '-01')->endOfMonth()->toDateString();
     }
 
     /** Recorte pelo número do lote — a regra que define o que é estoque. */
@@ -196,8 +227,8 @@ class DashboardController extends Controller
         // Agora o volume mora na ENTREGA, então as duas contas partem dela.
         $base = fn () => Entrega::query()
             ->join('compras', 'compras.id', '=', 'entregas.compra_id')
-            ->when($filtros['mes_de'] !== '', fn ($q) => $q->whereDate('entregas.mes_ano', '>=', $filtros['mes_de'] . '-01'))
-            ->when($filtros['mes_ate'] !== '', fn ($q) => $q->whereDate('entregas.mes_ano', '<=', $filtros['mes_ate'] . '-01'))
+            ->when($filtros['mes_de'] !== '', fn ($q) => $q->whereDate('entregas.data_entrega', '>=', self::primeiroDia($filtros['mes_de'])))
+            ->when($filtros['mes_ate'] !== '', fn ($q) => $q->whereDate('entregas.data_entrega', '<=', self::ultimoDia($filtros['mes_ate'])))
             ->when($filtros['certificado'] !== '', fn ($q) => $q->where('compras.certificacao', $filtros['certificado']))
             ->when($filtros['armazem'] !== '', fn ($q) => $q->where('entregas.armazem', $filtros['armazem']))
             ->when($filtros['busca'] !== '', function ($q) use ($filtros) {

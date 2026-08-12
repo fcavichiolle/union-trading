@@ -79,7 +79,7 @@ class MensagensValidacaoTest extends TestCase
                 'data_compra' => 'Informe a data da compra.',
                 'fornecedor_nome' => 'Informe o nome do vendedor (se ainda não souber o documento, deixe o CNPJ/CPF em branco).',
                 'certificacao' => 'Selecione a certificação.',
-                'volume_contratado' => 'Informe o volume contratado, em sacas.',
+                'volume_contratado' => 'Informe o volume contratado, em sacas ou em quilos.',
             ]);
 
         // E o que o usuário realmente vê ao ser devolvido ao formulário.
@@ -90,7 +90,7 @@ class MensagensValidacaoTest extends TestCase
             ->followingRedirects()
             ->post(route('compras.store'), [])
             ->assertOk()
-            ->assertSee('5 campos precisam de atenção')
+            ->assertSee('6 campos precisam de atenção')
             ->assertSee('Informe a UTS (referência da compra).')
             ->assertDontSee('validation.');
     }
@@ -178,7 +178,7 @@ class MensagensValidacaoTest extends TestCase
         $fornecedor = Fornecedor::create(['nome' => 'Fornecedor X', 'documento' => '12345678000199']);
         $compra = Compra::create([
             'uts' => 'UTS 1', 'data_compra' => '2026-08-01', 'fornecedor_id' => $fornecedor->id,
-            'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
+            'certificacao' => 'RFA', 'tipo_entrada' => 'ARABICA',
             'volume_contratado' => 600, 'created_by' => $this->admin->id,
         ]);
 
@@ -197,16 +197,16 @@ class MensagensValidacaoTest extends TestCase
         $fornecedor = Fornecedor::create(['nome' => 'Fornecedor X', 'documento' => '12345678000199']);
         $compra = Compra::create([
             'uts' => 'UTS 1', 'data_compra' => '2026-08-01', 'fornecedor_id' => $fornecedor->id,
-            'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
+            'certificacao' => 'RFA', 'tipo_entrada' => 'ARABICA',
             'volume_contratado' => 600, 'created_by' => $this->admin->id,
         ]);
 
         $this->actingAs($this->admin)
             ->post(route('compras.entregas.store', $compra), [])
             ->assertSessionHasErrors([
-                'mes_ano' => 'Informe o mês/ano da entrega.',
+                'data_entrega' => 'Informe a data da entrega.',
                 'armazem' => 'Selecione o armazém que recebeu o café.',
-                'volume_sacas' => 'Informe quantas sacas entraram no armazém.',
+                'volume_sacas' => 'Informe quantas sacas (ou quantos quilos) entraram no armazém.',
             ]);
     }
 
@@ -215,7 +215,7 @@ class MensagensValidacaoTest extends TestCase
         $fornecedor = Fornecedor::create(['nome' => 'Fornecedor X', 'documento' => '12345678000199']);
         $compra = Compra::create([
             'uts' => 'UTS 1', 'data_compra' => '2026-08-01', 'fornecedor_id' => $fornecedor->id,
-            'certificacao' => 'RFA', 'tipo_entrada' => 'BICA',
+            'certificacao' => 'RFA', 'tipo_entrada' => 'ARABICA',
             'volume_contratado' => 600, 'created_by' => $this->admin->id,
         ]);
 
