@@ -9,6 +9,7 @@ use App\Models\Contrato;
 use App\Models\Corretora;
 use App\Models\Fixacao;
 use App\Models\Fornecedor;
+use App\Models\Mensagem;
 use App\Models\Qualidade;
 use App\Models\Role;
 use App\Models\User;
@@ -76,6 +77,10 @@ class GerarDemoTest extends TestCase
             // O Estoque sai do mesmo cenário: sem isso a demo contava duas
             // histórias (painel com um total, estoque com outro).
             'relatorio.html' => route('relatorio.index'),
+            // Canal da equipe. Na demo ele é ilustração: o envio precisa de
+            // backend, então as mensagens de exemplo ficam só para mostrar
+            // como a tela funciona.
+            'mensagens.html' => route('mensagens.index'),
         ];
 
         foreach ($paginas as $arquivo => $url) {
@@ -205,6 +210,7 @@ class GerarDemoTest extends TestCase
         $this->entrega($c, '2026-08-26', 'QUALITE', 300, null);
 
         $this->semearContratos();
+        $this->semearMensagens();
     }
 
     private function compra(
@@ -300,6 +306,41 @@ class GerarDemoTest extends TestCase
         }
 
         Classificacao::create($dados);
+    }
+
+    /**
+     * Conversa de exemplo no canal da equipe, com duas pessoas e dois dias
+     * (para a demo mostrar o separador de data). Mensagens fictícias — a
+     * demo é pública.
+     */
+    private function semearMensagens(): void
+    {
+        $colega = User::create([
+            'role_id' => $this->admin->role_id,
+            'name' => 'Marina Alves',
+            'email' => 'marina@example.com',
+            'password' => Hash::make('demo-nao-usada'),
+            'force_password_change' => false,
+            'active' => true,
+        ]);
+
+        $conversa = [
+            ['2026-08-11 08:12:00', $colega, 'Bom dia. NY abriu em alta, +2,15 na Z6.'],
+            ['2026-08-11 08:20:00', $this->admin, 'Recebido. Vou segurar a fixação da UT 6013 até a tarde.'],
+            ['2026-08-11 15:47:00', $colega, 'SAAG confirmou que não vem mais café da UTS 7322 — dá para liquidar com as 590.'],
+            ['2026-08-12 07:58:00', $this->admin, 'Liquidei a 7322. Falta o lote da entrega do DÍNAMO na 7311.'],
+            ['2026-08-12 09:05:00', $colega, 'Cobrei o armazém, prometeram passar o número hoje.'],
+        ];
+
+        foreach ($conversa as [$quando, $autor, $texto]) {
+            Mensagem::create(['user_id' => $autor->id, 'texto' => $texto])
+                ->forceFill(['created_at' => $quando, 'updated_at' => $quando])
+                ->saveQuietly();
+        }
+
+        // O admin da demo abriu o canal antes da última mensagem: assim a
+        // página mostra a linha "novas mensagens" e o badge no menu.
+        $this->admin->forceFill(['mensagens_lidas_em' => '2026-08-12 08:30:00'])->saveQuietly();
     }
 
     /**

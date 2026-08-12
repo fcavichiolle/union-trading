@@ -18,6 +18,7 @@ use App\Http\Controllers\Compras\EntregaController;
 use App\Http\Controllers\Compras\DashboardController as ComprasDashboardController;
 use App\Http\Controllers\Compras\FinanceiroController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MensagemController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -150,6 +151,22 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
         Route::middleware('role:admin,compras,financeiro,diretoria')->group(function () {
             Route::get('/mercado', [MercadoController::class, 'index'])->name('mercado.index');
             Route::get('/api/market', [MercadoController::class, 'api'])->name('mercado.api');
+        });
+
+        /*
+        |----------------------------------------------------------------
+        | Canal geral de mensagens (mural interno)
+        |----------------------------------------------------------------
+        | Todo perfil lê e escreve: os perfis limitam o que se ALTERA nos
+        | registros, não a conversa da equipe. `novas` é o polling da tela
+        | (não há WebSocket — ver o comentário na migration).
+        */
+        Route::middleware('role:admin,compras,financeiro,diretoria')->prefix('mensagens')->name('mensagens.')->group(function () {
+            Route::get('/', [MensagemController::class, 'index'])->name('index');
+            Route::get('/novas', [MensagemController::class, 'novas'])->name('novas');
+            // Throttle para o campo de texto não virar metralhadora.
+            Route::post('/', [MensagemController::class, 'store'])->middleware('throttle:60,1')->name('store');
+            Route::delete('/{mensagem}', [MensagemController::class, 'destroy'])->name('destroy');
         });
 
         /*

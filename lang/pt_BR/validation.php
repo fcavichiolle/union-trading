@@ -257,6 +257,9 @@ return [
         'diferenciais' => 'diferencial dos contratos',
         'diferenciais.*' => 'diferencial',
 
+        // Canal de mensagens (mural da equipe)
+        'texto' => 'mensagem',
+
         // Cadastros (clientes, qualidades, corretoras)
         'nome' => 'nome',
         'tipo' => 'tipo',

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="">
-    <title>Compras lançadas</title>
+    <title>Mensagens</title>
     <style>
   :root {
     --bg: #F6F2EA;
@@ -930,10 +930,10 @@
             </a>
 
             
-            <a href="#" class="sb-link ">
+            <a href="#" class="sb-link is-active">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a7.5 7.5 0 0 1-7.5 7.5c-1.2 0-2.4-.3-3.4-.8L4.5 20l1.3-4.1A7.5 7.5 0 1 1 20 12Z"></path></svg>
                 <span>Mensagens</span>
-                                    <span class="sb-badge" title="Mensagens não lidas">1</span>
+                                    <span class="sb-badge" title="Mensagens não lidas">2</span>
                             </a>
 
                             <div class="sb-group">
@@ -942,7 +942,7 @@
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"></path></svg>
                             <span>Nova compra</span>
                         </a>
-                        <a href="compras.html" class="sb-link is-active">
+                        <a href="compras.html" class="sb-link ">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="17" rx="2"></rect><path d="M8.5 8h7M8.5 12h7M8.5 16h4"></path></svg>
                             <span>Compras lançadas</span>
                                                             <span class="sb-badge" title="Compras com etapa pendente">8</span>
@@ -1017,7 +1017,7 @@
     <div class="main">
         <header class="appbar">
             <div class="appbar__crumb">
-                                        <span>Compras &amp; Classificação</span><span class="sep">/</span><b>Compras lançadas</b>
+                                        <b>Mensagens</b>
                             </div>
             <div class="appbar__user">
                 <button type="button" class="theme-toggle" id="themeToggle" aria-label="Alternar modo escuro" title="Alternar modo escuro">
@@ -1041,516 +1041,366 @@
         <div class="content">
             <div class="page-head">
                 <div>
-                    <h1>Compras lançadas</h1>
-                    <p class="page-sub">Negócios fechados e o quanto já entrou no armazém.</p>                </div>
-                                    <div class="page-actions">    <a href="compra-nova.html" class="btn-coffee">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"></path></svg>
-        <span>Nova compra</span>
-    </a>
-</div>
+                    <h1>Mensagens</h1>
+                    <p class="page-sub">Canal da equipe. Todo mundo que usa o sistema lê e escreve aqui.</p>                </div>
                             </div>
 
-                            <form method="GET" action="compras.html" class="filter-bar">
-        <div class="field">
-            <label for="mes_de">Compra de</label>
-            <input type="month" id="mes_de" name="mes_de" value="">
-        </div>
-        <div class="field">
-            <label for="mes_ate">Compra até</label>
-            <input type="month" id="mes_ate" name="mes_ate" value="">
-        </div>
-        <div class="field">
-            <label for="armazem">Armazém</label>
-            <select id="armazem" name="armazem">
-                <option value="">Todos</option>
-                                    <option value="3" >DÍNAMO MACHADO</option>
-                                    <option value="2" >QUALITÉ</option>
-                                    <option value="1" >SAAG</option>
-                            </select>
-        </div>
-        <div class="field">
-            <label for="padrao">Padrão</label>
-            <select id="padrao" name="padrao">
-                <option value="">Todos</option>
-                                    <option value="FINE_CUP" >Fine Cup</option>
-                                    <option value="GOOD_CUP" >Good Cup</option>
-                                    <option value="VERY_GOOD_CUP" >Very Good Cup</option>
-                                    <option value="GOOD_CUP_2R" >Good Cup 2R</option>
-                                    <option value="RIO_MINAS" >Rio Minas</option>
-                                    <option value="BICA_FINE_CUP" >Bica Fine Cup</option>
-                                    <option value="BICA_GOOD_CUP" >Bica Good Cup</option>
-                                    <option value="BICA_VERY_GOOD_CUP" >Bica Very Good Cup</option>
-                                <option value="SEM_CLASSIFICACAO" >Não classificada</option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="pendencia">Pendência</label>
-            <select id="pendencia" name="pendencia">
-                <option value="">Todas</option>
-                <option value="qualquer" >Qualquer pendência</option>
-                <option value="sem_lote" >Entrega sem nº do lote</option>
-                <option value="saldo_a_entregar" >Com saldo a entregar</option>
-                <option value="divergente" >Divergência a liquidar</option>
-                <option value="sem_classificacao" >Sem classificação</option>
-                <option value="sem_preco" >Sem preço</option>
-                <option value="sem_documento" >Vendedor a confirmar</option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="busca">Buscar (UTS ou fornecedor)</label>
-            <input type="search" id="busca" name="busca" value="" placeholder="Ex: UTS 7312">
-        </div>
-        <button type="submit" class="btn btn-primary">Filtrar</button>
-            </form>
+                            <div class="chat" id="chat"
+         data-url-novas="#"
+         data-url-enviar="#">
 
-    <div class="table-wrap">
-        <table class="data data--cards">
-            <thead>
-                <tr>
-                    <th>UTS</th>
-                    <th>Data</th>
-                    <th>Vendedor</th>
-                    <th>Café</th>
-                    <th>Certificação</th>
-                    <th class="num">Contratado (sc)</th>
-                    <th class="num">Entregue (sc)</th>
-                    <th class="num">Entregue (kg)</th>
-                    <th>Entregas</th>
-                    <th>Padrão</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7344</strong></td>
-                        <td data-label="Data">11/08/2026</td>
-                        <td data-label="Vendedor">
-                            FAZENDA TRÊS BARRAS
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">RFA</td>
-                        <td class="num" data-label="Contratado (sc)">300,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            300,00
+        <div class="chat__corpo" id="chatCorpo">
+            
+            <div class="chat__anteriores" id="chatAnteriores"  hidden >
+                <button type="button" class="btn btn-ghost" id="btnAnteriores">Carregar mensagens anteriores</button>
+            </div>
+
+            <div id="chatLista">
+                                    
+                                            <div class="chat__dia" data-dia="11/08/2026"><span>11/08/2026</span></div>
+                    
+                    
+                    
+                    <div class="msg " data-id="1">
+                        <div class="msg__avatar">MA</div>
+                        <div class="msg__bolha">
+                            <div class="msg__topo">
+                                <span class="msg__autor">Marina Alves</span>
+                                <span class="msg__hora">08:12</span>
+                                                                    <form method="POST" action="#"
+                                          onsubmit="return confirm('Apagar esta mensagem?');" class="msg__apagar">
+                                        <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                                        <button type="submit" title="Apagar mensagem">×</button>
+                                    </form>
+                                                            </div>
                             
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            18.000,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (QUALITÉ)
-                                </span>
-                                                                    <br><span class="badge badge--red" title="Sem o nº do lote, não entra no estoque definitivo.">⚠ 1 sem lote</span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--muted">Fine Cup</span>
-                                <br><span style="color:var(--muted); font-size:11.5px;">sem peneiras lançadas</span>
-                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7341</strong></td>
-                        <td data-label="Data">11/08/2026</td>
-                        <td data-label="Vendedor">
-                            SÍTIO BOA VISTA AGROPECU...
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">Sem certificação</td>
-                        <td class="num" data-label="Contratado (sc)">550,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            250,00
+                            <p class="msg__texto">Bom dia. NY abriu em alta, +2,15 na Z6.</p>
+                        </div>
+                    </div>
+                                    
+                    
+                    
+                    
+                    <div class="msg msg--minha" data-id="2">
+                        <div class="msg__avatar">QU</div>
+                        <div class="msg__bolha">
+                            <div class="msg__topo">
+                                <span class="msg__autor">Você</span>
+                                <span class="msg__hora">08:20</span>
+                                                                    <form method="POST" action="#"
+                                          onsubmit="return confirm('Apagar esta mensagem?');" class="msg__apagar">
+                                        <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                                        <button type="submit" title="Apagar mensagem">×</button>
+                                    </form>
+                                                            </div>
                             
-                                                            <br><span class="badge badge--amber">faltam 300</span>
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            15.000,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (SAAG)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--green">Fine Cup</span>
-                                                                    <br><span style="color:var(--muted); font-size:11.5px;">Duro</span>
-                                                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7338</strong></td>
-                        <td data-label="Data">11/08/2026</td>
-                        <td data-label="Vendedor">
-                            COOPERATIVA VALE DO RIO...
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">4C</td>
-                        <td class="num" data-label="Contratado (sc)">450,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            450,00
+                            <p class="msg__texto">Recebido. Vou segurar a fixação da UT 6013 até a tarde.</p>
+                        </div>
+                    </div>
+                                    
+                    
+                    
+                    
+                    <div class="msg " data-id="3">
+                        <div class="msg__avatar">MA</div>
+                        <div class="msg__bolha">
+                            <div class="msg__topo">
+                                <span class="msg__autor">Marina Alves</span>
+                                <span class="msg__hora">15:47</span>
+                                                                    <form method="POST" action="#"
+                                          onsubmit="return confirm('Apagar esta mensagem?');" class="msg__apagar">
+                                        <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                                        <button type="submit" title="Apagar mensagem">×</button>
+                                    </form>
+                                                            </div>
                             
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            27.000,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (SAAG)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--green">Fine Cup</span>
-                                                                    <br><span style="color:var(--muted); font-size:11.5px;">Duro</span>
-                                                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7335</strong></td>
-                        <td data-label="Data">10/08/2026</td>
-                        <td data-label="Vendedor">
-                            FAZENDA SANTA CLARA LTDA
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">EUDR</td>
-                        <td class="num" data-label="Contratado (sc)">700,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            700,00
+                            <p class="msg__texto">SAAG confirmou que não vem mais café da UTS 7322 — dá para liquidar com as 590.</p>
+                        </div>
+                    </div>
+                                    
+                                            <div class="chat__dia" data-dia="12/08/2026"><span>12/08/2026</span></div>
+                    
+                    
+                    
+                    <div class="msg msg--minha" data-id="4">
+                        <div class="msg__avatar">QU</div>
+                        <div class="msg__bolha">
+                            <div class="msg__topo">
+                                <span class="msg__autor">Você</span>
+                                <span class="msg__hora">07:58</span>
+                                                                    <form method="POST" action="#"
+                                          onsubmit="return confirm('Apagar esta mensagem?');" class="msg__apagar">
+                                        <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                                        <button type="submit" title="Apagar mensagem">×</button>
+                                    </form>
+                                                            </div>
                             
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            42.000,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (QUALITÉ)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--muted">Fine Cup</span>
-                                <br><span style="color:var(--muted); font-size:11.5px;">sem peneiras lançadas</span>
-                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7330</strong></td>
-                        <td data-label="Data">08/08/2026</td>
-                        <td data-label="Vendedor">
-                            FAZENDA TRÊS BARRAS
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">4C + RFA</td>
-                        <td class="num" data-label="Contratado (sc)">350,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            0,00
+                            <p class="msg__texto">Liquidei a 7322. Falta o lote da entrega do DÍNAMO na 7311.</p>
+                        </div>
+                    </div>
+                                    
+                    
+                    
+                                            <div class="chat__novas" id="marcaNovas"><span>novas mensagens</span></div>
+                    
+                    <div class="msg " data-id="5">
+                        <div class="msg__avatar">MA</div>
+                        <div class="msg__bolha">
+                            <div class="msg__topo">
+                                <span class="msg__autor">Marina Alves</span>
+                                <span class="msg__hora">09:05</span>
+                                                                    <form method="POST" action="#"
+                                          onsubmit="return confirm('Apagar esta mensagem?');" class="msg__apagar">
+                                        <input type="hidden" name="_token" value="" autocomplete="off"> <input type="hidden" name="_method" value="DELETE">                                        <button type="submit" title="Apagar mensagem">×</button>
+                                    </form>
+                                                            </div>
                             
-                                                            <br><span class="badge badge--amber">faltam 350</span>
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            —
-                        </td>
-                        <td data-label="Entregas">
-                                                            <span class="badge badge--muted">nenhuma</span>
-                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--muted">Fine Cup</span>
-                                <br><span style="color:var(--muted); font-size:11.5px;">sem peneiras lançadas</span>
-                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7326</strong></td>
-                        <td data-label="Data">07/08/2026</td>
-                        <td data-label="Vendedor">
-                            SÍTIO BOA VISTA AGROPECU...
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">RFA + EUDR</td>
-                        <td class="num" data-label="Contratado (sc)">400,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            400,00
-                            
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            24.000,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (DÍNAMO MACHADO)
-                                </span>
-                                                                    <br><span class="badge badge--red" title="Sem o nº do lote, não entra no estoque definitivo.">⚠ 1 sem lote</span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--green">Fine Cup</span>
-                                                                    <br><span style="color:var(--muted); font-size:11.5px;">Duro</span>
-                                                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7324</strong></td>
-                        <td data-label="Data">06/08/2026</td>
-                        <td data-label="Vendedor">
-                            FAZENDA TRÊS BARRAS
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Conilon</td>
-                        <td data-label="Certificação">Sem certificação</td>
-                        <td class="num" data-label="Contratado (sc)">450,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            450,00
-                            
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            27.000,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (SAAG)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span style="color:var(--muted);">—</span>
-                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7322</strong></td>
-                        <td data-label="Data">06/08/2026</td>
-                        <td data-label="Vendedor">
-                            COOPERATIVA VALE DO RIO...
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">4C</td>
-                        <td class="num" data-label="Contratado (sc)">600,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            590,00
-                            
-                                                            <br><span class="badge badge--green" title="Liquidada em 10/08/2026 — este volume é o final.">liquidada</span>
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            35.400,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            2
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (SAAG)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--green">Good Cup</span>
-                                                                    <br><span style="color:var(--muted); font-size:11.5px;">Duro + 2RY</span>
-                                                                                    </td>
-                        <td class="cell-action"><a href="compra-liquidada.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7318</strong></td>
-                        <td data-label="Data">05/08/2026</td>
-                        <td data-label="Vendedor">
-                            FAZENDA SANTA CLARA LTDA
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">RFA</td>
-                        <td class="num" data-label="Contratado (sc)">250,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            260,00
-                            
-                                                            <br><span class="badge badge--amber">+10 a mais</span>
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            15.600,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (SAAG)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--green">Good Cup</span>
-                                                                    <br><span style="color:var(--muted); font-size:11.5px;">Duro</span>
-                                                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7314</strong></td>
-                        <td data-label="Data">04/08/2026</td>
-                        <td data-label="Vendedor">
-                            FAZENDA TRÊS BARRAS
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">Sem certificação</td>
-                        <td class="num" data-label="Contratado (sc)">500,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            320,00
-                            
-                                                            <br><span class="badge badge--amber">faltam 180</span>
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            19.200,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (SAAG)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--muted">Fine Cup</span>
-                                <br><span style="color:var(--muted); font-size:11.5px;">sem peneiras lançadas</span>
-                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7311</strong></td>
-                        <td data-label="Data">03/08/2026</td>
-                        <td data-label="Vendedor">
-                            SÍTIO BOA VISTA AGROPECU...
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">4C + EUDR</td>
-                        <td class="num" data-label="Contratado (sc)">600,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            620,00
-                            
-                                                            <br><span class="badge badge--amber">+20 a mais</span>
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            37.215,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            2
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (QUALITÉ, DÍNAMO MACHADO)
-                                </span>
-                                                                    <br><span class="badge badge--red" title="Sem o nº do lote, não entra no estoque definitivo.">⚠ 1 sem lote</span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--green">Very Good Cup</span>
-                                                                    <br><span style="color:var(--muted); font-size:11.5px;">Duro + 1RY</span>
-                                                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7305</strong></td>
-                        <td data-label="Data">01/08/2026</td>
-                        <td data-label="Vendedor">
-                            COOPERATIVA VALE DO RIO...
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">EUDR</td>
-                        <td class="num" data-label="Contratado (sc)">480,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            480,00
-                            
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            28.800,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (QUALITÉ)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--green">Bica Very Good Cup</span>
-                                                                    <br><span style="color:var(--muted); font-size:11.5px;">Duro + 2RY</span>
-                                                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7302</strong></td>
-                        <td data-label="Data">30/07/2026</td>
-                        <td data-label="Vendedor">
-                            FAZENDA SANTA CLARA LTDA
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">4C</td>
-                        <td class="num" data-label="Contratado (sc)">554,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            554,00
-                            
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            33.240,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            2
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (SAAG, QUALITÉ)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--green">Fine Cup</span>
-                                                                    <br><span style="color:var(--muted); font-size:11.5px;">Duro</span>
-                                                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                                                        <tr>
-                        <td data-label="UTS"><strong>UTS 7301</strong></td>
-                        <td data-label="Data">28/07/2026</td>
-                        <td data-label="Vendedor">
-                            FAZENDA SANTA CLARA LTDA
-                                                            <br><span class="badge badge--amber">CNPJ/CPF a confirmar</span>
-                                                    </td>
-                        <td data-label="Café">Arábica</td>
-                        <td data-label="Certificação">RFA</td>
-                        <td class="num" data-label="Contratado (sc)">320,00</td>
-                        <td class="num" data-label="Entregue (sc)">
-                            320,00
-                            
-                                                    </td>
-                        <td class="num" data-label="Entregue (kg)">
-                            19.200,00
-                        </td>
-                        <td data-label="Entregas">
-                                                            1
-                                <span style="color:var(--muted); font-size:11.5px;">
-                                    (SAAG)
-                                </span>
-                                                                                    </td>
-                        
-                        <td data-label="Padrão">
-                                                            <span class="badge badge--green">Good Cup</span>
-                                                                    <br><span style="color:var(--muted); font-size:11.5px;">Duro</span>
-                                                                                    </td>
-                        <td class="cell-action"><a href="compra.html" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Abrir</a></td>
-                    </tr>
-                            </tbody>
-        </table>
+                            <p class="msg__texto">Cobrei o armazém, prometeram passar o número hoje.</p>
+                        </div>
+                    </div>
+                            </div>
+        </div>
+
+        <form class="chat__form" method="POST" action="#" id="chatForm">
+            <input type="hidden" name="_token" value="" autocomplete="off">            <textarea name="texto" id="chatTexto" rows="1" maxlength="2000" required
+                      placeholder="Escreva para a equipe… (Enter envia, Shift+Enter pula linha)"></textarea>
+            <button type="submit" class="btn btn-primary" id="chatEnviar">Enviar</button>
+                    </form>
+
+        <p class="chat__nota">
+            A tela busca mensagens novas a cada 10 segundos. Mensagem apagada sai para todos —
+            quando um administrador apaga a mensagem de outra pessoa, o texto fica registrado no log de auditoria.
+        </p>
     </div>
 
-    <div class="pagination"></div>
+    <script>
+        (function () {
+            var chat = document.getElementById('chat'),
+                lista = document.getElementById('chatLista'),
+                corpo = document.getElementById('chatCorpo'),
+                form = document.getElementById('chatForm'),
+                campo = document.getElementById('chatTexto'),
+                enviar = document.getElementById('chatEnviar'),
+                anteriores = document.getElementById('chatAnteriores'),
+                btnAnteriores = document.getElementById('btnAnteriores'),
+                token = document.querySelector('meta[name="csrf-token"]').content;
+
+            var ultimoId = 0, primeiroId = 0, buscando = false;
+
+            function idsDaTela() {
+                var linhas = lista.querySelectorAll('.msg');
+                if (!linhas.length) { ultimoId = 0; primeiroId = 0; return; }
+                primeiroId = parseInt(linhas[0].dataset.id, 10);
+                ultimoId = parseInt(linhas[linhas.length - 1].dataset.id, 10);
+            }
+
+            function noFim() {
+                // Só rola sozinho se o usuário já estava no fim — senão a tela
+                // pula debaixo do dedo de quem está lendo o histórico.
+                return corpo.scrollHeight - corpo.scrollTop - corpo.clientHeight < 80;
+            }
+
+            function rolarParaOFim() { corpo.scrollTop = corpo.scrollHeight; }
+
+            /** Monta a linha da mensagem. Texto SEMPRE por textContent. */
+            function montar(m) {
+                var div = document.createElement('div');
+                div.className = 'msg' + (m.minha ? ' msg--minha' : '');
+                div.dataset.id = m.id;
+
+                var avatar = document.createElement('div');
+                avatar.className = 'msg__avatar';
+                avatar.textContent = m.iniciais;
+
+                var bolha = document.createElement('div');
+                bolha.className = 'msg__bolha';
+
+                var topo = document.createElement('div');
+                topo.className = 'msg__topo';
+
+                var autor = document.createElement('span');
+                autor.className = 'msg__autor';
+                autor.textContent = m.minha ? 'Você' : m.autor;
+
+                var hora = document.createElement('span');
+                hora.className = 'msg__hora';
+                hora.textContent = m.hora;
+
+                topo.appendChild(autor);
+                topo.appendChild(hora);
+
+                if (m.pode_apagar) topo.appendChild(formDeApagar(m.id));
+
+                var texto = document.createElement('p');
+                texto.className = 'msg__texto';
+                texto.textContent = m.texto;
+
+                bolha.appendChild(topo);
+                bolha.appendChild(texto);
+                div.appendChild(avatar);
+                div.appendChild(bolha);
+
+                return div;
+            }
+
+            function formDeApagar(id) {
+                var f = document.createElement('form');
+                f.method = 'POST';
+                f.action = '#' + id;
+                f.className = 'msg__apagar';
+                f.addEventListener('submit', function (ev) {
+                    if (!confirm('Apagar esta mensagem?')) ev.preventDefault();
+                });
+
+                [['_token', token], ['_method', 'DELETE']].forEach(function (par) {
+                    var i = document.createElement('input');
+                    i.type = 'hidden'; i.name = par[0]; i.value = par[1];
+                    f.appendChild(i);
+                });
+
+                var b = document.createElement('button');
+                b.type = 'submit'; b.title = 'Apagar mensagem'; b.textContent = '×';
+                f.appendChild(b);
+
+                return f;
+            }
+
+            function separadorDeDia(dia) {
+                var div = document.createElement('div');
+                div.className = 'chat__dia';
+                div.dataset.dia = dia;
+                var s = document.createElement('span');
+                s.textContent = dia;
+                div.appendChild(s);
+                return div;
+            }
+
+            function acrescentar(mensagens, noInicio) {
+                if (!mensagens.length) return;
+
+                var vazio = document.getElementById('chatVazio');
+                if (vazio) vazio.remove();
+
+                var fragmento = document.createDocumentFragment();
+                var diasNaTela = Array.prototype.map.call(
+                    lista.querySelectorAll('.chat__dia'), function (d) { return d.dataset.dia; }
+                );
+
+                mensagens.forEach(function (m) {
+                    if (diasNaTela.indexOf(m.dia) === -1) {
+                        diasNaTela.push(m.dia);
+                        fragmento.appendChild(separadorDeDia(m.dia));
+                    }
+                    fragmento.appendChild(montar(m));
+                });
+
+                if (noInicio) {
+                    var alturaAntes = corpo.scrollHeight;
+                    lista.insertBefore(fragmento, lista.firstChild);
+                    // Mantém a posição de leitura ao carregar histórico.
+                    corpo.scrollTop += corpo.scrollHeight - alturaAntes;
+                } else {
+                    var estavaNoFim = noFim();
+                    lista.appendChild(fragmento);
+                    if (estavaNoFim) rolarParaOFim();
+                }
+
+                idsDaTela();
+            }
+
+            function buscarNovas() {
+                if (buscando) return;
+                buscando = true;
+
+                fetch(chat.dataset.urlNovas + '?depois=' + ultimoId, {
+                    headers: { 'Accept': 'application/json' }
+                })
+                    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+                    .then(function (dados) {
+                        acrescentar(dados.mensagens || [], false);
+                        // Chegou mensagem => o badge do menu já não vale.
+                        if ((dados.mensagens || []).length) limparBadge();
+                    })
+                    .catch(function () { /* rede caiu: tenta no próximo ciclo */ })
+                    .finally(function () { buscando = false; });
+            }
+
+            function limparBadge() {
+                var badge = document.querySelector('.sb-link.is-active .sb-badge');
+                if (badge) badge.remove();
+            }
+
+            function enviarMensagem() {
+                var texto = campo.value.trim();
+                if (!texto) return;
+
+                enviar.disabled = true;
+
+                fetch(chat.dataset.urlEnviar, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token
+                    },
+                    body: JSON.stringify({ texto: texto })
+                })
+                    .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+                    .then(function (dados) {
+                        campo.value = '';
+                        campo.style.height = '';
+                        acrescentar([dados.mensagem], false);
+                        rolarParaOFim();
+                    })
+                    .catch(function () {
+                        // Sem JS/fetch a mensagem ainda vai pelo POST normal.
+                        form.submit();
+                    })
+                    .finally(function () { enviar.disabled = false; });
+            }
+
+            form.addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                enviarMensagem();
+            });
+
+            // Enter envia, Shift+Enter pula linha (comportamento de chat).
+            campo.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Enter' && !ev.shiftKey) {
+                    ev.preventDefault();
+                    enviarMensagem();
+                }
+            });
+
+            // Cresce com o texto, até um limite.
+            campo.addEventListener('input', function () {
+                campo.style.height = 'auto';
+                campo.style.height = Math.min(campo.scrollHeight, 160) + 'px';
+            });
+
+            if (btnAnteriores) {
+                btnAnteriores.addEventListener('click', function () {
+                    btnAnteriores.disabled = true;
+
+                    fetch(chat.dataset.urlNovas + '?antes=' + primeiroId, {
+                        headers: { 'Accept': 'application/json' }
+                    })
+                        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+                        .then(function (dados) {
+                            acrescentar(dados.mensagens || [], true);
+                            if (!dados.tem_anteriores) anteriores.hidden = true;
+                        })
+                        .finally(function () { btnAnteriores.disabled = false; });
+                });
+            }
+
+            idsDaTela();
+
+            // Abre na marca de "novas mensagens" quando existir; senão, no fim.
+            var marca = document.getElementById('marcaNovas');
+            if (marca) marca.scrollIntoView({ block: 'center' });
+            else rolarParaOFim();
+
+            campo.focus();
+            setInterval(buscarNovas, 10000);
+        })();
+    </script>
         </div>
     </div>
 </div>

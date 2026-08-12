@@ -408,6 +408,40 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   chamadas sucessivas de `Http::fake` NÃO substituem a anterior (stubs se acumulam e o
   primeiro match vence) — para simular queda use um fake único com closure + flag.
 
+### Módulo 4 — Mensagens (canal da equipe)
+- **Mural interno**: um canal só, onde **todo perfil lê e escreve** (os perfis do
+  sistema limitam o que se ALTERA nos registros, não a conversa da equipe).
+  Rota `/mensagens` (`mensagens.*`), item próprio no topo do menu com **badge de
+  não lidas**.
+- **Sem WebSocket, de propósito.** A tela pergunta por mensagens novas a cada 10s
+  (`GET /mensagens/novas?depois=<id>`), no mesmo espírito da página de Cotações
+  com `/api/market`. Tempo real de verdade (Reverb/Pusher) exige um **processo
+  rodando sempre** ao lado do PHP — o projeto não tem nem worker de fila, e o
+  ganho de alguns segundos não paga o custo de deploy. Se algum dia virar
+  necessidade, o caminho é trocar só a camada de transporte: o resto (mensagens,
+  não lidas, permissões) fica igual.
+- **Não lidas por marca de leitura, não por tabela de leituras**:
+  `users.mensagens_lidas_em` guarda quando o usuário abriu o canal; não lidas =
+  mensagens **de outros** criadas depois disso (a própria nunca conta). Com um
+  canal só, tabela pivô por mensagem seria peso sem ganho. Abrir o canal — ou
+  receber pelo polling com a tela aberta — marca como lido; por isso o badge
+  **não aparece na própria tela de mensagens**, e isso é o comportamento certo.
+- **Apagar**: o autor apaga a própria; **admin apaga qualquer uma**, e nesse caso
+  o texto vai para o **AuditLog** — único lugar onde ele sobrevive depois que a
+  linha sai do canal.
+- **Texto do usuário nunca vira HTML**: Blade escapa na renderização e o JS que
+  insere as mensagens novas usa **`textContent`** (nunca `innerHTML`). Verificado
+  no navegador com uma mensagem contendo `<img onerror=...>`: nenhuma tag é
+  criada e o script não roda. Guardado também por teste
+  (`MensagemTest::test_texto_do_usuario_nao_vira_html`).
+- Detalhes de tela: separador por dia, linha **"novas mensagens"** onde o usuário
+  parou, minhas mensagens espelhadas, Enter envia / Shift+Enter pula linha,
+  campo que cresce até 160px, "carregar mensagens anteriores" (50 por vez) e
+  rolagem automática **só quando o usuário já estava no fim** (senão a tela pula
+  debaixo de quem está lendo o histórico). Sem JS, o formulário posta normal.
+- **Na demo** a tela entra como ilustração (conversa fictícia de dois dias): o
+  envio precisa de backend.
+
 ### Cadastro de armazéns (ago/2026) e o armazém previsto na compra
 - **Armazéns deixaram de ser ENUM no código e viraram CADASTRO** (`armazens`:
   nome único, cidade, estado, endereço opcional e **CNPJ opcional** — validado
