@@ -71,8 +71,12 @@ class StoreFixacaoRequest extends FormRequest
                 return;
             }
 
+            // Janela larga aqui também: fixação lançada com atraso pode ser
+            // contra uma posição que acabou de vencer, e recusar isso
+            // travaria o registro de uma operação que existiu de verdade.
+            // O que a validação garante é que a tela é da BOLSA certa.
             $porto = $contratos->first()?->porto;
-            $meses = $porto === 'VITORIA' ? Contrato::mesesFixacaoVitoria() : Contrato::mesesFixacaoSantos();
+            $meses = $porto === 'VITORIA' ? Contrato::mesesFixacaoVitoriaTodas() : Contrato::mesesFixacaoSantosTodas();
             if (! array_key_exists($this->input('tela'), $meses)) {
                 $v->errors()->add('tela', 'Esta tela não pertence à bolsa dos contratos marcados.');
             }

@@ -269,10 +269,34 @@
 
 <script>
     (function () {
+        @php
+            // Posições EM ABERTO (a lista se atualiza sozinha com o tempo) mais
+            // as telas previstas dos contratos que estão aqui esperando fixação:
+            // se um contrato antigo aponta para uma posição já vencida, ainda
+            // tem de ser possível fixar contra ela.
+            $telasSantos = \App\Models\Contrato::mesesFixacaoSantos();
+            $telasVitoria = \App\Models\Contrato::mesesFixacaoVitoria();
+
+            foreach ($contratos as $contratoPendente) {
+                $tela = $contratoPendente->mes_fixacao;
+
+                if (! $tela || isset($telasSantos[$tela]) || isset($telasVitoria[$tela])) {
+                    continue;
+                }
+
+                $rotulo = \App\Models\Contrato::rotuloDaTela($tela) . ' — já vencida';
+
+                if (\App\Models\Contrato::telaEhDeLondres($tela)) {
+                    $telasVitoria = [$tela => $rotulo] + $telasVitoria;
+                } else {
+                    $telasSantos = [$tela => $rotulo] + $telasSantos;
+                }
+            }
+        @endphp
         // Meses de fixação por bolsa (código => rótulo) — mesmos do contrato.
         var MESES = {
-            SANTOS: @json(\App\Models\Contrato::mesesFixacaoSantos()),
-            VITORIA: @json(\App\Models\Contrato::mesesFixacaoVitoria())
+            SANTOS: @json($telasSantos),
+            VITORIA: @json($telasVitoria)
         };
 
         var lista = document.getElementById('fixList'),

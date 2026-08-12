@@ -12,6 +12,24 @@
     $temFixacoes = $editando && $contrato->lotesFixados() > 0;
 
     $valor = fn (string $campo, $padrao = null) => old($campo, $editando ? ($contrato->$campo ?? $padrao) : $padrao);
+
+    // Posições de bolsa: o dropdown oferece só as EM ABERTO (a lista se
+    // atualiza sozinha com o passar dos meses). Mas se este contrato está
+    // fixado numa posição que já venceu, ela entra na lista marcada como
+    // vencida — sem isso, abrir e salvar o contrato apagaria o mês gravado.
+    $mesesSantos = \App\Models\Contrato::mesesFixacaoSantos();
+    $mesesVitoria = \App\Models\Contrato::mesesFixacaoVitoria();
+    $telaAtual = $valor('mes_fixacao');
+
+    if ($telaAtual && ! isset($mesesSantos[$telaAtual]) && ! isset($mesesVitoria[$telaAtual])) {
+        $rotuloVencido = \App\Models\Contrato::rotuloDaTela($telaAtual) . ' — já vencida';
+
+        if (\App\Models\Contrato::telaEhDeLondres($telaAtual)) {
+            $mesesVitoria = [$telaAtual => $rotuloVencido] + $mesesVitoria;
+        } else {
+            $mesesSantos = [$telaAtual => $rotuloVencido] + $mesesSantos;
+        }
+    }
 @endphp
 
 <div class="contract-cols">
@@ -220,7 +238,9 @@
 <script>
     (function () {
         var DIV = { ARABICA: 283.49, CONILON: 166.66 }, CAP = { '20': 22000, '40': 25000 };
-        var MESES = { SANTOS: @json($cafe::mesesFixacaoSantos()), VITORIA: @json($cafe::mesesFixacaoVitoria()) };
+        // Listas vindas do PHP (posições em aberto + a vencida deste
+        // contrato, quando for o caso) — ver o @php no topo desta partial.
+        var MESES = { SANTOS: @json($mesesSantos), VITORIA: @json($mesesVitoria) };
 
         var kgEl = document.getElementById('quantidade_kg'),
             tipoEl = document.getElementById('tipo_cafe'),

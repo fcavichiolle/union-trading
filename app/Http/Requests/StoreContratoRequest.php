@@ -30,7 +30,10 @@ class StoreContratoRequest extends FormRequest
             'preco_fixado' => ['required_if:fixado,1', 'nullable', 'numeric', 'min:0', 'max:99999.99'],
             'preco_fixado_unidade' => ['required_if:fixado,1', 'nullable', Rule::in(array_keys(Contrato::unidadesPreco()))],
             'diferencial' => ['nullable', 'string', 'max:40'],
-            'mes_fixacao' => ['nullable', Rule::in(array_keys(Contrato::mesesFixacao()))],
+            // Janela larga: um contrato antigo pode estar fixado numa posição
+            // que já venceu, e editar esse contrato não pode virar
+            // "mês inválido". Os formulários só OFERECEM as em aberto.
+            'mes_fixacao' => ['nullable', Rule::in(array_keys(Contrato::mesesFixacaoTodas()))],
             'embarque_mes' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
             'incoterms' => ['required', Rule::in(array_keys(Contrato::incotermsLista()))],
             'porto' => ['required', Rule::in(array_keys(Contrato::portos()))],
