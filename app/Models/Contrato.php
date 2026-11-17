@@ -138,6 +138,24 @@ class Contrato extends Model
         return round((float) $this->quantidade_kg - $this->kgEmEmbarques(), 2);
     }
 
+    /**
+     * Sacas REAIS que N lotes deste contrato representam.
+     *
+     * O lote do contrato é um inteiro arredondado (320 sacas = 1,13 lote = 1
+     * lote), então "lotes × 283,49" não devolve as sacas do contrato: somando
+     * por tela, a posição a fixar ficava ~170 sacas abaixo da planilha, e o
+     * level médio ponderado por lotes saía mais de 1 cent diferente do
+     * ponderado por sacas. A conta certa é a proporção do próprio contrato.
+     */
+    public function sacasDeLotes(int $lotes): float
+    {
+        if ((int) $this->lotes === 0) {
+            return $lotes > 0 ? (float) $this->sacas : 0.0;
+        }
+
+        return (float) $this->sacas * $lotes / (int) $this->lotes;
+    }
+
     /** O mesmo saldo, em sacas — é assim que ele entra na posição. */
     public function sacasAProgramar(): float
     {

@@ -106,6 +106,13 @@
                         @error('faturado_em') <div class="field-error">{{ $message }}</div> @enderror
                     </div>
 
+                    <div class="field {{ $errors->has('baixado_em') ? 'has-error' : '' }}">
+                        <label for="baixado_em">Baixa do estoque</label>
+                        <input type="date" id="baixado_em" name="baixado_em" value="{{ $data('baixado_em') }}" max="{{ now()->toDateString() }}">
+                        <span class="hint">Data em que a saída foi registrada (Digisul). É a baixa, não a nota, que tira a venda da posição. Em branco = ainda no estoque.</span>
+                        @error('baixado_em') <div class="field-error">{{ $message }}</div> @enderror
+                    </div>
+
                     <div class="field {{ $errors->has('pss') ? 'has-error' : '' }}">
                         <label for="pss">PSS <span class="hint">(amostra pré-embarque)</span></label>
                         <select id="pss" name="pss">

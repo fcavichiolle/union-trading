@@ -210,6 +210,14 @@
   .num-tile__lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .num-tile__val { font-family: var(--font-data); font-size: 26px; font-weight: 700; line-height: 1.1; color: var(--ink); }
   .num-tile__val.is-neg { color: var(--danger-text); }
+
+  /* Posicao Long & Short: short em vermelho, long em verde */
+  td.ls-neg { color: var(--danger-text); font-weight: 600; }
+  td.ls-pos { color: var(--primary); }
+  /* grade de 14 colunas: mais apertada para caber sem rolar de lado */
+  table.ls-tabela th, table.ls-tabela td { padding: 9px 9px; font-size: 12.5px; }
+  table.ls-tabela td:first-child, table.ls-tabela th:first-child { white-space: nowrap; padding-left: 16px; }
+  :root[data-theme="dark"] td.ls-pos { color: #BFE6CE; }
   .num-tile__val.is-alerta { color: #8A6116; }
   .num-tile__sub { font-size: 11.5px; color: var(--muted); }
   .painel-nota { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
@@ -239,6 +247,10 @@
   .notice-danger p { margin: 2px 0 0; font-size: 12.5px; color: rgba(11,61,36,.62); }
 
   .admin-grid { display: grid; grid-template-columns: 1fr 372px; gap: 22px; align-items: start; }
+  /* Filho de grid não encolhe abaixo do conteúdo por padrão: uma tabela larga
+     dentro dele esticava a coluna (710px num celular de 375) e a página
+     inteira rolava de lado. Com min-width:0 quem rola é a tabela. */
+  .admin-grid > * { min-width: 0; }
   .usercard { display: flex; flex-direction: column; border-radius: 16px; background: #fff; overflow: hidden;
     box-shadow: 0 1px 2px rgba(11,61,36,.06), 0 10px 28px -14px rgba(11,61,36,.24), inset 0 0 0 1px rgba(11,61,36,.07); }
   .utable__head, .utable__row { display: grid; grid-template-columns: 2fr 1.3fr 1fr 96px; gap: 16px; align-items: center; padding: 15px 22px; }
@@ -440,6 +452,18 @@
   .filter-bar .field { min-width: 180px; }
 
   .pagination { margin-top: 16px; }
+
+  /* paginador próprio (partials/paginacao) — texto e classes do sistema,
+     sem depender do Tailwind que o paginador padrão do Laravel exige */
+  .paginacao { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .paginacao__resumo { font-size: 13px; color: var(--muted); }
+  .paginacao__paginas { display: flex; gap: 6px; flex-wrap: wrap; }
+  .paginacao__item { display: inline-block; min-width: 36px; padding: 7px 12px; text-align: center; font-size: 13.5px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--primary); text-decoration: none; }
+  a.paginacao__item:hover { background: var(--primary-soft); }
+  .paginacao__item.is-atual { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+  .paginacao__item.is-disabled { color: var(--muted); background: transparent; }
+  :root[data-theme="dark"] .paginacao__item.is-atual { color: #0B2A1C; }
 
   /* ---------- Tabela em cards (telas estreitas) ----------
      Em vez de rolar uma tabela larga na horizontal, cada linha vira um
@@ -666,13 +690,22 @@
     .sidebar__nav { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 12px; }
     .sb-group { gap: 2px; }
     .content { padding: 22px 18px 32px; }
-    .appbar { padding: 0 18px; height: 64px; }
+    /* O cabeçalho quebra em duas linhas em vez de estourar a largura: a
+       trilha fica em cima e o bloco do usuário embaixo. */
+    .appbar { padding: 10px 18px; height: auto; min-height: 64px; flex-wrap: wrap; row-gap: 6px; }
+    .appbar__user { flex-wrap: wrap; }
     .page-head { flex-direction: column; align-items: flex-start; gap: 14px; }
     .page-head h1 { font-size: 27px; }
     .utable__head { display: none; }
     .utable__row { grid-template-columns: 1fr auto; grid-auto-rows: min-content; gap: 8px 12px; padding-bottom: 52px; }
     .utable__rowacts { position: absolute; left: 22px; right: auto; bottom: 12px; top: auto; transform: none;
       opacity: 1; pointer-events: auto; padding-left: 0; background: none; }
+  }
+  /* Celular: nome e perfil saem (o avatar com as iniciais fica) — eram
+     eles que empurravam "Trocar senha" e "Sair" para fora da tela. */
+  @media (max-width: 560px) {
+    .appbar__meta { display: none; }
+    .appbar__acts { margin-left: 0; padding-left: 8px; }
   }
   /* ============================================================
      Botão de tema (header) + MODO ESCURO
@@ -937,6 +970,72 @@
     .chat__corpo { max-height: none; }
     .msg__apagar { opacity: 1; }
   }
+
+  /* ---- emojis no campo de texto ---- */
+  .chat__campo textarea { padding-right: 44px; }
+  .chat__emoji { position: absolute; right: 6px; bottom: 4px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+  .chat__emoji:hover, .chat__emoji[aria-expanded="true"] { background: var(--primary-soft); color: var(--primary); }
+  .emoji-painel { position: absolute; bottom: calc(100% + 6px); right: 0; width: 324px; max-width: 100%; max-height: 250px; overflow-y: auto; padding: 4px 10px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 10px 24px -12px rgba(18,61,42,.4); z-index: 20; }
+  .emoji-painel[hidden] { display: none; }
+  .emoji-painel__titulo { margin: 8px 2px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .emoji-painel__grade { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+  .emoji-painel__item { border: 0; background: none; padding: 5px 0; border-radius: 6px; font-size: 20px; line-height: 1.1; cursor: pointer; }
+  .emoji-painel__item:hover { background: var(--primary-soft); }
+
+  /* ---- reações ---- */
+  .msg__bolha { position: relative; }
+  .msg__reacoes { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 5px; }
+  .reacao { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12.5px; line-height: 1.5; cursor: pointer; }
+  .reacao:hover { border-color: var(--primary-light); }
+  .reacao.is-minha { background: var(--primary-soft); border-color: var(--primary-light); }
+  .reacao__total { font-family: var(--font-data); font-size: 11px; color: var(--muted); }
+  .reacao--mais { padding: 3px 5px; border-color: transparent; background: none; color: var(--muted); opacity: 0; }
+  .reacao--mais:hover { background: var(--surface); border-color: var(--border); color: var(--primary); }
+  .msg:hover .reacao--mais, .reacao--mais:focus-visible, .msg__reacoes:has(.reacao-seletor) .reacao--mais { opacity: 1; }
+  /* Sem nenhuma reação a linha não ocupa espaço: o botão de reagir fica
+     ao lado da bolha e só aparece com o mouse em cima da mensagem. */
+  .msg__reacoes:not(:has(.reacao[data-emoji])) { margin-top: 0; height: 0; }
+  .msg__reacoes:not(:has(.reacao[data-emoji])) .reacao--mais { position: absolute; left: calc(100% + 14px); bottom: 0; }
+  .msg--minha .msg__reacoes { justify-content: flex-end; }
+  .msg--minha .msg__reacoes:not(:has(.reacao[data-emoji])) .reacao--mais { left: auto; right: calc(100% + 14px); }
+  .reacao-seletor { position: absolute; top: calc(100% + 4px); left: 0; display: flex; gap: 2px; padding: 4px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; box-shadow: 0 10px 24px -12px rgba(18,61,42,.45); white-space: nowrap; z-index: 15; }
+  .msg--minha .reacao-seletor { left: auto; right: 0; }
+  .reacao-seletor__item { border: 0; background: none; padding: 3px 5px; border-radius: 50%; font-size: 18px; line-height: 1.1; cursor: pointer; }
+  .reacao-seletor__item:hover { background: var(--primary-soft); }
+  @media (hover: none) { .reacao--mais { opacity: 1; } }
+
+  /* ---- chat flutuante (todas as telas, menos a de Mensagens) ---- */
+  .chatf { position: fixed; right: 22px; bottom: 22px; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
+  .chatf > * { pointer-events: auto; }
+  .chatf__botao { position: relative; width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: var(--primary); color: #fff; cursor: pointer; box-shadow: 0 10px 24px -8px rgba(18,61,42,.6); transition: transform .12s ease, background .12s ease; }
+  .chatf__botao:hover { background: var(--primary-light); transform: translateY(-1px); }
+  .chatf__badge { position: absolute; top: -3px; right: -3px; min-width: 20px; height: 20px; padding: 0 5px; display: flex; align-items: center; justify-content: center; border-radius: 99px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; box-shadow: 0 0 0 2px var(--bg); }
+  .chatf__badge[hidden] { display: none; }
+  .chatf__painel { width: 384px; max-width: calc(100vw - 24px); height: min(560px, calc(100vh - 118px)); display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 24px 60px -20px rgba(18,61,42,.55); }
+  .chatf__painel[hidden] { display: none; }
+  .chatf__topo { display: flex; align-items: center; gap: 4px; padding: 9px 10px 9px 16px; background: var(--primary); color: #fff; }
+  .chatf__topo strong { flex: 1; font-size: 14px; }
+  .chatf__acao { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; background: none; color: #fff; opacity: .85; cursor: pointer; }
+  .chatf__acao:hover { background: rgba(255,255,255,.16); opacity: 1; }
+  .chat--mini { flex: 1; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .chat--mini .chat__corpo { min-height: 0; max-height: none; padding: 12px; gap: 10px; }
+  .chat--mini .msg { gap: 8px; }
+  .chat--mini .msg__avatar { width: 26px; height: 26px; font-size: 10px; }
+  .chat--mini .msg__bolha { max-width: calc(100% - 64px); }
+  .chat--mini .msg__texto { font-size: 13.5px; }
+  .chat--mini .chat__form { padding: 10px 12px; gap: 8px; flex-wrap: nowrap; }
+  .chat--mini .chat__campo { min-width: 0; }
+  .chat--mini .chat__form .btn { padding: 9px 12px; }
+  .chat--mini .emoji-painel { width: 100%; }
+  .chat--mini .reacao--mais { opacity: 1; }
+  :root[data-theme="dark"] .reacao { background: rgba(255,255,255,.06); color: #E7EFE9; }
+  :root[data-theme="dark"] .reacao.is-minha { background: rgba(122,214,163,.18); }
+  :root[data-theme="dark"] .chatf__badge { box-shadow: 0 0 0 2px #12181B; }
+  @media (max-width: 560px) {
+    .chatf { right: 12px; bottom: 12px; }
+    .chatf__painel { height: calc(100vh - 96px); }
+  }
+  @media print { .chatf { display: none; } }
 
   @media (max-width: 1024px) { .contract-cols { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }

@@ -17,11 +17,11 @@ use Tests\TestCase;
 /**
  * Embarques: a agenda das estufagens e o lado "vendido" da posição.
  *
- * O que estes testes guardam é a regra que a planilha não tinha: a soma de
- * vendas da aba VENDAS-FOB não olhava o STATUS, então a venda já faturada
- * continuava pesando na posição até alguém apagar a linha à mão. Aqui,
- * faturar tira o embarque da posição no ato — e o que ainda nem virou
- * embarque continua contando, pelo mês do contrato.
+ * O que estes testes guardam: na planilha a venda só saía da soma quando
+ * alguém apagava a linha à mão. Aqui ela sai na BAIXA do estoque — não na
+ * nota: faturar e dar baixa são coisas diferentes, e o café faturado sem
+ * baixa ainda está no armazém. O que ainda nem virou embarque continua
+ * contando, pelo mês do contrato.
  */
 class EmbarqueTest extends TestCase
 {
@@ -124,8 +124,11 @@ class EmbarqueTest extends TestCase
         $this->assertEqualsWithDelta(0, $linha['valores']['2026-12'], 0.01);
     }
 
-    /** O defeito da planilha: faturado continuava na soma. Aqui sai no ato. */
-    public function test_faturar_tira_o_embarque_da_posicao(): void
+    /**
+     * Faturar e dar baixa são coisas diferentes: a nota não tira o café do
+     * armazém, então a venda continua na posição até a baixa do estoque.
+     */
+    public function test_faturar_nao_tira_da_posicao_quem_tira_e_a_baixa(): void
     {
         $contrato = $this->contrato('5973');
         $e = $this->embarque($contrato, ['quantidade_kg' => 38400]);
@@ -139,7 +142,71 @@ class EmbarqueTest extends TestCase
         $e->refresh();
         $this->assertSame('FATURADO', $e->status);
         $this->assertSame('2026-11-17', $e->faturado_em->format('Y-m-d'));
+        $this->assertTrue($e->aguardandoBaixa());
+        $this->assertEqualsWithDelta(640, $this->posicao()['total'], 0.01);
+
+        $this->actingAs($this->admin)
+            ->patch(route('embarques.baixar', $e), ['baixado_em' => '2026-11-16'])
+            ->assertRedirect();
+
+        $e->refresh();
+        $this->assertSame('2026-11-16', $e->baixado_em->format('Y-m-d'));
+        $this->assertSame('FATURADO', $e->status); // a baixa não mexe na etapa
+        $this->assertFalse($e->aguardandoBaixa());
         $this->assertEqualsWithDelta(0, $this->posicao()['total'], 0.01);
+        $this->assertDatabaseHas('audit_logs', ['acao' => 'embarque_baixado']);
+    }
+
+    /** Sem data, a baixa é de hoje; data no futuro não existe. */
+    public function test_baixa_sem_data_usa_hoje_e_recusa_data_futura(): void
+    {
+        $e = $this->embarque($this->contrato('5973'), ['status' => 'FATURADO']);
+
+        $this->actingAs($this->admin)
+            ->patch(route('embarques.baixar', $e), ['baixado_em' => '2026-11-18'])
+            ->assertSessionHasErrors('baixado_em');
+        $this->assertNull($e->fresh()->baixado_em);
+
+        $this->actingAs($this->admin)->patch(route('embarques.baixar', $e))->assertRedirect();
+        $this->assertSame('2026-11-17', $e->fresh()->baixado_em->format('Y-m-d'));
+    }
+
+    /** Baixa dada por engano: apagar a data devolve a venda à posição. */
+    public function test_desfazer_a_baixa_devolve_a_venda_a_posicao(): void
+    {
+        $e = $this->embarque($this->contrato('5973'), [
+            'quantidade_kg' => 38400, 'status' => 'FATURADO', 'baixado_em' => '2026-11-10',
+        ]);
+        $this->assertEqualsWithDelta(0, $this->posicao()['total'], 0.01);
+
+        $this->actingAs($this->admin)->put(route('embarques.update', $e), [
+            'mes_faturamento' => '2026-12', 'quantidade_kg' => 38400, 'status' => 'FATURADO',
+            'faturado_em' => '2026-11-09', 'baixado_em' => '',
+        ])->assertRedirect();
+
+        $this->assertNull($e->fresh()->baixado_em);
+        $this->assertEqualsWithDelta(640, $this->posicao()['total'], 0.01);
+    }
+
+    /** A fila de baixas aparece sempre, independente do filtro da agenda. */
+    public function test_controle_logistico_mostra_a_fila_de_faturados_sem_baixa(): void
+    {
+        $contrato = $this->contrato('5973', ['quantidade_kg' => 57600]);
+        $this->embarque($contrato, ['sufixo' => 'A']);
+        $this->embarque($contrato, ['sufixo' => 'B', 'status' => 'FATURADO']);
+        $this->embarque($contrato, ['sufixo' => 'C', 'status' => 'FATURADO', 'baixado_em' => '2026-11-10']);
+
+        $tela = $this->actingAs($this->admin)->get(route('embarques.index'))->assertOk();
+
+        $tela->assertSee('Faturados aguardando baixa de estoque');
+        $this->assertSame(['B'], $tela->viewData('aguardandoBaixa')->pluck('sufixo')->all());
+
+        $semBaixa = $this->actingAs($this->admin)->get(route('embarques.index', ['status' => 'aguardando_baixa']));
+        $this->assertSame(1, $semBaixa->viewData('total'));
+
+        $baixados = $this->actingAs($this->admin)->get(route('embarques.index', ['status' => 'baixados']));
+        $this->assertSame(1, $baixados->viewData('total'));
+        $baixados->assertSee('baixa 10/11/2026');
     }
 
     /** Desfazer o faturamento (voltar a etapa) apaga a data da nota. */
@@ -177,7 +244,8 @@ class EmbarqueTest extends TestCase
     public function test_sobra_menor_que_uma_saca_nao_entra(): void
     {
         $contrato = $this->contrato('5973');
-        $this->embarque($contrato, ['quantidade_kg' => 38350, 'status' => 'FATURADO']); // sobram 50 kg
+        // Embarque já baixado: só sobram os 50 kg do contrato.
+        $this->embarque($contrato, ['quantidade_kg' => 38350, 'status' => 'FATURADO', 'baixado_em' => '2026-11-10']);
 
         $this->assertEqualsWithDelta(0, $this->posicao()['total'], 0.01);
     }
@@ -225,7 +293,7 @@ class EmbarqueTest extends TestCase
     {
         $contrato = $this->contrato('5973', ['quantidade_kg' => 57600]);
         $this->embarque($contrato, ['sufixo' => 'A']);
-        $this->embarque($contrato, ['sufixo' => 'B', 'status' => 'FATURADO']);
+        $this->embarque($contrato, ['sufixo' => 'B', 'status' => 'FATURADO', 'baixado_em' => '2026-11-10']);
 
         $abertos = $this->actingAs($this->admin)->get(route('embarques.index'))->assertOk();
         $this->assertSame(1, $abertos->viewData('total'));
@@ -316,6 +384,7 @@ class EmbarqueTest extends TestCase
 
         $this->actingAs($this->financeiro)->get(route('embarques.create', $contrato))->assertForbidden();
         $this->actingAs($this->financeiro)->patch(route('embarques.faturar', $e))->assertForbidden();
+        $this->actingAs($this->financeiro)->patch(route('embarques.baixar', $e))->assertForbidden();
         $this->actingAs($this->financeiro)->delete(route('embarques.destroy', $e))->assertForbidden();
 
         $this->assertSame('BOOKING', $e->fresh()->status);
@@ -339,7 +408,7 @@ class EmbarqueTest extends TestCase
     public function test_excluir_embarque_devolve_o_volume_ao_contrato(): void
     {
         $contrato = $this->contrato('5973');
-        $e = $this->embarque($contrato, ['status' => 'FATURADO', 'quantidade_kg' => 38400]);
+        $e = $this->embarque($contrato, ['status' => 'FATURADO', 'quantidade_kg' => 38400, 'baixado_em' => '2026-11-10']);
         $this->assertEqualsWithDelta(0, $this->posicao()['total'], 0.01);
 
         $this->actingAs($this->admin)->delete(route('embarques.destroy', $e))->assertRedirect();

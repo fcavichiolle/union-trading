@@ -137,6 +137,11 @@
                                         @if ($e->faturado_em)
                                             <br><span style="color:var(--muted); font-size:11.5px;">em {{ $e->faturado_em->format('d/m/Y') }}</span>
                                         @endif
+                                        @if ($e->baixado())
+                                            <br><span style="color:var(--muted); font-size:11.5px;">baixa do estoque em {{ $e->baixado_em->format('d/m/Y') }}</span>
+                                        @elseif ($e->aguardandoBaixa())
+                                            <br><span class="badge badge--amber">sem baixa do estoque</span>
+                                        @endif
                                     </td>
                                     <td>{{ $e->data_estufagem?->format('d/m/Y') ?? '—' }}</td>
                                     <td>{{ $e->armazem?->nome ?? '—' }}</td>

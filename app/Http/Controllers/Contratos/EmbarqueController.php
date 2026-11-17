@@ -20,8 +20,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Embarques: a agenda das estufagens e o controle de faturamento das
- * vendas. Substitui a aba VENDAS-FOB da planilha de posição e a planilha
+ * Embarques: a agenda das estufagens, o faturamento das vendas e a baixa
+ * de estoque (a saída do café, que é o que tira a venda da posição). Substitui a aba VENDAS-FOB da planilha de posição e a planilha
  * do Google com o agendamento.
  *
  * A agenda é leitura para todo perfil (é o que a equipe consulta o dia
@@ -34,6 +34,10 @@ class EmbarqueController extends Controller
 
     /** Valor do filtro de status que mostra só o que ainda vai sair. */
     public const ABERTOS = 'abertos';
+
+    /** Filtros pela situação de ESTOQUE (a baixa), não pela etapa. */
+    public const AGUARDANDO_BAIXA = 'aguardando_baixa';
+    public const BAIXADOS = 'baixados';
 
     public function index(Request $request, PosicaoVendas $posicao): View
     {
@@ -50,6 +54,8 @@ class EmbarqueController extends Controller
             ->with(['contrato', 'armazem'])
             ->when(preg_match('/^\d{4}-\d{2}$/', $filtros['mes']), fn ($q) => $q->whereDate('mes_faturamento', $filtros['mes'] . '-01'))
             ->when($filtros['status'] === self::ABERTOS, fn ($q) => $q->emAberto())
+            ->when($filtros['status'] === self::AGUARDANDO_BAIXA, fn ($q) => $q->faturadosSemBaixa())
+            ->when($filtros['status'] === self::BAIXADOS, fn ($q) => $q->baixados())
             ->when(
                 array_key_exists($filtros['status'], Embarque::statuses()),
                 fn ($q) => $q->where('status', $filtros['status'])
@@ -77,6 +83,13 @@ class EmbarqueController extends Controller
             'semFiltro' => $filtros['mes'] === '' && $filtros['status'] === self::ABERTOS
                 && $filtros['armazem'] === '' && $filtros['busca'] === '',
             'aProgramar' => $this->contratosAProgramar(),
+            // Fila de baixas: nota emitida e café ainda no estoque. Fica fora
+            // dos filtros de propósito — é pendência, não consulta.
+            'aguardandoBaixa' => Embarque::faturadosSemBaixa()
+                ->with('contrato')
+                ->orderBy('faturado_em')
+                ->orderBy('id')
+                ->get(),
             'posicao' => $posicao->calcular(),
             'podeEditar' => $request->user()->hasRole('admin', 'compras'),
         ]);
@@ -205,12 +218,18 @@ class EmbarqueController extends Controller
     public function update(EmbarqueRequest $request, Embarque $embarque): RedirectResponse
     {
         $antes = $embarque->status;
+        $baixaAntes = $embarque->baixado_em?->format('d/m/Y');
         $embarque->update($request->dados());
+        $baixaDepois = $embarque->baixado_em?->format('d/m/Y');
 
         AuditLog::registrar(
             'embarque_atualizado',
             "Embarque {$embarque->referencia()} atualizado"
-                . ($antes !== $embarque->status ? " ({$antes} → {$embarque->status})" : '') . '.',
+                . ($antes !== $embarque->status ? " ({$antes} → {$embarque->status})" : '')
+                // A baixa mexe na posição: mudança nela fica escrita no log.
+                . ($baixaAntes !== $baixaDepois
+                    ? ' — baixa de estoque: ' . ($baixaAntes ?? 'sem baixa') . ' → ' . ($baixaDepois ?? 'desfeita')
+                    : '') . '.',
             Auth::id()
         );
 
@@ -219,8 +238,9 @@ class EmbarqueController extends Controller
     }
 
     /**
-     * Faturar direto da agenda: é a ação mais frequente e a que tira a venda
-     * da posição, então não merece um formulário inteiro.
+     * Faturar direto da agenda: é a ação mais frequente, então não merece um
+     * formulário inteiro. Faturar NÃO tira a venda da posição — o café ainda
+     * está no armazém; quem tira é a baixa (ver `baixar`).
      */
     public function faturar(Request $request, Embarque $embarque): RedirectResponse
     {
@@ -236,11 +256,41 @@ class EmbarqueController extends Controller
         AuditLog::registrar(
             'embarque_faturado',
             "Embarque {$embarque->referencia()} faturado em {$embarque->faturado_em->format('d/m/Y')} "
-                . "({$embarque->sacas} sc saíram da posição).",
+                . "({$embarque->sacas} sc; aguardando a baixa do estoque).",
             Auth::id()
         );
 
-        return back()->with('status', "Embarque {$embarque->referencia()} marcado como faturado — saiu da posição de vendas.");
+        return back()->with('status', "Embarque {$embarque->referencia()} marcado como faturado. Continua na posição até a baixa do estoque.");
+    }
+
+    /**
+     * Dar baixa: registra que o café SAIU do estoque (a baixa do Digisul).
+     * É isto, e não a nota, que tira a venda da posição.
+     *
+     * Não exige etapa "Faturado": a saída às vezes é registrada antes da
+     * nota, e travar aqui só faria a baixa ficar de fora do sistema.
+     */
+    public function baixar(Request $request, Embarque $embarque): RedirectResponse
+    {
+        $dados = $request->validate(
+            ['baixado_em' => ['nullable', 'date', 'before_or_equal:today']],
+            [
+                'baixado_em.date' => 'Informe uma data de baixa válida.',
+                'baixado_em.before_or_equal' => 'A data da baixa não pode ser no futuro.',
+            ]
+        );
+
+        $embarque->baixado_em = Carbon::parse($dados['baixado_em'] ?? now())->toDateString();
+        $embarque->save();
+
+        AuditLog::registrar(
+            'embarque_baixado',
+            "Baixa de estoque do embarque {$embarque->referencia()} em {$embarque->baixado_em->format('d/m/Y')} "
+                . "({$embarque->sacas} sc saíram do estoque e da posição).",
+            Auth::id()
+        );
+
+        return back()->with('status', "Baixa de {$embarque->referencia()} registrada — as sacas saíram do estoque e da posição de vendas.");
     }
 
     public function destroy(Embarque $embarque): RedirectResponse

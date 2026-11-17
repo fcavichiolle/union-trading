@@ -261,10 +261,37 @@ class FixacaoTest extends TestCase
 
         $resp->assertSee('Posição de fixações por tela');
         $resp->assertSeeInOrder(['Z6', 'Sem tela definida']);
-        // Z6: 4 lotes a fixar (~1.134 sacas), 2 fixados, level médio 335,00.
+        // Z6: 4 dos 6 lotes a fixar, 2 fixados, level médio 335,00.
         $resp->assertSee('335,00 cts/lb');
-        $resp->assertSee(number_format(4 * 283.49, 0, ',', '.')); // 1.134 sacas a fixar na Z6
-        // Sem tela: 3 lotes do contrato 5941.
-        $resp->assertSee(number_format(3 * 283.49, 0, ',', '.')); // 850 sacas
+
+        // As sacas são as REAIS do contrato, na proporção dos lotes — não
+        // "lotes × 283,49", que ficava abaixo da planilha de posição.
+        $posicao = collect($resp->viewData('posicao'))->keyBy('tela');
+        $this->assertEqualsWithDelta(1200, $posicao['Z6']['a_fixar_sacas'], 0.01);  // 1.800 sc × 4/6
+        $this->assertEqualsWithDelta(600, $posicao['Z6']['fixado_sacas'], 0.01);    // 1.800 sc × 2/6
+        $this->assertEqualsWithDelta(900, $posicao['SEM_TELA']['a_fixar_sacas'], 0.01); // contrato 5941 inteiro
+    }
+
+    /**
+     * Level médio da tela ponderado pelas SACAS, como na planilha de posição.
+     * Ponderar pelos lotes inteiros distorce: 320 sacas (1,13 lote) contam
+     * como 1 lote, e 2.917 sacas (10,29 lotes) contam como 10.
+     */
+    public function test_level_medio_da_tela_e_ponderado_pelas_sacas(): void
+    {
+        // 5940: 1.800 sc / 6 lotes @ 300. 5942: 320 sc / 1 lote @ 360.
+        $pequeno = $this->novoContrato('5942', 19200);
+        $this->fixar(['lotes' => 6, 'tela' => 'Z6', 'level' => '300.00']);
+        $this->fixar([
+            'contratos' => [$pequeno->id], 'lotes' => 1, 'tela' => 'Z6', 'level' => '360.00',
+            'diferenciais' => [$pequeno->id => '-16.00'],
+        ]);
+
+        $z6 = collect($this->actingAs($this->admin)->get(route('ny.index'))->viewData('posicao'))->keyBy('tela')['Z6'];
+
+        // Por sacas: (300×1800 + 360×320) / 2120 = 309,06. Por lotes daria 308,57.
+        $this->assertEqualsWithDelta(309.06, $z6['level_medio'], 0.01);
+        $this->assertEqualsWithDelta(2120, $z6['fixado_sacas'], 0.01);
+        $this->assertSame(7, $z6['fixado_lotes']);
     }
 }

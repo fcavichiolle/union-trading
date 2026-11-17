@@ -35,6 +35,9 @@ class Compra extends Model
         'tipo_entrada',
         'padrao_final',
         'tipo_bebida',
+        // Rendimento previsto (amostra de compra) — entra na posição Long & Short.
+        'pct_1718',
+        'pct_cata',
         'volume_contratado',
         'peso_kg',
         'valor_saca',
@@ -57,6 +60,8 @@ class Compra extends Model
             'peso_kg' => 'decimal:2',
             'valor_saca' => 'decimal:2',
             'comissao_pct' => 'decimal:2',
+            'pct_1718' => 'decimal:2',
+            'pct_cata' => 'decimal:2',
             'liquidada_em' => 'datetime',
         ];
     }
@@ -200,6 +205,65 @@ class Compra extends Model
     public function logisticaLabel(): ?string
     {
         return $this->logistica === null ? null : (self::logisticas()[$this->logistica] ?? $this->logistica);
+    }
+
+    /* ---------- Rendimento previsto (posição Long & Short) ---------- */
+
+    /** Fine Cup ou Good Cup: decide em quais standards a compra cai. */
+    public function familiaDoPadrao(): string
+    {
+        return str_contains((string) $this->padrao_final, 'FINE_CUP') ? 'FC' : 'GC';
+    }
+
+    /**
+     * Em que padrões esta compra vira depois de preparada — a mesma conta
+     * da aba COMPRA da planilha de posição:
+     *   17/18 = % de 17/18;  14/16 = 100 − 17/18 − cata;
+     *   da cata, 85% é grinders e o resto é baixo (mercado interno).
+     *
+     * De onde vêm os percentuais, nesta ordem: os informados na compra
+     * (amostra), a classificação lançada, ou o rendimento padrão da
+     * família (`config/posicao.php`) — neste último caso a tela avisa.
+     *
+     * Conilon não entra na posição de arábica: devolve null.
+     *
+     * @return array{origem: string, baldes: array<string, float>}|null
+     *         frações (somam 1) por balde de `FotoEstoque::baldes()`
+     */
+    public function rendimentoPrevisto(): ?array
+    {
+        if ($this->ehConilon()) {
+            return null;
+        }
+
+        $familia = $this->familiaDoPadrao();
+
+        if ($this->pct_1718 !== null) {
+            $origem = 'compra';
+            $p1718 = (float) $this->pct_1718;
+            $cata = (float) $this->pct_cata;
+        } elseif ($this->classificacao) {
+            $origem = 'classificacao';
+            $p1718 = (float) $this->classificacao->peneira_1718_pct;
+            $cata = 100 - $p1718 - (float) $this->classificacao->peneira_1416_pct;
+        } else {
+            $origem = 'padrao';
+            [$p1718, $cata] = config("posicao.rendimento_padrao_da_compra.{$familia}");
+        }
+
+        $p1718 = max(0.0, min(100.0, $p1718));
+        $cata = max(0.0, min(100.0 - $p1718, $cata));
+        $grinders = $cata * (float) config('posicao.grinders_sobre_cata') / 100;
+
+        return [
+            'origem' => $origem,
+            'baldes' => [
+                "1718_{$familia}" => $p1718 / 100,
+                "1416_{$familia}" => (100 - $p1718 - $cata) / 100,
+                'GRINDERS_12UP' => $grinders / 100,
+                FotoEstoque::MERCADO_INTERNO => ($cata - $grinders) / 100,
+            ],
+        ];
     }
 
     /* ---------- Volumes: contratado × entregue ---------- */

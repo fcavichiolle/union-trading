@@ -189,6 +189,10 @@ class FixacaoController extends Controller
             // gravado — inclusive o de um cadastro já renomeado ou excluído.
             ->when($filtros['corretora'] !== '', fn ($q) => $q->where('corretora', $filtros['corretora']))
             ->when($filtros['contrato'] !== '', fn ($q) => $q->where('contrato_id', $filtros['contrato']))
+            // Pela DATA da fixação, não pela ordem de cadastro: as tranches
+            // trazidas da planilha entraram todas no mesmo dia, com a data
+            // real de cada uma, e "últimas" por id mostraria as de setembro.
+            ->orderByDesc('created_at')
             ->orderByDesc('id');
     }
 
@@ -235,27 +239,37 @@ class FixacaoController extends Controller
         // Lado "a fixar": lotes restantes por tela prevista (mes_fixacao).
         foreach ($pendentes as $c) {
             $tela = $c->mes_fixacao ?: 'SEM_TELA';
-            $divisor = $c->tipo_cafe === 'CONILON' ? Contrato::DIVISOR_CONILON : Contrato::DIVISOR_ARABICA;
 
             $linhas[$tela] ??= $this->linhaVazia($tela, $c->porto);
             $linhas[$tela]['a_fixar_lotes'] += $c->lotesRestantes();
-            $linhas[$tela]['a_fixar_sacas'] += $c->lotesRestantes() * $divisor;
+            // Sacas REAIS do contrato, não lotes × 283,49 (ver sacasDeLotes).
+            $linhas[$tela]['a_fixar_sacas'] += $c->sacasDeLotes($c->lotesRestantes());
         }
 
-        // Lado "fixado": tranches agrupadas pela tela em que foram feitas.
-        $fixadas = Fixacao::selectRaw('tela, SUM(lotes) AS lotes, SUM(level * lotes) AS soma_level')
-            ->whereNotNull('tela')
-            ->groupBy('tela')
-            ->get();
+        // Lado "fixado": tranches agrupadas pela tela em que foram feitas. O
+        // level médio é ponderado pelas SACAS de cada tranche — é assim que a
+        // planilha de posição faz, e o lote inteiro distorceria o peso.
+        $somaLevel = [];
+        foreach (Fixacao::with('contrato')->whereNotNull('tela')->get() as $f) {
+            if (! $f->contrato) {
+                continue;
+            }
 
-        foreach ($fixadas as $f) {
             // Janela larga: fixação antiga pode estar numa posição vencida, e
             // com a lista "em aberto" ela seria classificada como Santos por
             // engano (o `else` do array_key_exists).
             $porto = Contrato::telaEhDeLondres($f->tela) ? 'VITORIA' : 'SANTOS';
+            $sacas = $f->contrato->sacasDeLotes((int) $f->lotes);
+
             $linhas[$f->tela] ??= $this->linhaVazia($f->tela, $porto);
-            $linhas[$f->tela]['fixado_lotes'] = (int) $f->lotes;
-            $linhas[$f->tela]['level_medio'] = $f->lotes > 0 ? round($f->soma_level / $f->lotes, 2) : null;
+            $linhas[$f->tela]['fixado_lotes'] += (int) $f->lotes;
+            $linhas[$f->tela]['fixado_sacas'] += $sacas;
+            $somaLevel[$f->tela] = ($somaLevel[$f->tela] ?? 0) + (float) $f->level * $sacas;
+        }
+
+        foreach ($somaLevel as $tela => $soma) {
+            $sacas = $linhas[$tela]['fixado_sacas'];
+            $linhas[$tela]['level_medio'] = $sacas > 0 ? round($soma / $sacas, 2) : null;
         }
 
         // Ordena na sequência dos vencimentos (NY primeiro, depois Londres);
@@ -289,6 +303,7 @@ class FixacaoController extends Controller
             'a_fixar_lotes' => 0,
             'a_fixar_sacas' => 0.0,
             'fixado_lotes' => 0,
+            'fixado_sacas' => 0.0,
             'level_medio' => null,
         ];
     }

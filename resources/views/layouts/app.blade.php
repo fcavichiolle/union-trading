@@ -106,6 +106,10 @@
 
             <div class="sb-group">
                 <div class="sb-group__label">Mercado</div>
+                <a href="{{ route('posicao.index') }}" class="sb-link {{ request()->routeIs('posicao.index') ? 'is-active' : '' }}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"></path><path d="M5 7h14"></path><path d="M5 7l-2.5 6a3 3 0 0 0 5 0L5 7Z"></path><path d="M19 7l-2.5 6a3 3 0 0 0 5 0L19 7Z"></path></svg>
+                    <span>Posição Long &amp; Short</span>
+                </a>
                 @if ($u->hasRole('admin', 'compras'))
                     <a href="{{ route('ny.index') }}" class="sb-link {{ request()->routeIs('ny.index') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v4M7 14v6M7 8h0a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2Z"></path><path d="M17 4v2M17 16v4M17 6h0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"></path></svg>
@@ -215,6 +219,13 @@
         </div>
     </div>
 </div>
+
+{{-- Chat flutuante: o canal da equipe sem sair da tela. Fora da própria
+     tela de Mensagens, e só para quem já pode usar o sistema (com a troca
+     de senha pendente as rotas do canal ainda estão bloqueadas). --}}
+@if (! request()->routeIs('mensagens.*') && ! $u->force_password_change)
+    @include('partials.chat-flutuante')
+@endif
 
 <script>
     (function () {

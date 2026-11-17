@@ -19,7 +19,7 @@ class Embarque extends Model
         'contrato_id', 'sufixo', 'mes_faturamento', 'quantidade_kg', 'status',
         'pss', 'pss_obs', 'armazem_id', 'transportadora',
         'data_fumigacao', 'data_estufagem', 'deadline_documentos', 'deadline_carga', 'data_fitossanitario',
-        'destino', 'etd', 'navio', 'booking', 'pilha', 'faturado_em', 'observacoes', 'created_by',
+        'destino', 'etd', 'navio', 'booking', 'pilha', 'faturado_em', 'baixado_em', 'observacoes', 'created_by',
         // Programação de estufagem (PDF + e-mail para armazém e transportadora).
         'ico', 'fumigacao_empresa', 'fumigacao_tipo', 'fumigacao_tempo', 'permit_import', 'instrucoes',
     ];
@@ -37,10 +37,14 @@ class Embarque extends Model
             'data_fitossanitario' => 'date',
             'etd' => 'date',
             'faturado_em' => 'date',
+            'baixado_em' => 'date',
         ];
     }
 
-    /** Status que já tiraram o café do armazém (e a venda da posição). */
+    /**
+     * Status em que a logística do embarque acabou (a nota saiu). NÃO é a
+     * saída do estoque: isso é a baixa (`baixado_em`), que tem data própria.
+     */
     public const STATUS_ENCERRADOS = ['FATURADO', 'EMBARCADO'];
 
     /**
@@ -112,16 +116,48 @@ class Embarque extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /** Já faturado/embarcado: o café saiu e a venda não pesa mais na posição. */
+    /** Já faturado/embarcado: não há mais o que programar neste embarque. */
     public function encerrado(): bool
     {
         return in_array($this->status, self::STATUS_ENCERRADOS, true);
     }
 
-    /** Embarques que ainda vão sair — o lado "vendido" da posição. */
+    /** Embarques que ainda vão ser faturados — o que a agenda mostra. */
     public function scopeEmAberto(Builder $query): Builder
     {
         return $query->whereNotIn('status', self::STATUS_ENCERRADOS);
+    }
+
+    /**
+     * Baixa = a saída do café do estoque foi registrada (no Digisul). É o
+     * que tira a venda da posição: enquanto não há baixa o café está no
+     * armazém, conta no estoque físico e a venda tem de contar contra ele.
+     */
+    public function baixado(): bool
+    {
+        return $this->baixado_em !== null;
+    }
+
+    /** Nota emitida, café ainda no estoque: é a fila de baixas a dar. */
+    public function aguardandoBaixa(): bool
+    {
+        return $this->encerrado() && ! $this->baixado();
+    }
+
+    /** O lado "vendido" da posição: tudo que ainda não saiu do estoque. */
+    public function scopeSemBaixa(Builder $query): Builder
+    {
+        return $query->whereNull('baixado_em');
+    }
+
+    public function scopeBaixados(Builder $query): Builder
+    {
+        return $query->whereNotNull('baixado_em');
+    }
+
+    public function scopeFaturadosSemBaixa(Builder $query): Builder
+    {
+        return $query->whereIn('status', self::STATUS_ENCERRADOS)->whereNull('baixado_em');
     }
 
     /** "UT 5973 B" — a referência como a mesa fala. */

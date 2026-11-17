@@ -62,6 +62,9 @@ class StoreCompraRequest extends FormRequest
                 'nullable',
                 Rule::in(array_keys(Classificacao::tiposBebida())),
             ],
+            // Rendimento previsto pela amostra: alimenta a posição Long & Short.
+            'pct_1718' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'pct_cata' => ['nullable', 'numeric', 'min:0', 'max:100'],
             // Sacas OU peso: quem não vier é calculado a 60 kg/saca (ver
             // prepareForValidation).
             'volume_contratado' => ['required', 'numeric', 'min:0.01', 'max:999999'],
@@ -92,6 +95,10 @@ class StoreCompraRequest extends FormRequest
             'valor_saca.numeric' => 'O preço da saca deve ser um número (ex.: 1630 ou 1630,50).',
             'comissao_pct.numeric' => 'A comissão deve ser um número em porcentagem (ex.: 0,5).',
             'comissao_pct.max' => 'A comissão não pode passar de 100%.',
+            'pct_1718.numeric' => 'O % de 17/18 deve ser um número (ex.: 20).',
+            'pct_1718.max' => 'O % de 17/18 não pode passar de 100.',
+            'pct_cata.numeric' => 'O % de cata deve ser um número (ex.: 30).',
+            'pct_cata.max' => 'O % de cata não pode passar de 100.',
         ];
     }
 }

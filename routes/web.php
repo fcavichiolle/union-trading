@@ -176,6 +176,9 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             // dos mesmos embarques.
             Route::get('/exportacao/agendamentos', [EmbarqueController::class, 'agenda'])->name('embarques.agenda');
             Route::get('/exportacao/logistica', [EmbarqueController::class, 'index'])->name('embarques.index');
+
+            // Posição Long & Short: consulta para todo perfil, como a agenda.
+            Route::get('/posicao', [\App\Http\Controllers\PosicaoController::class, 'index'])->name('posicao.index');
         });
 
         Route::middleware('role:admin,compras')->group(function () {
@@ -184,6 +187,7 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::get('/embarques/{embarque}/editar', [EmbarqueController::class, 'edit'])->name('embarques.edit');
             Route::put('/embarques/{embarque}', [EmbarqueController::class, 'update'])->name('embarques.update');
             Route::patch('/embarques/{embarque}/faturar', [EmbarqueController::class, 'faturar'])->name('embarques.faturar');
+            Route::patch('/embarques/{embarque}/baixa', [EmbarqueController::class, 'baixar'])->name('embarques.baixar');
             Route::get('/embarques/{embarque}/programacao', [EmbarqueController::class, 'programacao'])->name('embarques.programacao');
             Route::delete('/embarques/{embarque}', [EmbarqueController::class, 'destroy'])->name('embarques.destroy');
         });
@@ -207,6 +211,8 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             // Throttle para o campo de texto não virar metralhadora.
             Route::post('/', [MensagemController::class, 'store'])->middleware('throttle:60,1')->name('store');
             Route::delete('/{mensagem}', [MensagemController::class, 'destroy'])->name('destroy');
+            Route::get('/resumo', [MensagemController::class, 'resumo'])->name('resumo');
+            Route::post('/{mensagem}/reacoes', [MensagemController::class, 'reagir'])->middleware('throttle:120,1')->name('reagir');
         });
 
         /*

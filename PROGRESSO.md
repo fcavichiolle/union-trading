@@ -38,7 +38,7 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   ```
   php artisan migrate:fresh --seed
   ```
-- E-mail admin atual: `usuario1@example.com`.
+- O e-mail do admin é o definido em `ADMIN_EMAIL` no `.env` (não fica aqui: o repositório é público).
 
 ## 3. O que já está implementado
 
@@ -262,6 +262,59 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   busca por UTS/fornecedor; colunas de resumo (Volume, Mercado interno, Grinders) e
   coluna de **Certificação**, para ver tudo sem abrir compra por compra.
 
+#### Carga das compras e conferência com o Digisul (17/11/2026)
+Primeiro passo para o estoque do sistema bater com o real. **Os números,
+nomes e divergências de cada carga estão em
+`storage/app/private/REGISTRO-DE-CARGAS.md` (fora do Git — o repositório é
+público).** Aqui ficam só as regras.
+
+- Scripts em `storage/app/private/`, sempre no mesmo molde: um extrator em
+  Python gera um JSON e um `importar_*.php` simula por padrão e só grava com
+  `APLICAR=1`, com backup antes. `extrair_compras.py` + `importar_compras.php`
+  (planilha fiscal, uma linha por NOTA, e a aba COMPRA da posição);
+  `importar_digisul_compras.php` (relatório de compras do Digisul);
+  `separar_nf_de_lote.php`; `backup_banco.php` (mysqldump completo).
+- **Alcance decidido pela mesa: o mês corrente + o que está a receber**, não
+  o ano inteiro (quase tudo já foi vendido e encheria o painel de
+  pendências). O estoque parte de um saldo/foto e anda com o que entra e
+  sai depois — ver "Posição Long & Short".
+- **Cada NOTA vira uma entrega.** UTS com sufixo na planilha (7435-A,
+  7418-B) é UMA compra. Compra ainda sem nota usa o rótulo da posição
+  (`CORRETOR x% | VENDEDOR`; sem a barra, o rótulo é o vendedor); vendedor
+  desconhecido vira o fornecedor "A CONFIRMAR", sem documento — pendência
+  até a nota chegar.
+- **NF e lote são coisas diferentes** (mesa, 17/11: *"depois pegamos vários
+  lotes para compor um contrato e de lá sai uma guia de serviço que vai para
+  o armazém"*). A cadeia é: **nota fiscal → entrada no Digisul (nasce o
+  LOTE) → vários lotes compõem um contrato de venda → GUIA DE SERVIÇO para
+  o armazém preparar**. A guia (PI-…, RAP-… no estoque do Digisul) é o elo
+  entre estoque e venda — ainda não existe no sistema.
+  - `entregas.nota_fiscal` (migration `2026_04_01_000004`), com campo na
+    tela da compra. `numero_lote` é só o lote do Digisul; **nota sem lote =
+    entrada pendente no Digisul** — a fila "aguardando nº do lote" que já
+    existia (pendência em Compras lançadas, "Fora do estoque" na tela
+    Estoque). É a origem do retrabalho de conferência da mesa: a nota chega
+    e a entrada é lançada depois.
+  - **Erro da primeira carga, para não repetir**: gravar a NF no campo do
+    lote marcou como estoque definitivo também o que ainda não tinha
+    entrada. Corrigido no mesmo dia.
+  - O relatório de compras do Digisul lista os lotes por CONTRATO, não por
+    nota: nas UTS com vários lotes, cada nota mostra a lista inteira. E ele
+    **só lista contrato já fechado** — UTS com entrada parcial não aparece
+    nele (aparece no export de estoque).
+- **Classificação trazida do Digisul** (padrão, bebida e peneiras) para as
+  compras que existem nos dois lados. De/para das faixas: `17/18`→SCS 17/18,
+  **`13/16`→SCS 14/16** (o Digisul chama de 13/16 o que a posição chama de
+  14/16), `GRINDERS 12 UP`→SCS 12 UP, `CONSUMO`→Mercado interno. **É a
+  peneira do contrato de compra (rendimento esperado, "classificação inicial
+  baseada nas amostras de compra"), não a conferência do classificador** —
+  ele pode corrigir na tela. Volume, lote e a data "Liquidado" do Digisul
+  NÃO são importados (volume vem das notas; liquidar é ato do financeiro).
+- **O estoque fecha no agregado, não lote a lote.** O estoque do Digisul é
+  quase todo café JÁ PREPARADO: depois do rebenefício o lote da compra some,
+  e só uma parte pequena ainda tem elo com uma UTS. A conta é saldo/foto +
+  entradas − baixas, por padrão.
+
 ### Módulo 2 — Contratos de exportação
 - **Cadastros** (admin): **Clientes** (nome + endereço multilinha + **ref. padrão** opcional do
   comprador) e **Qualidades** (descrição do café). Rotas `admin.clientes.*` / `admin.qualidades.*`.
@@ -402,13 +455,36 @@ posição" mais abaixo; aqui fica o que foi construído.
   14/16 GC, Grinders 12UP/13UP — `Contrato::standards()`). **Não é a descrição
   comercial da qualidade.** Opcional: venda fora da posição (black beans,
   moka) fica sem, e a tela avisa.
-- **Faturar tira a venda da posição no ato.** Era o defeito de origem da
-  planilha: a soma de vendas não olhava o STATUS, então o faturado continuava
-  pesando até alguém apagar a linha à mão (na planilha de 16/11 eram N
-  sc nessa situação). `faturado_em` acompanha o status — voltar a etapa apaga
-  a data — e é ela que o passo 2 vai comparar com a data da foto do Digisul.
+- **A venda sai da posição na BAIXA do estoque, não na nota** (17/11/2026 —
+  corrige a regra anterior, "faturar tira da posição no ato"). A mesa: *"fatura
+  e dar baixa são coisas diferentes; os que foram dado baixa são os que
+  registraram a saída do estoque"*. Entre a nota e a baixa o café continua no
+  armazém e conta no estoque físico do Digisul; se a venda sumisse na nota, a
+  posição ficaria mais comprada do que é. Então:
+  - `embarques.baixado_em` (data, migration `2026_04_01_000003`). **É uma data,
+    não uma etapa**: a baixa não tem ordem fixa com a nota, por isso não entra
+    em `Embarque::statuses()`. `faturado_em` continua acompanhando o status.
+  - `Embarque::baixado()`, `aguardandoBaixa()` (faturado e ainda no estoque) e
+    os scopes `semBaixa`, `baixados`, `faturadosSemBaixa`. **Método e scope
+    não podem ter o mesmo nome** — `aguardandoBaixa()` + `scopeAguardandoBaixa`
+    quebra com "Non-static method cannot be called statically".
+  - **Controle logístico**: card "Faturados aguardando baixa de estoque" (a
+    fila, sempre visível, com data + botão "Dar baixa" → `embarques.baixar`),
+    filtros "Faturados aguardando baixa" e "Baixados", e a baixa aparece
+    embaixo da etapa. A linha só fica riscada depois da baixa. Desfazer a
+    baixa = apagar a data no formulário do embarque (fica no log de auditoria).
+  - `encerrado()` / `scopeEmAberto` continuam significando "faturado ou não" —
+    é o que a AGENDA usa (o que ainda vai ser estufado).
+  - **Baixas trazidas do Digisul** (17/11/2026, `importar_baixas.php` em
+    `storage/app/private/`): o relatório "embarcados" (texto separado por
+    `|`) casa por UT + sufixo, com as sacas iguais. Linha de contrato que não
+    está no sistema é ignorada (vendas anteriores à carga), e também a de
+    parcela antiga (a "A" de um contrato cujo saldo aqui é a "B").
+    **Cuidado com a unidade**: o Digisul conta SACOS — numa venda em sacos
+    de 30 kg ele mostra o dobro das sacas de 60 kg do sistema; o peso é o
+    mesmo. Divergência de sacas não é gravada, só listada.
 - **Vendas em aberto por mês × standard** (`App\Services\PosicaoVendas`), no
-  topo da agenda: embarques não faturados, no mês de cada um, **mais o saldo
+  topo da agenda: embarques **sem baixa**, no mês de cada um, **mais o saldo
   do contrato que ainda não virou embarque**, no mês de embarque do contrato.
   Sem a segunda parte a venda recém-lançada ficaria fora da posição. Sobra
   de menos de 1 saca é arredondamento de peso e não entra. Nada some em
@@ -461,15 +537,35 @@ posição" mais abaixo; aqui fica o que foi construído.
 - As etapas (`Embarque::statuses()`) e as situações da PSS são listas no
   model — foram definidas a partir dos textos livres das duas planilhas e
   **vale a mesa revisar**.
-- Testes: `tests/Feature/EmbarqueTest.php` (24), com o tempo congelado.
+- Testes: `tests/Feature/EmbarqueTest.php` (29), com o tempo congelado.
+
+- **Fixações trazidas da planilha** (17/11/2026, `sincronizar_fixacoes.php`
+  em `storage/app/private/`): 75 tranches criadas para os contratos que a
+  aba VENDAS-FOB dava como Fixed, com a data, o level, o diferencial e a
+  tela de cada um. A planilha não diz a corretora, então entraram como
+  **"Não informada (planilha)"**. Contrato que já tinha tranche lançada à
+  mão não foi tocado. Depois disso a "Posição de fixações por tela" bate
+  com a planilha, com duas diferenças conhecidas: a UT 5895 (metade fixada,
+  metade a fixar — a planilha divide por sacas, o sistema por lotes
+  inteiros: 120 sc) e as UT 5995/5996/5997, que só existem no sistema.
+- **Posição por tela em SACAS REAIS** (`Contrato::sacasDeLotes()`): a tela
+  fazia "lotes × 283,49" e ponderava o level médio pelos lotes inteiros. Com
+  contratos pequenos (320 sc = 1,13 lote = 1 lote) isso dava ~170 sc a menos
+  a fixar na H7 e mais de 1 cent de diferença no level médio em relação à
+  planilha. Agora as sacas são as do contrato, na proporção dos lotes, e o
+  level médio é ponderado por elas; a tela ganhou a coluna "Fixado (sacas)".
+- "Fixações registradas" ordena pela **data da fixação**, não pelo id.
 
 #### Roteiro da posição (decidido em nov/2026)
-1. ~~Embarques~~ (feito, acima). ~~Carga das vendas em aberto~~ **feita em
-   17/11/2026**: 129 contratos e 139 embarques criados a partir da planilha
-   de posição de 16/11; 6 clientes criados com "(endereço a cadastrar)".
-   Posição após a carga: N sc (N da planilha + N das UT 5995,
-   5996 e 5997, que já estavam no banco e não estão na planilha).
-2. **Importação do Digisul.** O Digisul emite a NF-e e dá a baixa, então ele
+1. ~~Embarques~~ (feito, acima). ~~Carga das vendas em aberto~~ e ~~carga
+   das compras~~ **feitas em 17/11/2026**, a partir da planilha de posição
+   de 16/11 e da planilha fiscal. Depois da carga a posição de vendas do
+   sistema bate com a da planilha; com a regra da baixa ela passa a incluir
+   o que está faturado e ainda sem baixa, que a planilha já não contava.
+2. **Importação do Digisul.** *(A baixa das VENDAS já é controlada no
+   sistema — ver "A venda sai da posição na BAIXA". O que falta importar é o
+   estoque físico por lote e o saldo inicial de 31/10.)* O Digisul emite a
+   NF-e e dá a baixa, então ele
    continua sendo a verdade do estoque físico — o sistema IMPORTA a
    exportação `.xlsx` dele (263 lotes, com padrão, armazém, certificador,
    guia de serviço e a UTC da compra) em vez de manter um razão próprio, que
@@ -482,6 +578,51 @@ posição" mais abaixo; aqui fica o que foi construído.
    entram no mês certo (a planilha as jogava um mês para frente — confirmado
    pela mesa como desalinhamento).
 4. **Custo médio e hedge.**
+
+### Posição Long & Short (17/11/2026) — passo 3 do roteiro
+Tela **Mercado → Posição Long & Short** (`posicao.index`, `/posicao`, leitura
+para todo perfil). É a aba POSIÇAO_LONG SHORT da planilha, calculada em
+`App\Services\LongShort`. Por standard, em sacas:
+
+    foto do estoque (medido + rendimento estimado da bica/reaproveitamento)
+    + entregas a partir da data da foto − baixas a partir da data da foto
+    = ESTOQUE HOJE  + compras a receber  = DISPONÍVEL
+    − vendas em aberto mês a mês (PosicaoVendas)  = POSIÇÃO (long/short)
+
+- **Foto do estoque** (`fotos_estoque` + `foto_estoque_lotes`, model
+  `FotoEstoque`): o estoque do Digisul lote a lote, com DATA. O estoque
+  físico continua sendo do Digisul; o sistema parte da foto e anda sozinho
+  com as entregas e as baixas posteriores. **A foto vale como abertura do
+  dia** (entrega/baixa do próprio dia conta como posterior). Foto nova só
+  re-ancora — `FotoEstoque::atual()` pega a mais recente.
+- **Balde** de cada lote = de/para do padrão do Digisul
+  (`FotoEstoque::baldeDoPadrao`): a coluna que a mesa preenchia à mão na aba
+  GERAL ESTOQUE. Padrão desconhecido fica SEM balde e a tela avisa — não é
+  chutado. Bica FC/GC e reaproveitamento viram padrão pelo rendimento de
+  `config/posicao.php` (os percentuais do rodapé da aba).
+- **Rendimento da compra** (`compras.pct_1718`, `compras.pct_cata`,
+  `Compra::rendimentoPrevisto()`): 17/18 = %; 14/16 = 100 − 17/18 − cata; da
+  cata, 85% grinders e 15% mercado interno (`posicao.grinders_sobre_cata`).
+  Ordem: % da compra → classificação → rendimento padrão da família (com
+  aviso). Campos no formulário da compra. **A divisão da cata segue a
+  planilha (85/15), não a peneira do Digisul (60/40).**
+- **Diferenças para a planilha, de propósito**: nada é apagado à mão (a
+  data da foto decide o que entra); as compras entram já no disponível (na
+  planilha caíam um mês para a frente — desalinhamento confirmado); venda
+  atrasada pesa no primeiro mês.
+- **Mercado interno** aparece só do lado comprado: as vendas de mercado
+  interno ainda não estão no sistema.
+- **Carga inicial** (`importar_posicao.php` em `storage/app/private/`): foto
+  de 03/11/2026 a partir da aba GERAL ESTOQUE (266 lotes; o de/para do
+  sistema bateu com o da mesa em todos) e % de 17/18 e cata das 37 compras.
+  A posição do sistema fecha com a da planilha, com duas diferenças
+  explicadas: uma UTS que a planilha conta duas vezes (já está na foto e
+  ainda aparece como saldo a faturar) e as UT 6025/6026 (sacas digitadas em
+  dobro na planilha). Os números estão no relatório da carga, fora do Git.
+- **Falta**: tela para subir a foto nova do Digisul (hoje é por script — o
+  PHP não tem a extensão `zip` para ler `.xlsx`); vendas de mercado interno;
+  custo médio e hedge (passo 4).
+- Testes: `tests/Feature/LongShortTest.php` (10).
 
 ### Carta de fixação — PRICE FIXING CONFIRMATION (set/2026)
 Depois de cada fixação o cliente manda a carta de confirmação dele (modelo
@@ -610,7 +751,7 @@ deixava pronto para conferir e clicar em Enviar.
   Fica no `.env` e não no código porque o repositório é **público** e a lista
   muda com a equipe, sem deploy. Quem já está no "Para" **não é repetido** na
   cópia (comparação sem diferenciar maiúsculas) — receberia o mesmo e-mail
-  duas vezes. Hoje é o `usuario3@`, que também aparece nas listas "Para" das
+  duas vezes. Hoje é um endereço que também aparece nas listas "Para" das
   duas corretoras; por isso, na prática, ele sai como destinatário e a cópia
   fixa só entra em cena se um dia a lista da corretora não o incluir.
 - **A assinatura é do usuário logado** (`users.cargo`, `cargo_en`, `telefone`,
@@ -740,6 +881,28 @@ deixava pronto para conferir e clicar em Enviar.
   debaixo de quem está lendo o histórico). Sem JS, o formulário posta normal.
 - **Na demo** a tela entra como ilustração (conversa fictícia de dois dias): o
   envio precisa de backend.
+
+#### Mensagens: emojis, reações e chat flutuante (17/11/2026)
+- **Emojis no campo de texto**: botão dentro do campo abre um painel com
+  uma lista curta (rostos, gestos, trabalho, café/logística) e insere na
+  posição do cursor. Sem biblioteca externa. Emoji novo demais não aparece
+  no Windows 10 (vira um quadrado) — a lista só tem os que ele desenha.
+- **Reações** (`mensagem_reacoes`, `MensagemReacao`): uma linha por
+  (mensagem, pessoa, emoji). **Lista fechada** (`Mensagem::REACOES`),
+  validada no servidor — reação não é campo de texto livre. Clicar de novo
+  tira (`alternarReacao`). `POST mensagens/{mensagem}/reacoes`.
+  Reação em mensagem antiga não é "mensagem nova": o polling manda
+  `visiveis_de` e recebe as reações do trecho aberto (com teto de 300).
+- **Chat flutuante** (`partials/chat-flutuante`, incluído no layout): ícone
+  no canto de toda tela, menos na de Mensagens. Abre um painel pequeno com
+  o mesmo chat; lembra aberto/fechado ao trocar de tela (`sessionStorage`);
+  Esc fecha. Fechado, só consulta `mensagens/resumo` a cada 30 s (o
+  contador) — **olhar o contador não marca como lido; abrir o painel, sim**.
+- **Uma caixa, um script**: `mensagens/_caixa.blade.php` (marcação) e
+  `mensagens/_script.blade.php` (`UTChat.iniciar`) servem a tela cheia e o
+  flutuante. Os elementos são achados por `data-chat-*`, não por id.
+- Apagar mensagem agora é por `fetch` (some no lugar, sem recarregar).
+- Testes: `tests/Feature/MensagemReacaoTest.php` (10).
 
 ### Cadastro de armazéns (ago/2026) e o armazém previsto na compra
 - **Armazéns deixaram de ser ENUM no código e viraram CADASTRO** (`armazens`:
@@ -978,6 +1141,51 @@ não submenu.
    calculadas dos quilos — mas vale a regra para qualquer carga futura:
    **conferir a soma de sacas contra kg ÷ 60 antes de confiar no total**.
 
+20. **O paginador padrão do Laravel exige Tailwind.** As cinco listas
+   paginadas (`->links()` em contratos, compras, clientes, qualidades e
+   usuários) usavam o template padrão, cujas setas são SVG com classes
+   Tailwind (`w-5 h-5`). Sem aquele CSS — o projeto não tem build step — o
+   SVG cresce até ocupar a tela. **Ficou escondido até a carga de nov/2026**,
+   quando "Contratos gerados" passou de 20 linhas pela primeira vez: nenhuma
+   lista tinha paginado em uso real, e nenhum teste criava registros
+   suficientes. Corrigido com `partials/paginacao.blade.php` (texto e classes
+   do sistema), registrado como padrão em `AppServiceProvider`
+   (`Paginator::defaultView`). Guardado por `PaginacaoTest`.
+21. **`display:flex` direto num `<td>` quebra a linha da tabela.** A célula
+   deixa de ser célula de tabela; em "Contratos gerados" os três botões
+   empilhavam e cada linha tinha 91px. O flex vai num `<div>` interno
+   (corrigido também na tabela de entregas de `compras/show`).
+22. **Filho de grid não encolhe abaixo do conteúdo.** No celular, uma tabela
+   larga dentro de `.admin-grid` esticava a coluna para 710px numa tela de
+   375 e a PÁGINA inteira rolava de lado (Tela NY). `min-width: 0` nos
+   filhos do grid devolve a rolagem para o `.table-wrap`. No mesmo pente, o
+   cabeçalho (`.appbar`) passou a quebrar em duas linhas até 780px e esconde
+   nome/perfil até 560px — eram eles que empurravam "Sair" para fora.
+23. **Método e scope com o mesmo nome não convivem.** `aguardandoBaixa()`
+   (instância) + `scopeAguardandoBaixa` → "Non-static method cannot be
+   called statically" ao chamar `Embarque::aguardandoBaixa()`. O scope
+   virou `faturadosSemBaixa`.
+24. **Comentário dentro de `<script>` é texto da página para os testes.**
+   Um `/** ... a página mais recente ... */` no JS do chat (que agora está
+   em toda tela) fez um `assertDontSee('a mais')` de outra tela falhar.
+   Comentário que vai para o navegador conta como conteúdo.
+25. **Varredura de segurança de 17/11/2026** — ver `SECURITY.md` para o
+   checklist; o que mudou: o disco `local` deixou de ser servido por HTTP
+   (`'serve' => false`); `composer audit` voltou a acusar pacotes com falha
+   conhecida (Laravel, Symfony, league/commonmark) — **falta
+   `composer update`**; não há `Content-Security-Policy` nem `trustHosts`.
+26. **O PROGRESSO é público: regra sim, número não.** Volumes de estoque e
+   de venda, preços, nomes de cliente/fornecedor e e-mails de pessoas NÃO
+   entram aqui nem em teste, comentário ou placeholder — vão para
+   `storage/app/private/REGISTRO-DE-CARGAS.md`. Em 17/11/2026 os testes
+   trocaram os nomes reais por fictícios (ALFA, BETA, GAMA, TRANSNORTE…) e o
+   telefone/e-mail do cabeçalho dos PDFs foram para o `.env`
+   (`EMPRESA_TELEFONE`, `EMPRESA_EMAIL`, `config/empresa.php`). **O que já
+   foi enviado ao GitHub continua no histórico** — tirar de lá exige
+   reescrever o histórico ou tornar o repositório privado.
+- **Busca em "Contratos gerados"** (nov/2026): UT, comprador ou ref. do
+  comprador, com `withQueryString()` para a paginação não perder o termo.
+
 ## 6. O que falta / próximos passos
 
 - ~~**E-mail de produção**: configurar `MAIL_*` e criar uma `Notification` para enviar a senha
@@ -1018,7 +1226,7 @@ não submenu.
   compras (ver "Demo pública" na seção 3). **Contratos, Tela NY e cadastros seguem como
   demonstração fixa** — se for para valer também neles, o caminho é o mesmo
   (`docs/demo-compras.js` como modelo), mas é trabalho de outra sessão.
-- **Usuário de demonstração** (12/ago/2026): `usuario5@example.com`, perfil **admin**,
+- **Usuário de demonstração** (12/ago/2026): uma conta `demo.…@` do domínio da empresa, perfil **admin**,
   criado direto no banco com senha aleatória e **sem** troca obrigatória no primeiro acesso
   (forçar a troca travaria justamente quem recebe a conta). A senha foi entregue no chat e
   não é recuperável — o banco guarda só o hash; para trocar, use "Resetar senha" na tela de

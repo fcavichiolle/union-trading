@@ -170,7 +170,8 @@
                             <th class="num">Sacas</th>
                             <th class="num">Peso (kg)</th>
                             <th class="num">Valor da entrega</th>
-                            <th>Nº do lote</th>
+                            <th>Nota fiscal</th>
+                            <th>Nº do lote <span style="font-weight:400; text-transform:none;">(Digisul)</span></th>
                             <th>Lançada por</th>
                             <th></th>
                         </tr>
@@ -211,24 +212,32 @@
                                     {{ $valorEntrega === null ? '—' : 'R$ ' . number_format($valorEntrega, 2, ',', '.') }}
                                 </td>
                                 <td>
+                                    <input type="text" form="e-{{ $entrega->id }}" name="nota_fiscal" value="{{ $entrega->nota_fiscal }}"
+                                           placeholder="Nº da NF" class="campo-lote" aria-label="Nota fiscal">
+                                </td>
+                                <td>
                                     <input type="text" form="e-{{ $entrega->id }}" name="numero_lote" value="{{ $entrega->numero_lote }}"
                                            placeholder="Ex.: L-2026-0451" class="campo-lote">
                                 </td>
                                 <td style="font-size:12.5px; color:var(--muted);">
                                     {{ $entrega->criadoPor?->name ?? '—' }}<br>{{ $entrega->created_at->format('d/m/Y') }}
                                 </td>
-                                <td class="cell-action" style="display:flex; gap:6px; justify-content:flex-end;">
-                                    <button type="submit" form="e-{{ $entrega->id }}" class="mini">Salvar</button>
-                                    <form method="POST" action="{{ route('compras.entregas.destroy', [$compra, $entrega]) }}"
-                                          onsubmit="return confirm('Remover esta entrega? O saldo da UTS será recalculado.');" style="margin:0;">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="mini mini--danger">Excluir</button>
-                                    </form>
+                                {{-- Flex num <div> interno: direto no <td> a célula deixa
+                                     de ser célula de tabela (GOTCHA 21). --}}
+                                <td class="cell-action">
+                                    <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:nowrap;">
+                                        <button type="submit" form="e-{{ $entrega->id }}" class="mini">Salvar</button>
+                                        <form method="POST" action="{{ route('compras.entregas.destroy', [$compra, $entrega]) }}"
+                                              onsubmit="return confirm('Remover esta entrega? O saldo da UTS será recalculado.');" style="margin:0;">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="mini mini--danger">Excluir</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">
+                                <td colspan="9" style="text-align:center; color:var(--muted); padding:24px;">
                                     Nenhuma entrega lançada — o café desta UTS ainda não entrou no armazém.
                                 </td>
                             </tr>
@@ -243,7 +252,7 @@
                                 <td class="num" style="font-family:var(--font-data); font-size:13px;">
                                     <strong>{{ $compra->valorEntregue() === null ? '—' : 'R$ ' . number_format($compra->valorEntregue(), 2, ',', '.') }}</strong>
                                 </td>
-                                <td colspan="3"></td>
+                                <td colspan="4"></td>
                             </tr>
                         </tfoot>
                     @endif
@@ -287,8 +296,13 @@
                                style="width:150px;" class="js-peso">
                         @error('peso_kg') <div class="field-error">{{ $message }}</div> @enderror
                     </div>
+                    <div class="field {{ $errors->has('nota_fiscal') ? 'has-error' : '' }}" style="margin-bottom:0;">
+                        <label for="nota_fiscal">Nota fiscal</label>
+                        <input type="text" id="nota_fiscal" name="nota_fiscal" value="{{ old('nota_fiscal') }}" placeholder="Nº da NF" style="width:150px;">
+                        @error('nota_fiscal') <div class="field-error">{{ $message }}</div> @enderror
+                    </div>
                     <div class="field" style="margin-bottom:0;">
-                        <label for="numero_lote">Nº do lote <span class="hint">(quando o armazém informar)</span></label>
+                        <label for="numero_lote">Nº do lote <span class="hint">(do Digisul, quando a entrada for lançada)</span></label>
                         <input type="text" id="numero_lote" name="numero_lote" value="{{ old('numero_lote') }}" placeholder="Ex.: L-2026-0451">
                     </div>
                     <button type="submit" class="btn btn-primary">Lançar entrega</button>

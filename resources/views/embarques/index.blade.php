@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Controle logístico')
-@section('subtitle', 'Agenda das estufagens e faturamento das vendas. Embarque faturado sai da posição na hora — não é preciso apagar nada.')
+@section('subtitle', 'Agenda das estufagens, faturamento e baixa de estoque. A venda sai da posição quando o embarque recebe a baixa — não é preciso apagar nada.')
 
 @section('crumb')
     <span>Exportação</span><span class="sep">/</span><b>Controle logístico</b>
@@ -65,13 +65,70 @@
     </div>
 
     <p style="margin:-10px 0 18px; font-size:12.5px; color:var(--muted);">
-        Soma os embarques ainda não faturados (no mês de faturamento de cada um) e o volume dos contratos
-        que ainda não virou embarque (no mês de embarque do contrato). Contrato cancelado não entra.
+        Soma os embarques ainda sem baixa de estoque (no mês de faturamento de cada um) e o volume dos contratos
+        que ainda não virou embarque (no mês de embarque do contrato). Faturado sem baixa continua contando:
+        o café ainda está no armazém. Contrato cancelado não entra.
     </p>
 
     @foreach ($posicao['avisos'] as $aviso)
         <div class="alert alert-error" style="margin-bottom:14px;">⚠ {{ $aviso }}</div>
     @endforeach
+
+    {{-- Fila de baixas: nota emitida, café ainda no estoque. Faturar e dar
+         baixa são coisas diferentes — é a baixa que tira a venda da posição. --}}
+    @if ($aguardandoBaixa->isNotEmpty())
+        <div class="card" style="margin-bottom:22px;">
+            <div class="card__header">
+                <h2>Faturados aguardando baixa de estoque
+                    <span style="font-weight:400; color:var(--muted); font-size:13px;">
+                        — {{ $aguardandoBaixa->count() === 1 ? '1 embarque' : $aguardandoBaixa->count() . ' embarques' }},
+                        {{ $n($aguardandoBaixa->sum('sacas')) }} sc ainda no estoque
+                    </span>
+                </h2>
+            </div>
+            <div class="card__body" style="padding:0;">
+                <div class="table-wrap" style="border:0; border-radius:0;">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th>Ref.</th>
+                                <th>Comprador</th>
+                                <th>Standard</th>
+                                <th>Faturado em</th>
+                                <th>Navio</th>
+                                <th class="num">Sacas</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($aguardandoBaixa as $e)
+                                <tr>
+                                    <td><a href="{{ route('contratos.show', $e->contrato) }}" style="white-space:nowrap;"><strong>{{ $e->referencia() }}</strong></a></td>
+                                    <td>{{ \Illuminate\Support\Str::limit($e->contrato->cliente_nome, 30) }}</td>
+                                    <td style="white-space:nowrap;">{{ $e->contrato->standardLabel() ?? '—' }}</td>
+                                    <td style="white-space:nowrap;">{{ $e->faturado_em?->format('d/m/Y') ?? '—' }}</td>
+                                    <td>{{ $e->navio ?? '—' }}</td>
+                                    <td class="num"><strong>{{ $n($e->sacas) }}</strong></td>
+                                    <td class="cell-action">
+                                        @if ($podeEditar)
+                                            <form method="POST" action="{{ route('embarques.baixar', $e) }}" style="margin:0;">
+                                                @csrf @method('PATCH')
+                                                <div style="display:flex; gap:6px; justify-content:flex-end; align-items:center;">
+                                                    <input type="date" name="baixado_em" value="{{ now()->toDateString() }}" max="{{ now()->toDateString() }}"
+                                                           aria-label="Data da baixa de {{ $e->referencia() }}" style="padding:5px 8px; font-size:13px; width:auto;">
+                                                    <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:13px; white-space:nowrap;">Dar baixa</button>
+                                                </div>
+                                            </form>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Venda sem logística nenhuma: aparece aqui para não ficar fora da agenda. --}}
     @if ($aProgramar->isNotEmpty())
@@ -123,6 +180,8 @@
             <label for="status">Etapa</label>
             <select id="status" name="status">
                 <option value="{{ \App\Http\Controllers\Contratos\EmbarqueController::ABERTOS }}" @selected($filtros['status'] === 'abertos')>Em aberto (a sair)</option>
+                <option value="aguardando_baixa" @selected($filtros['status'] === 'aguardando_baixa')>Faturados aguardando baixa</option>
+                <option value="baixados" @selected($filtros['status'] === 'baixados')>Baixados (saíram do estoque)</option>
                 <option value="todos" @selected($filtros['status'] === 'todos')>Todos, inclusive faturados</option>
                 @foreach (\App\Models\Embarque::statuses() as $cod => $rotulo)
                     <option value="{{ $cod }}" @selected($filtros['status'] === $cod)>{{ $rotulo }}</option>
@@ -182,7 +241,7 @@
                         <tbody>
                             @foreach ($doMes as $e)
                                 @php $dias = $e->diasAteEstufagem(); @endphp
-                                <tr @class(['linha-cancelada' => $e->encerrado()])>
+                                <tr @class(['linha-cancelada' => $e->baixado()])>
                                     <td>
                                         <a href="{{ route('contratos.show', $e->contrato) }}" style="white-space:nowrap;"><strong>{{ $e->referencia() }}</strong></a>
                                         @if ($e->contrato->buyer_ref)
@@ -201,7 +260,14 @@
                                             <span style="color:var(--muted);">—</span>
                                         @endif
                                     </td>
-                                    <td><span class="badge {{ $corStatus[$e->status] ?? 'badge--muted' }}" style="white-space:nowrap;">{{ $e->statusLabel() }}</span></td>
+                                    <td>
+                                        <span class="badge {{ $corStatus[$e->status] ?? 'badge--muted' }}" style="white-space:nowrap;">{{ $e->statusLabel() }}</span>
+                                        @if ($e->baixado())
+                                            <br><span style="color:var(--muted); font-size:11.5px; white-space:nowrap;">baixa {{ $e->baixado_em->format('d/m/Y') }}</span>
+                                        @elseif ($e->aguardandoBaixa())
+                                            <br><span class="badge badge--amber" style="white-space:nowrap;">sem baixa</span>
+                                        @endif
+                                    </td>
                                     <td style="white-space:nowrap;">
                                         @if ($e->data_estufagem)
                                             <strong>{{ $e->data_estufagem->format('d/m') }}</strong>
@@ -247,11 +313,18 @@
                                                 <a href="{{ route('embarques.edit', $e) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px; white-space:nowrap;">Editar</a>
                                                 @unless ($e->encerrado())
                                                     <form method="POST" action="{{ route('embarques.faturar', $e) }}" style="margin:0;"
-                                                          onsubmit="return confirm('Marcar {{ $e->referencia() }} como FATURADO hoje? As {{ $n($e->sacas) }} sacas saem da posição de vendas.');">
+                                                          onsubmit="return confirm('Marcar {{ $e->referencia() }} como FATURADO hoje? As {{ $n($e->sacas) }} sacas continuam na posição até a baixa do estoque.');">
                                                         @csrf @method('PATCH')
                                                         <button type="submit" class="btn btn-ghost" style="padding:6px 12px; font-size:13px; white-space:nowrap;">Faturar</button>
                                                     </form>
                                                 @endunless
+                                                @if ($e->aguardandoBaixa())
+                                                    <form method="POST" action="{{ route('embarques.baixar', $e) }}" style="margin:0;"
+                                                          onsubmit="return confirm('Dar baixa de {{ $e->referencia() }} com a data de hoje? As {{ $n($e->sacas) }} sacas saem do estoque e da posição de vendas.');">
+                                                        @csrf @method('PATCH')
+                                                        <button type="submit" class="btn btn-ghost" style="padding:6px 12px; font-size:13px; white-space:nowrap;">Dar baixa</button>
+                                                    </form>
+                                                @endif
                                             </div>
                                         @endif
                                     </td>

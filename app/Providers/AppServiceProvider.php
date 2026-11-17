@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\PainelInicial;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -26,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+
+        // Paginador próprio para toda lista com `->links()`. O padrão do
+        // Laravel é feito para Tailwind; sem aquele CSS as setas em SVG
+        // ocupavam a tela inteira assim que uma lista passava de uma página.
+        Paginator::defaultView('partials.paginacao');
 
         // Badges de pendência no menu lateral, em todas as telas autenticadas.
         View::composer('layouts.app', function ($view) {

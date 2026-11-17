@@ -116,6 +116,21 @@
                         </div>
                     </div>
 
+                    {{-- Rendimento previsto pela amostra: é o que transforma a
+                         bica em sacas de cada padrão na posição Long & Short. --}}
+                    <div style="display:flex; gap:12px; margin-bottom:14px;" id="blocoRendimento">
+                        <div class="field {{ $errors->has('pct_1718') ? 'has-error' : '' }}" style="flex:1; margin-bottom:0;">
+                            <label for="pct_1718">% de 17/18 <span class="hint">(amostra)</span></label>
+                            <input type="number" step="0.01" min="0" max="100" id="pct_1718" name="pct_1718" value="{{ $valor('pct_1718') }}" placeholder="Ex.: 20">
+                            @error('pct_1718') <div class="field-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="field {{ $errors->has('pct_cata') ? 'has-error' : '' }}" style="flex:1; margin-bottom:0;">
+                            <label for="pct_cata">% de cata <span class="hint">(o resto é 14/16)</span></label>
+                            <input type="number" step="0.01" min="0" max="100" id="pct_cata" name="pct_cata" value="{{ $valor('pct_cata') }}" placeholder="Ex.: 30">
+                            @error('pct_cata') <div class="field-error">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+
                     <div style="display:flex; gap:12px; margin-bottom:0;">
                         <div class="field {{ $errors->has('certificacao') ? 'has-error' : '' }}" style="flex:1; margin-bottom:0;">
                             <label for="certificacao">Certificação</label>
@@ -303,11 +318,16 @@
 
         // ---- Conilon não tem padrão/bebida ----
         var tipoEl = document.getElementById('tipo_entrada'),
-            qualidade = document.getElementById('blocoQualidade');
+            qualidade = document.getElementById('blocoQualidade'),
+            rendimento = document.getElementById('blocoRendimento');
 
         function sincronizarQualidade() {
             var conilon = tipoEl.value === 'CONILON';
             qualidade.style.display = conilon ? 'none' : 'flex';
+            rendimento.style.display = conilon ? 'none' : 'flex';
+            rendimento.querySelectorAll('input').forEach(function (el) {
+                el.disabled = conilon;
+            });
 
             // Escondido e desabilitado: sem isso o navegador ainda enviaria
             // o padrão de um arábica que virou conilon no meio do

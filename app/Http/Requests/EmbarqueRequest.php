@@ -37,6 +37,7 @@ class EmbarqueRequest extends FormRequest
             'booking' => ['nullable', 'string', 'max:120'],
             'pilha' => ['nullable', 'string', 'max:80'],
             'faturado_em' => ['nullable', 'date'],
+            'baixado_em' => ['nullable', 'date', 'before_or_equal:today'],
             'observacoes' => ['nullable', 'string', 'max:2000'],
             'ico' => ['nullable', 'string', 'max:40'],
             'fumigacao_empresa' => ['nullable', 'string', 'max:60'],
@@ -58,6 +59,7 @@ class EmbarqueRequest extends FormRequest
             'status.required' => 'Selecione a etapa do embarque.',
             'status.in' => 'Etapa de embarque inválida.',
             'armazem_id.exists' => 'O armazém selecionado não está mais cadastrado.',
+            'baixado_em.before_or_equal' => 'A data da baixa do estoque não pode ser no futuro.',
         ];
     }
 

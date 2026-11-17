@@ -19,7 +19,7 @@ class Entrega extends Model
     protected $table = 'entregas';
 
     protected $fillable = [
-        'compra_id', 'data_entrega', 'armazem_id', 'volume_sacas', 'peso_kg', 'numero_lote', 'created_by',
+        'compra_id', 'data_entrega', 'armazem_id', 'volume_sacas', 'peso_kg', 'numero_lote', 'nota_fiscal', 'created_by',
     ];
 
     protected function casts(): array
@@ -49,8 +49,10 @@ class Entrega extends Model
     }
 
     /**
-     * Sem o número do lote (dado pelo armazém), a entrega não pode ser
-     * considerada definitivamente em estoque.
+     * Sem o número do lote, a entrega não pode ser considerada
+     * definitivamente em estoque. O lote nasce quando a entrada é lançada
+     * no Digisul — a nota fiscal (`nota_fiscal`) chega antes e NÃO vale
+     * como lote: nota sem lote é entrada pendente no Digisul.
      */
     public function precisaDeNumeroLote(): bool
     {

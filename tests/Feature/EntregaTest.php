@@ -138,6 +138,34 @@ class EntregaTest extends TestCase
         $this->assertEqualsWithDelta(245.0, (float) $entrega->volume_sacas, 0.01);
     }
 
+    /**
+     * A nota chega antes da entrada no Digisul. Ter a NF NÃO põe a entrega
+     * no estoque definitivo: isso é do lote, que só existe depois da entrada.
+     */
+    public function test_nota_fiscal_e_lote_sao_campos_diferentes(): void
+    {
+        $this->lancar(['volume_sacas' => 250, 'nota_fiscal' => '19062', 'numero_lote' => ''])->assertSessionHasNoErrors();
+
+        $entrega = Entrega::first();
+        $this->assertSame('19062', $entrega->nota_fiscal);
+        $this->assertTrue($entrega->precisaDeNumeroLote());
+        $this->assertSame(1, Entrega::semNumeroLote()->count());
+
+        // A entrada foi lançada: informa-se o lote e a NF continua lá.
+        $this->actingAs($this->admin)->put(route('compras.entregas.update', [$this->compra, $entrega]), [
+            'data_entrega' => '2026-08-14', 'armazem_id' => $this->armazem('QUALITE'), 'volume_sacas' => 250,
+            'nota_fiscal' => '19062', 'numero_lote' => '263264',
+        ])->assertRedirect(route('compras.show', $this->compra));
+
+        $entrega->refresh();
+        $this->assertSame('19062', $entrega->nota_fiscal);
+        $this->assertSame('263264', $entrega->numero_lote);
+        $this->assertSame(1, Entrega::comNumeroLote()->count());
+
+        $this->actingAs($this->admin)->get(route('compras.show', $this->compra))
+            ->assertOk()->assertSee('Nota fiscal')->assertSee('19062');
+    }
+
     public function test_excluir_entrega_recalcula_o_saldo(): void
     {
         $this->lancar(['volume_sacas' => 500]);

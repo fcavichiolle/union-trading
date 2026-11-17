@@ -13,19 +13,34 @@ use App\Models\Qualidade;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class ContratoController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $busca = trim((string) $request->query('busca', ''));
+
         $contratos = Contrato::with('cliente')
             ->withSum('fixacoes as lotes_fixados', 'lotes') // p/ badge PARCIAL sem N+1
-            ->orderByDesc('data_contrato')->orderByDesc('id')->paginate(20);
+            // UT, comprador ou ref. do comprador. Busca pelo snapshot do
+            // contrato (cliente_nome), que é o que a lista mostra.
+            ->when($busca !== '', function ($q) use ($busca) {
+                $termo = '%' . $busca . '%';
+                $q->where(fn ($w) => $w
+                    ->where('numero_ut', 'like', $termo)
+                    ->orWhere('cliente_nome', 'like', $termo)
+                    ->orWhere('buyer_ref', 'like', $termo));
+            })
+            ->orderByDesc('data_contrato')->orderByDesc('id')
+            ->paginate(20)
+            // Sem isso, ir para a página 2 perderia a busca.
+            ->withQueryString();
 
-        return view('contratos.index', compact('contratos'));
+        return view('contratos.index', compact('contratos', 'busca'));
     }
 
     public function create(): View

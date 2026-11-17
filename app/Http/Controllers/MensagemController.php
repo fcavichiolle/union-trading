@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 /**
  * Canal geral de mensagens da equipe (mural interno).
@@ -28,12 +29,15 @@ use Illuminate\Support\Facades\Auth;
  */
 class MensagemController extends Controller
 {
+    /** O que a tela precisa de cada mensagem — carregado junto, sem N+1. */
+    private const RELACOES = ['autor', 'reacoes.usuario'];
+
     public function index(): View
     {
         $usuario = Auth::user();
         $usuarios = $this->usuariosDoCanal();
 
-        $mensagens = Mensagem::with('autor')
+        $mensagens = Mensagem::with(self::RELACOES)
             ->latest('id')
             ->limit(Mensagem::POR_PAGINA)
             ->get()
@@ -86,7 +90,7 @@ class MensagemController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'mensagem' => $mensagem->load('autor')->paraTela(Auth::user(), $usuarios),
+                'mensagem' => $mensagem->load(self::RELACOES)->paraTela(Auth::user(), $usuarios),
             ]);
         }
 
@@ -103,8 +107,32 @@ class MensagemController extends Controller
         $usuario = Auth::user();
         $usuarios = $this->usuariosDoCanal();
 
+        // Abertura do chat flutuante: a página mais recente, mais o que a
+        // tela cheia recebe pronta do servidor (a lista para o "@").
+        if ($request->boolean('recentes')) {
+            $mensagens = Mensagem::with(self::RELACOES)
+                ->latest('id')
+                ->limit(Mensagem::POR_PAGINA)
+                ->get()
+                ->sortBy('id')
+                ->values();
+
+            $naoLidas = Mensagem::naoLidasPor($usuario)->count();
+            $this->marcarComoLido();
+
+            return response()->json([
+                'mensagens' => $mensagens->map(fn (Mensagem $m) => $m->paraTela($usuario, $usuarios))->all(),
+                'tem_anteriores' => $mensagens->isNotEmpty()
+                    && Mensagem::where('id', '<', $mensagens->first()->id)->exists(),
+                'nao_lidas' => $naoLidas,
+                'usuarios' => $usuarios->map(fn (User $u) => [
+                    'id' => $u->id, 'nome' => $u->name, 'perfil' => $u->role?->nome,
+                ])->values()->all(),
+            ]);
+        }
+
         if ($request->filled('antes')) {
-            $mensagens = Mensagem::with('autor')
+            $mensagens = Mensagem::with(self::RELACOES)
                 ->where('id', '<', $request->integer('antes'))
                 ->latest('id')
                 ->limit(Mensagem::POR_PAGINA)
@@ -119,7 +147,7 @@ class MensagemController extends Controller
             ]);
         }
 
-        $mensagens = Mensagem::with('autor')
+        $mensagens = Mensagem::with(self::RELACOES)
             ->depoisDe($request->integer('depois'))
             ->orderBy('id')
             ->limit(200)
@@ -130,10 +158,65 @@ class MensagemController extends Controller
 
         return response()->json([
             'mensagens' => $mensagens->map(fn (Mensagem $m) => $m->paraTela($usuario, $usuarios))->all(),
+            // Reação em mensagem antiga não é "mensagem nova": a tela manda
+            // de onde começa o que está aberto (`visiveis_de`) e recebe as
+            // reações desse trecho — quem não vier na lista ficou sem reação.
+            'reacoes' => $request->filled('visiveis_de')
+                ? $this->reacoesDesde($request->integer('visiveis_de'), $usuario)
+                : null,
         ]);
     }
 
-    public function destroy(Mensagem $mensagem): RedirectResponse
+    /**
+     * Reagir a uma mensagem (ou tirar a reação, clicando de novo). Qualquer
+     * pessoa do canal reage a qualquer mensagem.
+     */
+    public function reagir(Request $request, Mensagem $mensagem): JsonResponse
+    {
+        $dados = $request->validate(
+            ['emoji' => ['required', 'string', Rule::in(Mensagem::REACOES)]],
+            ['emoji.in' => 'Reação inválida.', 'emoji.required' => 'Escolha uma reação.']
+        );
+
+        $mensagem->alternarReacao(Auth::user(), $dados['emoji']);
+
+        return response()->json([
+            'id' => $mensagem->id,
+            'reacoes' => $mensagem->load('reacoes.usuario')->reacoesParaTela(Auth::user()),
+        ]);
+    }
+
+    /**
+     * Quantas mensagens o usuário ainda não leu — para o ícone flutuante
+     * das outras telas. Não marca nada como lido: só olhar o contador não
+     * é abrir o canal.
+     */
+    public function resumo(): JsonResponse
+    {
+        $usuario = Auth::user();
+
+        return response()->json([
+            'nao_lidas' => Mensagem::naoLidasPor($usuario)->count(),
+            'citado' => Mensagem::mencionandoNaoLidas($usuario)->exists(),
+        ]);
+    }
+
+    /** @return array<int, array<int, array<string, mixed>>> id da mensagem => reações */
+    private function reacoesDesde(int $id, User $usuario): array
+    {
+        return Mensagem::with('reacoes.usuario')
+            ->where('id', '>=', $id)
+            ->whereHas('reacoes')
+            // Teto: `visiveis_de` vem do navegador. Sem limite, um pedido
+            // com 0 varreria o histórico inteiro a cada 10 segundos.
+            ->latest('id')
+            ->limit(300)
+            ->get()
+            ->mapWithKeys(fn (Mensagem $m) => [$m->id => $m->reacoesParaTela($usuario)])
+            ->all();
+    }
+
+    public function destroy(Request $request, Mensagem $mensagem): RedirectResponse|JsonResponse
     {
         $usuario = Auth::user();
 
@@ -157,6 +240,12 @@ class MensagemController extends Controller
         }
 
         $mensagem->delete();
+
+        // Pelo chat (fetch) a mensagem some no lugar, sem recarregar — no
+        // ícone flutuante, redirecionar tiraria a pessoa da tela em que está.
+        if ($request->expectsJson()) {
+            return response()->json(['removida' => $mensagem->id]);
+        }
 
         return redirect()->route('mensagens.index')->with('status', 'Mensagem removida.');
     }

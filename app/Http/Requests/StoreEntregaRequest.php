@@ -40,6 +40,7 @@ class StoreEntregaRequest extends FormRequest
             'volume_sacas' => ['required', 'numeric', 'min:0.01', 'max:999999'],
             'peso_kg' => ['nullable', 'numeric', 'min:0.01', 'max:99999999'],
             'numero_lote' => ['nullable', 'string', 'max:60'],
+            'nota_fiscal' => ['nullable', 'string', 'max:40'],
         ];
     }
 
@@ -55,6 +56,7 @@ class StoreEntregaRequest extends FormRequest
             'volume_sacas.min' => 'O volume entregue deve ser maior que zero.',
             'peso_kg.numeric' => 'O peso deve ser um número, em quilos (ex.: 28800 ou 28800,50).',
             'numero_lote.max' => 'O número do lote é muito longo (máximo de 60 caracteres).',
+            'nota_fiscal.max' => 'O número da nota fiscal é muito longo (máximo de 40 caracteres).',
         ];
     }
 }

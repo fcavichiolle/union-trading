@@ -157,6 +157,8 @@ class CompraController extends Controller
             'tipo_entrada' => $dados['tipo_entrada'] ?? 'ARABICA',
             'padrao_final' => $conilon ? null : ($dados['padrao_final'] ?? null),
             'tipo_bebida' => $conilon ? null : ($dados['tipo_bebida'] ?? null),
+            'pct_1718' => $conilon ? null : ($dados['pct_1718'] ?? null),
+            'pct_cata' => $conilon ? null : ($dados['pct_cata'] ?? null),
             'volume_contratado' => $dados['volume_contratado'],
             'peso_kg' => $dados['peso_kg'] ?? null,
             'valor_saca' => $dados['valor_saca'] ?? null,

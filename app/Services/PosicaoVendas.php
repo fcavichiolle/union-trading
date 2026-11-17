@@ -8,13 +8,16 @@ use Illuminate\Support\Carbon;
 /**
  * Vendas em aberto por mês × standard — o lado "vendido" do Long & Short.
  *
- * Na planilha isso era o bloco de SUMIFS no fim da aba VENDAS-FOB, e tinha
- * um defeito de origem: a soma não olhava o STATUS, então a venda já
- * faturada continuava pesando na posição até alguém apagar a linha à mão.
- * Aqui a regra é uma só: embarque FATURADO saiu da posição, no ato.
+ * Na planilha isso era o bloco de SUMIFS no fim da aba VENDAS-FOB, e a
+ * venda só saía da conta quando alguém apagava a linha à mão.
+ *
+ * A regra aqui: a venda sai da posição na BAIXA do estoque, não na nota.
+ * Faturar e dar baixa são coisas diferentes — o café faturado e ainda não
+ * baixado está no armazém e conta no estoque físico (Digisul); se a venda
+ * dele sumisse na nota, a posição ficaria mais comprada do que é.
  *
  * O que entra:
- *  - cada embarque ainda não faturado, no mês de faturamento DELE;
+ *  - cada embarque ainda sem baixa, no mês de faturamento DELE;
  *  - o saldo do contrato que ainda não virou embarque, no mês de embarque
  *    do contrato — senão a venda recém-lançada, sem logística nenhuma,
  *    ficaria fora da posição justamente quando mais importa.
@@ -62,7 +65,7 @@ final class PosicaoVendas
 
             $itens = [];
             foreach ($contrato->embarques as $embarque) {
-                if (! $embarque->encerrado()) {
+                if (! $embarque->baixado()) {
                     $itens[] = [$embarque->mes_faturamento, (float) $embarque->sacas];
                 }
             }

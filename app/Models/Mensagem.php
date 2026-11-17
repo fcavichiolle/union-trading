@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Uma mensagem no canal geral da equipe (mural interno).
@@ -32,6 +33,14 @@ class Mensagem extends Model
     /** Quantas mensagens a tela carrega de uma vez. */
     public const POR_PAGINA = 50;
 
+    /**
+     * Emojis aceitos como REAÇÃO. Lista fechada de propósito: a reação é um
+     * sinal rápido ("vi", "ok", "obrigado"), não conteúdo livre — e lista
+     * fechada é o que permite validar no servidor sem aceitar qualquer
+     * sequência de caracteres. No texto da mensagem o emoji é livre.
+     */
+    public const REACOES = ['👍', '❤️', '😂', '😮', '😢', '🙏', '✅', '👀'];
+
     protected function casts(): array
     {
         return [
@@ -56,6 +65,56 @@ class Mensagem extends Model
     public function autor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function reacoes(): HasMany
+    {
+        return $this->hasMany(MensagemReacao::class);
+    }
+
+    /**
+     * Liga/desliga a reação de uma pessoa: clicar de novo no mesmo emoji
+     * tira. Devolve true quando a reação ficou ligada.
+     */
+    public function alternarReacao(User $user, string $emoji): bool
+    {
+        $existente = $this->reacoes()->where('user_id', $user->id)->where('emoji', $emoji)->first();
+
+        if ($existente) {
+            $existente->delete();
+
+            return false;
+        }
+
+        // firstOrCreate: dois cliques simultâneos não viram erro de índice único.
+        $this->reacoes()->firstOrCreate(['user_id' => $user->id, 'emoji' => $emoji]);
+
+        return true;
+    }
+
+    /**
+     * Reações agrupadas por emoji, na ordem de `REACOES`, prontas para a
+     * tela: quantas, se uma delas é minha e quem reagiu (para o tooltip).
+     *
+     * @return array<int, array{emoji: string, total: int, minha: bool, quem: string}>
+     */
+    public function reacoesParaTela(User $usuarioAtual): array
+    {
+        $reacoes = $this->relationLoaded('reacoes') ? $this->reacoes : $this->reacoes()->with('usuario')->get();
+
+        return $reacoes
+            ->groupBy('emoji')
+            ->sortBy(fn ($grupo, $emoji) => array_search($emoji, self::REACOES, true))
+            ->map(fn ($grupo, $emoji) => [
+                'emoji' => (string) $emoji,
+                'total' => $grupo->count(),
+                'minha' => $grupo->contains('user_id', $usuarioAtual->id),
+                'quem' => $grupo->map(fn (MensagemReacao $r) => $r->user_id === $usuarioAtual->id
+                    ? 'Você'
+                    : ($r->usuario?->name ?? 'Usuário removido'))->implode(', '),
+            ])
+            ->values()
+            ->all();
     }
 
     /**
@@ -274,6 +333,7 @@ class Mensagem extends Model
             'pode_apagar' => $this->podeSerApagadaPor($usuarioAtual),
             // Citou a mim: a tela marca a mensagem inteira.
             'me_citou' => collect($segmentos)->contains(fn (array $s) => $s['para_mim']),
+            'reacoes' => $this->reacoesParaTela($usuarioAtual),
         ];
     }
 }

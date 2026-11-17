@@ -34,6 +34,7 @@
                                 <th class="num">A fixar (lotes)</th>
                                 <th class="num">A fixar (sacas)</th>
                                 <th class="num">Fixado (lotes)</th>
+                                <th class="num">Fixado (sacas)</th>
                                 <th class="num">Level médio</th>
                             </tr>
                         </thead>
@@ -51,6 +52,7 @@
                                     </td>
                                     <td class="num">{{ number_format($p['a_fixar_sacas'], 0, ',', '.') }}</td>
                                     <td class="num">{{ $p['fixado_lotes'] ?: '—' }}</td>
+                                    <td class="num">{{ $p['fixado_sacas'] > 0 ? number_format($p['fixado_sacas'], 0, ',', '.') : '—' }}</td>
                                     <td class="num">{{ $p['level_medio'] !== null ? number_format($p['level_medio'], 2, ',', '.') . ' ' . $p['unidade'] : '—' }}</td>
                                 </tr>
                             @endforeach
@@ -61,6 +63,7 @@
                                 <td class="num"><strong>{{ array_sum(array_column($posicao, 'a_fixar_lotes')) }}</strong></td>
                                 <td class="num"><strong>{{ number_format(array_sum(array_column($posicao, 'a_fixar_sacas')), 0, ',', '.') }}</strong></td>
                                 <td class="num"><strong>{{ array_sum(array_column($posicao, 'fixado_lotes')) }}</strong></td>
+                                <td class="num"><strong>{{ number_format(array_sum(array_column($posicao, 'fixado_sacas')), 0, ',', '.') }}</strong></td>
                                 <td></td>
                             </tr>
                         </tfoot>
