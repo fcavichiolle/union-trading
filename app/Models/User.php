@@ -19,6 +19,11 @@ class User extends Authenticatable
         'password',
         'force_password_change',
         'active',
+        // Bloco de assinatura usado no e-mail de instrução de AA.
+        'cargo',
+        'cargo_en',
+        'telefone',
+        'celular',
     ];
 
     // NUNCA remover 'password'/'remember_token' daqui: impede que apareçam
@@ -61,5 +66,39 @@ class User extends Authenticatable
     public function canAuthenticate(): bool
     {
         return $this->active === true;
+    }
+
+    /**
+     * Bloco de assinatura do e-mail de instrução de AA, em texto puro.
+     *
+     * Na planilha essa assinatura estava escrita DENTRO da macro, então
+     * qualquer pessoa que apertasse o botão mandava o e-mail assinado com o
+     * nome de quem montou a planilha. Aqui ela é do usuário logado, e cada
+     * linha só aparece se estiver preenchida — usuário sem cargo/telefone
+     * cadastrado assina só com nome, e-mail e site.
+     */
+    public function assinaturaEmail(): string
+    {
+        $linhas = ['Atenciosamente,', '', $this->name];
+
+        foreach ([$this->cargo, $this->cargo_en] as $cargo) {
+            if (filled($cargo)) {
+                $linhas[] = $cargo;
+            }
+        }
+
+        $linhas[] = '';
+
+        foreach ([$this->telefone, $this->celular] as $fone) {
+            if (filled($fone)) {
+                $linhas[] = $fone;
+            }
+        }
+
+        $linhas[] = $this->email;
+        $linhas[] = 'www.utrading.com.br';
+
+        return implode("
+", $linhas);
     }
 }

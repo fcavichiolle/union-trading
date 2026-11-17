@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Corretoras & Brokers')
-@section('subtitle', 'Corretoras da Union e brokers usados pelos clientes — alimentam os dropdowns da Tela NY. Fixações já registradas guardam o nome da época e não mudam.')
+@section('subtitle', 'Corretoras da Union e brokers usados pelos clientes — alimentam os dropdowns da Tela NY. Os e-mails da NOSSA corretora são os destinatários da instrução de AA. Fixações já registradas guardam o nome da época e não mudam.')
 
 @section('crumb')
     <span>Administração</span><span class="sep">/</span><b>Corretoras</b>
@@ -11,22 +11,42 @@
     <div class="admin-grid">
         <div>
             <div class="usercard" style="margin-bottom:22px;">
-                <div class="utable__head" style="grid-template-columns: 1fr 160px;">
-                    <span>Nossas corretoras</span><span class="r">Ações</span>
+                <div class="utable__head" style="grid-template-columns: 1fr;">
+                    <span>Nossas corretoras</span>
                 </div>
 
                 @forelse ($nossas as $c)
-                    <div class="utable__row" style="grid-template-columns: 1fr 160px; position:static; align-items:center; gap:12px;">
-                        <form method="POST" action="{{ route('admin.corretoras.update', $c) }}" id="c-{{ $c->id }}" style="margin:0;">
+                    {{-- Linha empilhada (não em colunas): além do nome, a nossa
+                         corretora guarda as listas de destinatários da instrução
+                         de AA, que são longas demais para caber numa célula. --}}
+                    <div class="utable__row" style="display:block; position:static; padding:16px 22px;">
+                        <form method="POST" action="{{ route('admin.corretoras.update', $c) }}" id="c-{{ $c->id }}" style="margin:0; display:grid; gap:10px;">
                             @csrf @method('PUT')
-                            <input type="text" name="nome" value="{{ $c->nome }}" required style="height:38px; font-size:13.5px; width:100%;">
+
+                            <input type="text" name="nome" value="{{ $c->nome }}" required
+                                   style="height:38px; font-size:13.5px; width:100%; font-weight:600;">
+
+                            <label style="display:block;">
+                                <span class="lbl">E-mails (Para)</span>
+                                <textarea name="emails_para" rows="2" placeholder="nome@corretora.com; outro@corretora.com"
+                                          style="width:100%; resize:vertical; font-size:12.5px;">{{ $c->emails_para }}</textarea>
+                            </label>
+
+                            <label style="display:block;">
+                                <span class="lbl">E-mails (Cópia)</span>
+                                <textarea name="emails_copia" rows="2" placeholder="copia@utrading.com.br"
+                                          style="width:100%; resize:vertical; font-size:12.5px;">{{ $c->emails_copia }}</textarea>
+                            </label>
                         </form>
-                        <div style="display:flex; gap:8px; justify-content:flex-end;">
+
+                        <form method="POST" action="{{ route('admin.corretoras.destroy', $c) }}" id="del-{{ $c->id }}"
+                              onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
+                            @csrf @method('DELETE')
+                        </form>
+
+                        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
                             <button type="submit" form="c-{{ $c->id }}" class="mini" title="Salvar alteração">Salvar</button>
-                            <form method="POST" action="{{ route('admin.corretoras.destroy', $c) }}" onsubmit="return confirm('Remover esta corretora do cadastro? Fixações já registradas não são alteradas.');" style="margin:0;">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="mini mini--danger">Excluir</button>
-                            </form>
+                            <button type="submit" form="del-{{ $c->id }}" class="mini mini--danger">Excluir</button>
                         </div>
                     </div>
                 @empty

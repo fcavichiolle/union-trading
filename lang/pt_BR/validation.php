@@ -266,12 +266,18 @@ return [
         'endereco' => 'endereço',
         'ref_padrao' => 'ref. padrão do comprador',
         'descricao' => 'descrição',
+        'emails_para' => 'e-mails (para)',
+        'emails_copia' => 'e-mails em cópia',
 
         // Usuários e senhas
         'name' => 'nome',
         'email' => 'e-mail',
         'role_id' => 'perfil',
         'active' => 'status da conta',
+        'cargo' => 'cargo',
+        'cargo_en' => 'cargo em inglês',
+        'telefone' => 'telefone',
+        'celular' => 'celular',
         'password' => 'senha',
         'password_confirmation' => 'confirmação da senha',
         'current_password' => 'senha atual',

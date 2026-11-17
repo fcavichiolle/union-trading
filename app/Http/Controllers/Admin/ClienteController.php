@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
+use App\Rules\ListaDeEmails;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,6 +54,8 @@ class ClienteController extends Controller
             'nome' => ['required', 'string', 'max:150'],
             'endereco' => ['required', 'string', 'max:500'],
             'ref_padrao' => ['nullable', 'string', 'max:120'],
+            // Entram em CÓPIA na instrução de AA, junto com os da corretora.
+            'emails_copia' => ['nullable', 'string', 'max:2000', new ListaDeEmails],
         ], [
             'nome.required' => 'Informe o nome do cliente (como sai no BUYER do contrato).',
             'endereco.required' => 'Informe o endereço do cliente.',

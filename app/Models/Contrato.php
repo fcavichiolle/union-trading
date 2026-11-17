@@ -173,6 +173,96 @@ class Contrato extends Model
         return $this->embalagem === 'Jute Bags 59kg' ? 59 : self::KG_POR_SACA;
     }
 
+    /**
+     * Resumo para a carta de fixação (PRICE FIXING CONFIRMATION).
+     *
+     * A carta traz DOIS números que não se confundem: a **média** é dos
+     * LEVELS (o preço da bolsa) e o **preço final** é média dos preços das
+     * tranches (level + diferencial). Na carta do cliente: média 289,50 e
+     * final 279,50, com diferencial -10. Ambas ponderadas pelos lotes — a
+     * média simples trataria uma tranche de 1 lote igual a uma de 12.
+     *
+     * @return array<string, mixed>
+     */
+    public function resumoDeFixacao(): array
+    {
+        $tranches = $this->fixacoes;
+        $lotes = (int) $tranches->sum('lotes');
+
+        $ponderada = fn (string $campo) => $lotes > 0
+            ? round($tranches->sum(fn (Fixacao $f) => $f->lotes * (float) $f->{$campo}) / $lotes, 2)
+            : null;
+
+        return [
+            'lotes_fixados' => $lotes,
+            'saldo' => max(0, (int) $this->lotes - $lotes),
+            'media_level' => $ponderada('level'),
+            'media_diferencial' => $ponderada('diferencial'),
+            'preco_final' => $ponderada('preco'),
+            'completo' => $lotes >= (int) $this->lotes && $lotes > 0,
+        ];
+    }
+
+    /** Meses por extenso em inglês — a carta de fixação é em inglês. */
+    private const MESES_EN = [
+        1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April', 5 => 'May', 6 => 'June',
+        7 => 'July', 8 => 'August', 9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+    ];
+
+    /**
+     * Posição escrita como na carta de fixação: `Z6` => "ICE NEW YORK /
+     * December,2026"; `Sep_2026` => "ICE LONDON / September,2026". Devolve o
+     * próprio código quando não reconhece — melhor o código cru do que uma
+     * posição inventada num documento que vai para o cliente.
+     */
+    public static function bolsaEMesPorExtenso(?string $tela): ?string
+    {
+        if ($tela === null || $tela === '') {
+            return null;
+        }
+
+        if (self::telaEhDeLondres($tela)) {
+            [$sigla, $ano] = array_pad(explode('_', $tela, 2), 2, '');
+            $mes = self::MESES_LONDRES[$sigla] ?? null;
+
+            return $mes && $ano !== '' ? 'ICE LONDON / ' . self::MESES_EN[$mes] . ',' . $ano : $tela;
+        }
+
+        $mes = self::MESES_NY[substr($tela, 0, 1)] ?? null;
+        $ano = self::anoDoDigito(substr($tela, 1));
+
+        return $mes && $ano ? 'ICE NEW YORK / ' . self::MESES_EN[$mes] . ',' . $ano : $tela;
+    }
+
+    /**
+     * Ano cheio a partir do último dígito do código de Santos (H7 => 2027).
+     * Só é possível porque a janela conhecida tem menos de 10 anos: dentro
+     * dela cada dígito aparece uma vez só.
+     */
+    private static function anoDoDigito(string $digito): ?int
+    {
+        if (! preg_match('/^\d$/', $digito)) {
+            return null;
+        }
+
+        foreach (self::anos(now()->year - self::ANOS_ATRAS, self::ANOS_ATRAS + self::ANOS_A_FRENTE) as $ano) {
+            if (substr((string) $ano, -1) === $digito) {
+                return $ano;
+            }
+        }
+
+        return null;
+    }
+
+    /** Nome do arquivo da carta de fixação, ex.: Price_fixing_UT_5970_ALFA_23-09-2026.pdf */
+    public function nomeArquivoCartaFixacao(): string
+    {
+        $slug = Str::of($this->cliente_nome)->upper()->replaceMatches('/[^A-Z0-9]+/', '')->limit(20, '');
+        $num = preg_replace('/\D+/', '', $this->numero_ut) ?: $this->numero_ut;
+
+        return "Price_fixing_UT_{$num}_{$slug}_" . now()->format('d-m-Y') . '.pdf';
+    }
+
     /** Nome sugerido do arquivo PDF, ex.: UT_5940_ALFA_05-08-2026.pdf */
     public function nomeArquivoPdf(): string
     {
@@ -299,6 +389,37 @@ class Contrato extends Model
     public static function telaEhDeLondres(string $codigo): bool
     {
         return array_key_exists($codigo, self::mesesFixacaoVitoriaTodas());
+    }
+
+    /** Letra de vencimento de cada mês do robusta (Londres). */
+    private const LETRAS_LONDRES = ['Jan' => 'F', 'Mar' => 'H', 'May' => 'K', 'Jul' => 'N', 'Sep' => 'U', 'Nov' => 'X'];
+
+    /**
+     * Código de bolsa da tela para o campo "Commodity/Month" da instrução de
+     * AA: arábica na NY vira `KC` + tela (`Z6` => `KCZ6`) e robusta em
+     * Londres vira `RC` + letra do mês + último dígito do ano
+     * (`Sep_2026` => `RCU6`).
+     *
+     * A tela de Santos já é "letra + dígito", então basta o prefixo; a de
+     * Londres é `Mmm_AAAA` por dentro (para ficar legível no formulário) e
+     * precisa ser traduzida para a forma da bolsa.
+     */
+    public static function commodityDaTela(?string $tela): ?string
+    {
+        if ($tela === null || $tela === '') {
+            return null;
+        }
+
+        if (! self::telaEhDeLondres($tela)) {
+            return 'KC' . $tela;
+        }
+
+        [$mes, $ano] = array_pad(explode('_', $tela, 2), 2, '');
+        $letra = self::LETRAS_LONDRES[$mes] ?? null;
+
+        // Tela de Londres fora do formato esperado: devolve o código cru em
+        // vez de inventar um símbolo errado na instrução para o broker.
+        return $letra === null || $ano === '' ? $tela : 'RC' . $letra . substr($ano, -1);
     }
 
     /**

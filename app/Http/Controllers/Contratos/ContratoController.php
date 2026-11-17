@@ -179,6 +179,48 @@ class ContratoController extends Controller
     }
 
     /**
+     * Carta de fixação (PRICE FIXING CONFIRMATION) — a nossa versão do
+     * documento que o cliente manda depois de cada fixação. Traz as tranches
+     * com o saldo correndo e, no pé, a média dos levels e o preço final.
+     *
+     * Sai a partir da PRIMEIRA tranche, não só com o contrato fechado: a
+     * carta é a confirmação de cada fixação, e a do cliente também chega
+     * com saldo em aberto.
+     */
+    public function cartaFixacao(Contrato $contrato): Response|RedirectResponse
+    {
+        $contrato->load(['fixacoes' => fn ($q) => $q->orderBy('id')]);
+
+        if ($contrato->fixacoes->isEmpty()) {
+            return redirect()->route('contratos.show', $contrato)
+                ->with('status', 'Este contrato ainda não tem nenhuma fixação — não há o que confirmar.');
+        }
+
+        // Saldo correndo: quantos lotes sobram DEPOIS de cada tranche, como
+        // na coluna "Balance" da carta do cliente.
+        $saldo = (int) $contrato->lotes;
+        $linhas = $contrato->fixacoes->map(function ($f) use (&$saldo) {
+            $saldo = max(0, $saldo - (int) $f->lotes);
+
+            return ['fixacao' => $f, 'saldo' => $saldo];
+        });
+
+        $pdf = Pdf::loadView('contratos.carta-fixacao', [
+            'contrato' => $contrato,
+            'linhas' => $linhas,
+            'resumo' => $contrato->resumoDeFixacao(),
+        ])->setPaper('a4');
+
+        AuditLog::registrar(
+            'carta_fixacao_gerada',
+            "Carta de fixação gerada para o contrato UT {$contrato->numero_ut}.",
+            Auth::id()
+        );
+
+        return $pdf->download($contrato->nomeArquivoCartaFixacao());
+    }
+
+    /**
      * Snapshot do cliente/qualidade e limpeza dos campos do modo de preço
      * não usado — as duas regras valem igual na criação e na edição.
      */

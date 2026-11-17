@@ -417,6 +417,20 @@
   .link-share__url { flex: 1; min-width: 240px; word-break: break-all; font-family: var(--font-data); font-size: 12px; }
   .link-share .btn { flex: none; padding: 6px 14px; font-size: 13px; }
 
+  /* instruções de AA prontas para enviar (depois de registrar a fixação) */
+  .aa-flash__lbl { display: block; font-weight: 600; margin-bottom: 10px; }
+  .aa-flash__item + .aa-flash__item { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,.08); }
+  .aa-flash__acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .aa-flash__acoes .btn { padding: 6px 14px; font-size: 13px; }
+  .aa-flash__btn--off { padding: 6px 14px; font-size: 13px; color: var(--muted); border: 1px dashed var(--border); border-radius: 8px; }
+  .aa-flash__aviso { margin-top: 8px; font-size: 12.5px; color: #8A6116; }
+  .aa-flash__dica { margin: 12px 0 0; font-size: 12.5px; color: var(--muted); }
+  .aa-flash__dica kbd { font-family: var(--font-data); font-size: 11.5px; padding: 1px 5px;
+    border: 1px solid var(--border); border-radius: 4px; background: rgba(0,0,0,.05); }
+  :root[data-theme="dark"] .aa-flash__dica kbd { background: rgba(255,255,255,.08); }
+  :root[data-theme="dark"] .aa-flash__aviso { color: #F0D9A8; }
+  :root[data-theme="dark"] .aa-flash__item + .aa-flash__item { border-top-color: rgba(255,255,255,.12); }
+
   /* subtotal por armazém na tabela de estoque */
   tr.linha-subtotal td { background: var(--primary-soft); font-weight: 600; }
   :root[data-theme="dark"] tr.linha-subtotal td { background: rgba(122,214,163,.10); }

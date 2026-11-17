@@ -133,6 +133,8 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::patch('/{contrato}/reativar', [ContratoController::class, 'reativar'])->name('reativar');
             Route::delete('/{contrato}', [ContratoController::class, 'destroy'])->name('destroy');
             Route::get('/{contrato}/pdf', [ContratoController::class, 'pdf'])->name('pdf');
+            // Nossa versão da "price fixing confirmation" que o cliente manda.
+            Route::get('/{contrato}/carta-fixacao', [ContratoController::class, 'cartaFixacao'])->name('carta-fixacao');
         });
 
         /*
@@ -144,6 +146,10 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
         */
         Route::middleware('role:admin,compras')->group(function () {
             Route::get('/tela-ny', [FixacaoController::class, 'index'])->name('ny.index');
+            // Histórico de fixações: página própria, item do menu lateral.
+            Route::get('/tela-ny/fixacoes', [FixacaoController::class, 'fixacoes'])->name('ny.fixacoes.index');
+            // Antes da rota de {fixacao} para "pdf" não ser lido como id.
+            Route::get('/tela-ny/fixacoes/pdf', [FixacaoController::class, 'pdf'])->name('ny.fixacoes.pdf');
             Route::post('/tela-ny/fixacoes', [FixacaoController::class, 'store'])->name('ny.fixacoes.store');
             Route::delete('/tela-ny/fixacoes/{fixacao}', [FixacaoController::class, 'destroy'])->name('ny.fixacoes.destroy');
         });

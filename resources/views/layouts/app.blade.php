@@ -97,6 +97,12 @@
                             <span class="sb-badge" title="Lotes a fixar">{{ $badgesMenu['ny.index'] }}</span>
                         @endisset
                     </a>
+                    {{-- Histórico: separado da Tela NY porque lá é onde se FAZ a
+                         fixação, e aqui é consulta do que já foi feito. --}}
+                    <a href="{{ route('ny.fixacoes.index') }}" class="sb-link {{ request()->routeIs('ny.fixacoes.index') ? 'is-active' : '' }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"></path><circle cx="18" cy="18" r="3"></circle></svg>
+                        <span>Fixações registradas</span>
+                    </a>
                 @endif
                 <a href="{{ route('mercado.index') }}" class="sb-link {{ request()->routeIs('mercado.index') ? 'is-active' : '' }}">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"></path><path d="m5 14 4-4 3.5 3L18 7"></path><path d="M14.5 7H18v3.5"></path></svg>

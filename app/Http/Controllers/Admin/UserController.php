@@ -98,6 +98,10 @@ class UserController extends Controller
             'email' => $dados['email'],
             'role_id' => $dados['role_id'],
             'active' => $dados['active'],
+            'cargo' => $dados['cargo'] ?? null,
+            'cargo_en' => $dados['cargo_en'] ?? null,
+            'telefone' => $dados['telefone'] ?? null,
+            'celular' => $dados['celular'] ?? null,
         ]);
 
         AuditLog::registrar('usuario_atualizado', "Usuário #{$user->id} atualizado (perfil/status).", Auth::id());

@@ -12,6 +12,10 @@
     @unless ($contrato->cancelado())
         <a href="{{ route('contratos.edit', $contrato) }}" class="btn btn-ghost">Editar</a>
     @endunless
+    {{-- Só aparece com fixação registrada: sem tranche não há o que confirmar. --}}
+    @if ($contrato->fixacoes->isNotEmpty())
+        <a href="{{ route('contratos.carta-fixacao', $contrato) }}" class="btn btn-ghost">Carta de fixação (PDF)</a>
+    @endif
     <a href="{{ route('contratos.pdf', $contrato) }}" class="btn-coffee js-save-pdf" data-filename="{{ $contrato->nomeArquivoPdf() }}">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>
         <span>Baixar PDF</span>

@@ -77,13 +77,55 @@
                     <h2>Contratos a fixar</h2>
                 </div>
                 <div class="card__body" style="padding:0;">
-                    <div class="table-wrap" style="border:0; border-radius:0;">
+                    <div style="padding:16px 20px 0;">
+                        {{-- Filtro da fila do que falta fixar. As opções de comprador
+                             e de tela saem dos contratos PENDENTES: oferecer um mês
+                             sem nenhum contrato atrás é clique perdido. --}}
+                        <form method="GET" action="{{ route('ny.index') }}#contratos" class="filter-bar">
+                            <div class="field">
+                                <label for="f_ut">UT</label>
+                                <input type="search" id="f_ut" name="ut" value="{{ $filtrosContratos['ut'] }}" placeholder="Ex.: 5995">
+                            </div>
+                            <div class="field">
+                                <label for="f_comprador">Comprador</label>
+                                <select id="f_comprador" name="comprador">
+                                    <option value="">Todos</option>
+                                    @foreach ($compradores as $nome)
+                                        <option value="{{ $nome }}" @selected($filtrosContratos['comprador'] === $nome)>{{ $nome }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="f_tela">Mês de fixação</label>
+                                <select id="f_tela" name="tela">
+                                    <option value="">Todos</option>
+                                    @foreach ($telasPendentes as $cod => $rotulo)
+                                        <option value="{{ $cod }}" @selected($filtrosContratos['tela'] === $cod)>{{ $rotulo }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Filtrar</button>
+                            @unless ($semFiltroContratos)
+                                <a href="{{ route('ny.index') }}#contratos" class="btn btn-ghost">Limpar</a>
+                            @endunless
+                        </form>
+
+                        @unless ($semFiltroContratos)
+                            <p style="margin:0 0 14px; font-size:12.5px; color:var(--muted);">
+                                {{ $contratos->count() === 1 ? '1 contrato' : $contratos->count() . ' contratos' }} neste filtro.
+                                A posição por tela acima continua mostrando o total, sem recorte.
+                            </p>
+                        @endunless
+                    </div>
+
+                    <div class="table-wrap" style="border:0; border-radius:0;" id="contratos">
                         <table class="data">
                             <thead>
                                 <tr>
                                     <th>UT</th>
                                     <th>Comprador</th>
                                     <th>Bolsa</th>
+                                    <th>Tela</th>
                                     <th class="num">Diferencial</th>
                                     <th class="num">Lotes fixados</th>
                                     <th>Status</th>
@@ -96,6 +138,15 @@
                                         <td><strong>UT {{ $c->numero_ut }}</strong></td>
                                         <td>{{ \Illuminate\Support\Str::limit($c->cliente_nome, 24) }}</td>
                                         <td>{{ $c->porto === 'VITORIA' ? 'Londres' : 'NY ICE' }}</td>
+                                        {{-- Código curto (H7, Z6) porque é assim que a mesa
+                                             fala; o mês por extenso fica no title. --}}
+                                        <td title="{{ \App\Models\Contrato::rotuloDaTela($c->mes_fixacao) }}">
+                                            @if ($c->mes_fixacao)
+                                                <strong>{{ $c->mes_fixacao }}</strong>
+                                            @else
+                                                <span style="color:var(--muted);">—</span>
+                                            @endif
+                                        </td>
                                         <td class="num">{{ $c->diferencial !== null && $c->diferencial !== '' ? $c->diferencial . ' ' . $c->unidadePreco() : '—' }}</td>
                                         <td class="num">{{ $c->lotesFixados() }} / {{ $c->lotes }}</td>
                                         <td>
@@ -110,61 +161,11 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Nenhum contrato pendente de fixação. 🎉</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card__header"><h2>Fixações registradas</h2></div>
-                <div class="card__body" style="padding:0;">
-                    <div class="table-wrap" style="border:0; border-radius:0;">
-                        <table class="data">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Contrato</th>
-                                    <th>Corretora</th>
-                                    <th>Tela</th>
-                                    <th class="num">Lotes</th>
-                                    <th class="num">Level</th>
-                                    <th class="num">Dif.</th>
-                                    <th class="num">Preço</th>
-                                    <th>Por</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($fixacoes as $f)
-                                    <tr>
-                                        <td>{{ $f->created_at->format('d/m/Y H:i') }}</td>
-                                        <td><strong>UT {{ $f->contrato?->numero_ut }}</strong></td>
-                                        <td>
-                                            {{ $f->corretora }}
-                                            @if ($f->broker_cliente)
-                                                <br><span style="color:var(--muted); font-size:11.5px;">cliente: {{ $f->broker_cliente }}</span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $f->tela ?: '—' }}</td>
-                                        <td class="num">{{ $f->lotes }}</td>
-                                        <td class="num">{{ number_format((float) $f->level, 2, ',', '.') }}</td>
-                                        <td class="num">{{ number_format((float) $f->diferencial, 2, ',', '.') }}</td>
-                                        <td class="num"><strong>{{ number_format((float) $f->preco, 2, ',', '.') }}</strong> {{ $f->contrato?->unidadePreco() }}</td>
-                                        <td>{{ $f->criadoPor?->name ?? '—' }}</td>
-                                        <td class="cell-action">
-                                            <form method="POST" action="{{ route('ny.fixacoes.destroy', $f) }}"
-                                                  onsubmit="return confirm('Excluir esta fixação? O saldo do contrato será recalculado (um contrato FIXED pode voltar a A FIXAR).');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-ghost" style="padding:6px 12px; font-size:13px; color:var(--danger-text);">Excluir</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px;">Nenhuma fixação registrada ainda.</td></tr>
+                                    <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">
+                                        {{-- Com filtro ativo, o "🎉" seria comemorar cedo
+                                             demais: há contratos a fixar, só não neste recorte. --}}
+                                        {{ $semFiltroContratos ? 'Nenhum contrato pendente de fixação. 🎉' : 'Nenhum contrato neste filtro.' }}
+                                    </td></tr>
                                 @endforelse
                             </tbody>
                         </table>

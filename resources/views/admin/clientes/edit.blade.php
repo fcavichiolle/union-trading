@@ -27,6 +27,12 @@
                 <span class="lbl">Ref. padrão do comprador (opcional)</span>
                 <input type="text" name="ref_padrao" value="{{ old('ref_padrao', $cliente->ref_padrao) }}" placeholder="Ex.: CONTRACT NO. 26-003 DD. 17.02.2026">
             </label>
+            <label>
+                <span class="lbl">E-mails em cópia — AA (opcional)</span>
+                <textarea name="emails_copia" rows="2" placeholder="operacoes@cliente.com; logistica@cliente.com" style="width:100%; resize:vertical;">{{ old('emails_copia', $cliente->emails_copia) }}</textarea>
+                <span class="hint">Entram em cópia na instrução de AA deste cliente. Separe vários por ponto e vírgula (;).</span>
+                @error('emails_copia') <div class="field-error">{{ $message }}</div> @enderror
+            </label>
         </div>
         <div style="display:flex; gap:10px;">
             <button type="submit" class="btn-coffee">Salvar</button>

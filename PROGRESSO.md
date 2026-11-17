@@ -4,7 +4,7 @@
 > O código em si mora nos arquivos do projeto; este resumo guarda o "porquê" das
 > decisões, os problemas já resolvidos e o que ainda falta.
 >
-> Última atualização: agosto/2026.
+> Última atualização: setembro/2026.
 
 ---
 
@@ -387,6 +387,177 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   **level médio ponderado**. Formato espelhado da aba "Resumo FOB → VENDAS À FIXAR POR
   REFERÊNCIA" da planilha de posição da mesa. Contrato sem `mes_fixacao` entra como
   "Sem tela definida". Cálculo em `FixacaoController::posicaoPorTela()`.
+### Carta de fixação — PRICE FIXING CONFIRMATION (set/2026)
+Depois de cada fixação o cliente manda a carta de confirmação dele (modelo
+analisado: a da Alfa para a UT 5970). Agora a Union emite a sua:
+**Contrato → "Carta de fixação (PDF)"** (`contratos.carta-fixacao`), botão
+que só aparece quando há ao menos uma tranche.
+
+- **Dois números que não se confundem**: **Average** é a média dos `level`
+  (o preço da bolsa) e **Final Price** é a média dos `preco` das tranches
+  (level + diferencial). Na carta real: 289,50 de média, -10 de diferencial
+  e 279,50 de preço final. Ambas **ponderadas pelos lotes** — a simples
+  trataria uma tranche de 1 lote igual a uma de 3. Em
+  `Contrato::resumoDeFixacao()`.
+- **Coluna Balance**: saldo de lotes correndo depois de cada tranche, como
+  na carta do cliente.
+- **Sai também com fixação PARCIAL**, porque a carta é a confirmação de cada
+  fixação e a do cliente também chega com saldo em aberto. Nesse caso um
+  aviso diz quantos lotes faltam, senão o "Final Price" passaria por preço
+  fechado.
+- **Somos o SELLER**: `Seller's Ref.` é o nosso UT e `Buyer's Ref.` é o
+  `buyer_ref`. Na carta que o cliente manda eles aparecem trocados de lado,
+  porque lá quem escreve é o comprador — copiar sem pensar inverteria as
+  referências no documento que vai para fora.
+- **Posição por extenso em inglês** (`Contrato::bolsaEMesPorExtenso()`):
+  `H7` => "ICE NEW YORK / March,2027", `Sep_2026` => "ICE LONDON /
+  September,2026". O ano cheio de Santos é recuperado do último dígito, o
+  que só funciona porque a janela conhecida tem menos de 10 anos — dentro
+  dela cada dígito aparece uma vez só. Código irreconhecível volta cru, em
+  vez de virar posição inventada num documento externo.
+- Testes: `tests/Feature/CartaFixacaoTest.php` (10). **Armadilha encontrada
+  ao escrever**: `contratos.lotes` é CALCULADO no `saving` a partir de
+  `quantidade_kg`, então `update(['lotes' => 4])` é ignorado em silêncio e
+  dois testes passaram por acaso. O helper `comLotes()` mexe no peso e
+  **confere** o resultado antes de seguir.
+
+### Contratos a fixar: coluna da tela e filtros (set/2026)
+- A fila do que falta fixar ganhou a coluna **Tela** com o código curto
+  (`H7`, `Z6`) — é como a mesa fala; o mês por extenso fica no `title`.
+- Filtros de **UT** (busca parcial), **Comprador** e **Mês de fixação**. As
+  opções de comprador e de tela saem dos **contratos pendentes**, não das
+  listas gerais: oferecer uma posição sem nenhum contrato atrás é clique
+  perdido. Contrato sem mês entra como **"Sem tela definida"**
+  (`FixacaoController::SEM_TELA`), o mesmo código que a posição por tela usa.
+- **A "Posição de fixações por tela" NÃO é filtrada junto.** Ela é um retrato
+  geral; encolher o card com a tabela deixaria uma posição parcial com cara
+  de total — erro que ninguém percebe olhando. Por isso o controller faz duas
+  consultas: `contratosPendentes()` sem filtro alimenta o card, e com filtro
+  alimenta a tabela. Guardado por teste.
+- **Dois conjuntos de filtro na mesma tela** (`FILTROS_CONTRATOS` para a fila,
+  `FILTROS` para as fixações). Cada formulário leva o filtro do outro em
+  campos `hidden`, e o "Limpar" de cada um preserva o do vizinho — senão
+  filtrar embaixo apagaria o recorte de cima. Cada form volta para a sua
+  âncora (`#contratos` / `#fixacoes`).
+
+### Fixações registradas: página própria (set/2026)
+O histórico saiu da Tela NY e virou item de menu em **Mercado → Fixações
+registradas** (`ny.fixacoes.index`). Motivo: a Tela NY é onde se **faz** a
+fixação, e a lista do que já foi feito é consulta — com os dois filtros e as
+duas tabelas na mesma tela, a página ficou longa e dividia a atenção de quem
+estava operando. A Tela NY ficou com três cartões: posição por tela,
+contratos a fixar e o formulário.
+
+Efeito colateral bom: sumiu a ginástica dos campos `hidden` que cada
+formulário levava para não apagar o filtro do vizinho — cada página tem o
+seu. O `store()` continua voltando para a Tela NY (é de lá que se fixa), e o
+aviso com a instrução de AA continua aparecendo lá, porque o
+`partials/flash` mora no layout.
+
+### Fixações registradas: filtro e PDF (set/2026)
+- Filtro por **corretora** e por **contrato** na lista da Tela NY. As opções
+  saem das **próprias fixações**, não do cadastro: opção sem nenhum registro
+  é clique perdido, e o histórico pode ter nome de corretora que já saiu do
+  cadastro (a fixação guarda o nome como snapshot).
+- **O filtro vai ao banco, não à lista já carregada.** Sem filtro a tela
+  mostra as **últimas 15**; se o filtro fosse aplicado sobre essas 15, uma
+  tranche antiga daquele contrato — justamente a que se procura — nunca
+  apareceria. Com filtro ativo, some o corte e aparece o recorte inteiro.
+- **PDF** (`ny.fixacoes.pdf`) com o **mesmo recorte da tela**, e sem o corte
+  das 15: quem baixa quer o conjunto do filtro, não uma amostra. Os filtros
+  ativos são impressos no cabeçalho — relatório filtrado que não diz o
+  recorte vira número sem contexto na mão de quem recebe. Paisagem, porque
+  retrato não cabe as 10 colunas. Os filtros ficam em
+  `FixacaoController::FILTROS`, lidos por tela e PDF pelo mesmo método.
+- **Totais por UNIDADE, nunca um total só**: Santos é cts/lb e Vitória é
+  USD/MT; somar ou mediar os dois daria um número que parece certo e não
+  significa nada. O level médio é **ponderado pelos lotes** (a média simples
+  trataria uma tranche de 1 lote igual a uma de 12).
+- Testes: `tests/Feature/FixacoesFiltroPdfTest.php` (8) — inclusive o caso
+  da tranche fora das 15 e a conferência da média ponderada.
+
+### Instruções de AA por e-mail (set/2026)
+Depois de fixar, a mesa manda ao broker a **instrução de AA** ("against
+actuals"). Isso vivia na planilha `AA instructions v2.xlsm`, cuja macro
+montava a mensagem e abria o Outlook com `.Display` — **não enviava**, só
+deixava pronto para conferir e clicar em Enviar.
+
+- **No sistema é um `mailto:`**, não envio pelo servidor. Escolha do projeto:
+  o e-mail sai da **caixa de quem fixou**, então a resposta do broker volta
+  para a pessoa, e não para uma caixa do sistema; e não depende dos `MAIL_*`
+  de produção, que seguem pendentes. Preço do não escolhido: texto puro, sem
+  anexo e sem registro do que foi enviado — se um dia isso fizer falta, o
+  caminho é uma `Mailable` ao lado, reaproveitando o mesmo `InstrucaoAA`.
+- **O PREÇO da instrução é o `level`, não o `preco` da tranche**: o AA se faz
+  contra a bolsa, e o diferencial é o prêmio do físico. Guardado por teste,
+  porque é o tipo de erro que ninguém percebe olhando a tela.
+- **Uma instrução por CLIENTE.** O e-mail é sempre "Union X um cliente", mas a
+  fixação em grupo pode misturar clientes. Por isso `fixacoes.grupo` (uuid
+  gravado no envio do formulário): ele diz quais tranches são o mesmo negócio,
+  e `InstrucaoAA::deFixacoes()` separa por cliente. Fixar 2 contratos da Alfa
+  e 1 da Beta de uma vez = dois e-mails, cada um com os seus contratos —
+  na planilha essa separação era feita na mão, contrato por contrato.
+- **Commodity/Month** vem de `Contrato::commodityDaTela()`: Santos vira `KC` +
+  tela (`Z6` => `KCZ6`) e Vitória vira `RC` + letra do mês + último dígito do
+  ano (`Sep_2026` => `RCU6`) — a tela de Londres é `Mmm_AAAA` por dentro, para
+  ficar legível no formulário, e precisa ser traduzida para a forma da bolsa.
+- **Destinatários viraram cadastro** (eram duas abas da planilha):
+  `corretoras.emails_para` / `emails_copia` (a NOSSA corretora define quem
+  recebe, porque é ela que executa o AA) e `clientes.emails_copia`, que soma
+  na cópia. Lista separada por `;`, com `App\Rules\ListaDeEmails` sendo a
+  única definição do formato — a validação do cadastro e a leitura pelos
+  models usam o mesmo `separar()`, senão daria para salvar uma lista que o
+  envio interpretaria de outro jeito. Corretora sem e-mail não mostra o botão
+  e explica onde cadastrar (a macro dava um `MsgBox` equivalente).
+- **Cópia fixa da casa**: `AA_COPIA_FIXA` no `.env` (lido por `config/aa.php`)
+  entra em cópia em TODA instrução, independente de corretora e cliente.
+  Fica no `.env` e não no código porque o repositório é **público** e a lista
+  muda com a equipe, sem deploy. Quem já está no "Para" **não é repetido** na
+  cópia (comparação sem diferenciar maiúsculas) — receberia o mesmo e-mail
+  duas vezes. Hoje é o `usuario3@`, que também aparece nas listas "Para" das
+  duas corretoras; por isso, na prática, ele sai como destinatário e a cópia
+  fixa só entra em cena se um dia a lista da corretora não o incluir.
+- **A assinatura é do usuário logado** (`users.cargo`, `cargo_en`, `telefone`,
+  `celular`, editáveis em Administração → Usuários). Na macro ela estava
+  escrita no código, então qualquer pessoa que apertasse o botão mandava o
+  e-mail assinado com o nome de quem montou a planilha. Campo em branco
+  simplesmente não aparece.
+- **Onde aparece**: logo depois de registrar a fixação (um botão "Abrir no
+  Outlook" por cliente, com "Copiar texto" ao lado) e na coluna de ações de
+  "Fixações registradas", para remontar depois. O botão da lista usa o
+  **grupo inteiro**, não a linha.
+- **"✓ Instrução enviada"** tira o item do aviso depois de enviado (e o aviso
+  inteiro quando sai o último), para o que já foi feito parar de pedir
+  atenção. É só visual: o aviso é flash e sumiria na página seguinte de
+  qualquer jeito — por isso o botão nasce `hidden` e só aparece com JS, em
+  vez de virar um botão morto sem ele. **Não fica registrado** que a
+  instrução foi enviada; se um dia isso fizer falta (saber quais fixações já
+  tiveram AA mandado), é coluna em `fixacoes` + rota, não mais um `hidden`.
+- **O Outlook resolve os endereços preguiçosamente** e os últimos da lista
+  chegam como texto solto, não como destinatário validado — a pessoa acaba
+  clicando um a um. Um link não tem como chamar o `Recipients.ResolveAll`
+  que a macro usava. **Decisão (set/2026): fica assim**, com a dica de
+  `Ctrl+K` ("Verificar Nomes") escrita no próprio aviso, que resolve todos
+  de uma vez. A alternativa avaliada e **não** adotada era trocar o
+  `mailto:` por download de um `.eml` com `X-Unsent: 1`, que o Outlook abre
+  como rascunho já com os destinatários montados dos cabeçalhos (e de quebra
+  mataria o limite de tamanho abaixo) — se o `Ctrl+K` cansar, é por aí.
+- **Limite do `mailto:`**: o Outlook corta a URL perto de 2.000 caracteres
+  (`InstrucaoAA::LIMITE_MAILTO`). Um AA comum dá ~720; muitos contratos numa
+  instrução só podem chegar lá, e nesse caso a tela avisa e sobra o "Copiar
+  texto". É limite do Windows/Outlook, não do sistema — daí ser aviso e não erro.
+- **Números saem no padrão brasileiro** (`Price: 271,25`), que é o que o
+  `Format` do VBA produz nas máquinas da mesa e o que os brokers já recebem
+  hoje. **Ponto em aberto**: para robusta em USD/MT (`3.725,00`) isso é
+  ambíguo para quem lê em inglês — se for para trocar por `3,725.00`, é uma
+  linha em `InstrucaoAA::corpo()`.
+- Testes: `tests/Feature/InstrucaoAATest.php` (16 testes) — formato do corpo,
+  price = level, separação por cliente, destinatários somados, cópia fixa e
+  não-repetição, aviso sem cadastro, tradução da tela de Londres, `mailto`
+  com `%0D%0A`, assinatura do usuário, botão na tela e nas telas de cadastro.
+  O `setUp` zera a cópia fixa de propósito: senão o resultado mudaria
+  conforme o `.env` de quem roda os testes.
+
 - **Cotações** (`/mercado`, todos os perfis): arábica NY (7 posições), robusta Londres e
   câmbio (dólar/euro) via **Yahoo Finance** (endpoint público `v8/finance/chart`, delay
   ~15 min, sem chave de API). Backend em `app/Services/MercadoCafe.php`: busca os símbolos
@@ -670,6 +841,37 @@ não submenu.
    Corrigido reescrevendo o arquivo do zero. Fica como lembrete: depois de editar uma view,
    reabrir o arquivo (ou `git diff`) para confirmar que não sobrou conteúdo duplicado.
 
+15. **Snapshot curto demais: `fixacoes.corretora` era VARCHAR(30).** As
+   colunas `corretora`/`broker_cliente` foram dimensionadas na época em que
+   guardavam CÓDIGOS (`STONEX`, `ICAP`). Quando as corretoras viraram
+   cadastro, a fixação passou a gravar o **nome** como snapshot — e
+   `corretoras.nome` aceita 80. Resultado: escolher "ICAP Corporates LLC
+   (Hedgepoint)" (32 caracteres) ou "Marex Financial Limited AGS Coffee"
+   (34) derrubava a Tela NY com *"Data too long for column 'corretora'"* no
+   INSERT. Só a StoneX East Coast (17) cabia — e era justamente a usada nos
+   testes. Corrigido em `..._alarga_corretora_nas_fixacoes` (as duas colunas
+   passaram a 80, o tamanho da origem). **Regra**: coluna de snapshot nunca
+   pode ser menor do que a coluna que ela copia.
+16. **O SQLite dos testes não guarda o tamanho de VARCHAR.** O driver do
+   Laravel emite `"corretora" varchar` — **sem limite** — e o SQLite aceita
+   qualquer string. Por isso o GOTCHA 15 passou despercebido: o teste de
+   fixação gravava um nome de 32 caracteres e passava, enquanto o MySQL
+   recusava. E não adianta conferir pelo schema (`Schema::getColumns`), que
+   no SQLite devolve só `varchar`, sem o número. Conclusão prática: **erro de
+   tamanho de coluna não é pegável pela suíte** — quando mexer no tamanho de
+   um VARCHAR, confira no MySQL de verdade.
+
+17. **No `mailto:`, destinatário se separa com PONTO E VÍRGULA.** A RFC 6068
+   manda vírgula, e foi assim que a primeira versão saiu — o Outlook então
+   colou os 9 endereços da StoneX num destinatário só (a lista inteira como UM contato), e o e-mail não ia. O Outlook do
+   Windows só aceita vírgula quando a opção *"é possível usar vírgulas para
+   separar vários destinatários"* está ligada, e ela vem **desligada**; ponto
+   e vírgula ele sempre entende. Como o link existe para abrir o Outlook,
+   vale o que o Outlook entende (`InstrucaoAA::SEPARADOR_DESTINATARIOS`). A
+   macro da planilha não sofria disso porque adicionava um a um via
+   `Recipients.Add`. **Nenhum teste pega isso**: a URL fica igualmente
+   válida das duas formas — quem reprova é o cliente de e-mail.
+
 ## 6. O que falta / próximos passos
 
 - ~~**E-mail de produção**: configurar `MAIL_*` e criar uma `Notification` para enviar a senha
@@ -763,6 +965,9 @@ não submenu.
 - **Rotas**: `routes/web.php`.
 - **Demo (GitHub Pages)**: páginas em `docs/`; gerador em `tests/Feature/GerarDemoTest.php`;
   motor interativo em `docs/demo-compras.js`.
+- **Instruções de AA**: `app/Services/InstrucaoAA.php` (monta assunto, corpo e o
+  `mailto:`), `App\Rules\ListaDeEmails` (formato das listas de e-mail),
+  `Contrato::commodityDaTela()` e os campos de assinatura em `User`.
 - **Listas centrais** (mexer aqui, não nas telas): `Classificacao::faixas()` (peneiras),
   `Classificacao::padroes()`, `Classificacao::tiposBebida()`, `Compra::tiposEntrada()`,
   `Compra::certificacoes()`, `Compra::logisticas()`. **Armazéns não são mais lista no

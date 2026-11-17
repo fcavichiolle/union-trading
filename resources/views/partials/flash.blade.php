@@ -8,11 +8,65 @@
         <code class="link-share__url" id="linkCompartilhavel">{{ session('linkGerado') }}</code>
         <button type="button" class="btn btn-ghost js-copiar-link" data-alvo="linkCompartilhavel">Copiar</button>
     </div>
+@endif
 
+@if (session('aa'))
+    {{-- Instruções de AA montadas pela fixação que acabou de ser registrada.
+         Uma por cliente: o e-mail é sempre "Union X um cliente", então uma
+         fixação em grupo com clientes diferentes gera mais de um botão. --}}
+    <div class="alert alert-success aa-flash">
+        <span class="aa-flash__lbl">
+            {{ count(session('aa')) === 1 ? 'Instrução de AA pronta para enviar:' : 'Instruções de AA prontas para enviar:' }}
+        </span>
+
+        @foreach (session('aa') as $i => $aa)
+            <div class="aa-flash__item">
+                <div class="aa-flash__acoes">
+                    @if ($aa['enviavel'])
+                        <a href="{{ $aa['mailto'] }}" class="btn btn-ghost aa-flash__btn">
+                            ✉ Abrir no Outlook — {{ $aa['cliente'] }}
+                        </a>
+                    @else
+                        <span class="aa-flash__btn aa-flash__btn--off">✉ {{ $aa['cliente'] }}</span>
+                    @endif
+
+                    <button type="button" class="btn btn-ghost js-copiar-link" data-alvo="aa-corpo-{{ $i }}">
+                        Copiar texto
+                    </button>
+
+                    {{-- Some da tela depois de enviado. Nasce `hidden` e só
+                         aparece com JS: sem JS ele não faria nada, e o aviso
+                         já desaparece sozinho na próxima página (é flash). --}}
+                    <button type="button" class="btn btn-ghost js-aa-enviada" hidden>
+                        ✓ Instrução enviada
+                    </button>
+                </div>
+
+                {{-- Fonte do "Copiar texto". Fica escondido, mas é texto
+                     escapado pelo Blade — nunca HTML montado no JS. --}}
+                <pre id="aa-corpo-{{ $i }}" class="aa-flash__corpo" hidden>{{ $aa['corpo'] }}</pre>
+
+                @foreach ($aa['avisos'] as $aviso)
+                    <div class="aa-flash__aviso">⚠ {{ $aviso }}</div>
+                @endforeach
+            </div>
+        @endforeach
+
+        {{-- O Outlook resolve os endereços do `mailto:` preguiçosamente: os
+             últimos da lista chegam como texto, e sem saber do atalho a pessoa
+             clica um a um. A dica fica na tela porque o link não tem como
+             chamar o `Recipients.ResolveAll` que a macro da planilha usava. --}}
+        <p class="aa-flash__dica">
+            No Outlook, <kbd>Ctrl</kbd>+<kbd>K</kbd> ("Verificar Nomes") valida todos
+            os destinatários de uma vez.
+        </p>
+    </div>
+@endif
+
+@if (session('linkGerado') || session('aa'))
     <script>
         (function () {
-            var btn = document.querySelector('.js-copiar-link');
-            if (!btn) return;
+            var botoes = document.querySelectorAll('.js-copiar-link');
 
             function selecionarEcopiar(texto) {
                 // Fallback para navegador sem clipboard API (ou fora de
@@ -30,25 +84,40 @@
                 return ok;
             }
 
-            function avisar(texto) {
-                var original = 'Copiar';
-                btn.textContent = texto;
-                btn.disabled = true;
-                setTimeout(function () { btn.textContent = original; btn.disabled = false; }, 1800);
-            }
+            // "Instrução enviada": tira o item da tela; quando some o
+            // último, o aviso inteiro sai junto.
+            document.querySelectorAll('.js-aa-enviada').forEach(function (btn) {
+                btn.hidden = false;
+                btn.addEventListener('click', function () {
+                    var item = btn.closest('.aa-flash__item');
+                    var caixa = btn.closest('.aa-flash');
+                    if (item) item.remove();
+                    if (caixa && !caixa.querySelector('.aa-flash__item')) caixa.remove();
+                });
+            });
 
-            btn.addEventListener('click', function () {
-                var alvo = document.getElementById(btn.getAttribute('data-alvo'));
-                if (!alvo) return;
-                var texto = alvo.textContent.trim();
+            botoes.forEach(function (btn) {
+                var original = btn.textContent.trim();
 
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(texto)
-                        .then(function () { avisar('Copiado!'); })
-                        .catch(function () { avisar(selecionarEcopiar(texto) ? 'Copiado!' : 'Copie manualmente'); });
-                } else {
-                    avisar(selecionarEcopiar(texto) ? 'Copiado!' : 'Copie manualmente');
+                function avisar(texto) {
+                    btn.textContent = texto;
+                    btn.disabled = true;
+                    setTimeout(function () { btn.textContent = original; btn.disabled = false; }, 1800);
                 }
+
+                btn.addEventListener('click', function () {
+                    var alvo = document.getElementById(btn.getAttribute('data-alvo'));
+                    if (!alvo) return;
+                    var texto = alvo.textContent.trim();
+
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(texto)
+                            .then(function () { avisar('Copiado!'); })
+                            .catch(function () { avisar(selecionarEcopiar(texto) ? 'Copiado!' : 'Copie manualmente'); });
+                    } else {
+                        avisar(selecionarEcopiar(texto) ? 'Copiado!' : 'Copie manualmente');
+                    }
+                });
             });
         })();
     </script>

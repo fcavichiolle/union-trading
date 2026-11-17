@@ -11,7 +11,7 @@ class Fixacao extends Model
     protected $table = 'fixacoes';
 
     protected $fillable = [
-        'contrato_id', 'corretora', 'broker_cliente', 'tela', 'lotes', 'level', 'diferencial', 'created_by',
+        'contrato_id', 'grupo', 'corretora', 'broker_cliente', 'tela', 'lotes', 'level', 'diferencial', 'created_by',
     ];
 
     protected function casts(): array

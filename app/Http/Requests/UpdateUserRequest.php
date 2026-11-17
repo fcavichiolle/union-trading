@@ -21,6 +21,12 @@ class UpdateUserRequest extends FormRequest
             'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($userId)],
             'role_id' => ['required', 'integer', 'exists:roles,id'],
             'active' => ['required', 'boolean'],
+            // Assinatura do e-mail de instrução de AA — tudo opcional: quem
+            // não preencher assina só com nome, e-mail e site.
+            'cargo' => ['nullable', 'string', 'max:80'],
+            'cargo_en' => ['nullable', 'string', 'max:80'],
+            'telefone' => ['nullable', 'string', 'max:40'],
+            'celular' => ['nullable', 'string', 'max:40'],
         ];
     }
 

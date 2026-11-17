@@ -56,6 +56,12 @@
                     <input type="text" name="ref_padrao" value="{{ old('ref_padrao') }}" placeholder="Ex.: CONTRACT NO. 26-003 DD. 17.02.2026">
                     <span class="hint">Se preenchido, é lançado automaticamente no "Ref. Comprador" ao escolher este cliente.</span>
                 </label>
+                <label>
+                    <span class="lbl">E-mails em cópia — AA (opcional)</span>
+                    <textarea name="emails_copia" rows="2" placeholder="operacoes@cliente.com; logistica@cliente.com" style="width:100%; resize:vertical;">{{ old('emails_copia') }}</textarea>
+                    <span class="hint">Entram em cópia na instrução de AA deste cliente. Separe vários por ponto e vírgula (;).</span>
+                    @error('emails_copia') <div class="field-error">{{ $message }}</div> @enderror
+                </label>
             </div>
             <button type="submit" class="btn-coffee" style="margin-top:2px;">Adicionar cliente</button>
         </form>
