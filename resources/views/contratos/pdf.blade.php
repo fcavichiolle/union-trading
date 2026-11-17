@@ -45,7 +45,8 @@
             <div class="nm">UNION TRADING COMÉRCIO IMPORTAÇÃO E EXPORTAÇÃO LTDA</div>
             Cep: 13.990-029 / Espírito Santo do Pinhal - SP, Brasil<br>
             CNPJ: 11.881.236/0001-09 &nbsp; IE: 530.055.829.118<br>
-            Phone: +55 00 0000-0000 &nbsp;&nbsp; Email: usuario3@example.com
+            @if (config('empresa.telefone')) Phone: {{ config('empresa.telefone') }} &nbsp;&nbsp; @endif
+            @if (config('empresa.email')) Email: {{ config('empresa.email') }} @endif
         </td>
     </tr>
 </table>

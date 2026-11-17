@@ -33,7 +33,11 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Desligado (nov/2026): este disco guarda cargas e backups com dados
+            // reais e nada no sistema gera link para ele. Com `true` o Laravel
+            // registra a rota /storage/{path} (protegida por URL assinada) — é
+            // uma porta a menos para vigiar.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

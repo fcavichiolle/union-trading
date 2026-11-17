@@ -88,6 +88,25 @@ tem uma explicação curta.
   `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
   `Permissions-Policy`, e `Strict-Transport-Security` quando a conexão
   já é HTTPS.
+- **Content-Security-Policy** (nov/2026, mesmo middleware): a página só
+  carrega e só conversa com o próprio servidor (`default-src 'self'`,
+  `connect-src 'self'`, `form-action 'self'`, `object-src 'none'`,
+  `base-uri 'self'`, `frame-ancestors 'none'`). **Limite assumido**: script
+  e estilo usam `'unsafe-inline'`, porque o sistema não tem etapa de build
+  e o JS/CSS mora nas views. Então a CSP não barra script injetado na
+  própria página — isso continua sendo papel do escape do Blade e do
+  `textContent` no JS. Ela barra o passo seguinte: carregar script de fora,
+  mandar dado para outro servidor, trocar o destino de um formulário.
+- **Cabeçalho `Host` confiável** (`trustHosts()` em `bootstrap/app.php`):
+  fora do ambiente local, o Laravel só aceita pedido cujo Host seja o do
+  `APP_URL`. Fecha o envenenamento do link de redefinição de senha (pedir a
+  redefinição com um Host forjado para o e-mail apontar para outro servidor).
+- **`X-Powered-By` removido**: a versão do PHP não é anunciada.
+- **Disco privado sem rota HTTP** (`filesystems.disks.local.serve = false`):
+  `storage/app/private` guarda cargas e backups com dados reais e nada no
+  sistema gera link para ele.
+- **Emojis de reação** nas mensagens são de uma lista fechada, validada no
+  servidor — não é mais um campo de texto livre vindo do navegador.
 
 ## 5. Auditoria
 
@@ -124,10 +143,35 @@ tem uma explicação curta.
 - [ ] `composer install --no-dev --optimize-autoloader` no deploy (não
       instalar dependências de desenvolvimento em produção).
 - [ ] Revisar periodicamente `composer audit` (verifica dependências
-      com vulnerabilidades conhecidas).
-- [ ] (Opcional, hardening extra) Definir uma Content-Security-Policy
-      explícita — hoje o CSS é servido inline (`partials/styles.blade.php`)
-      e há um pequeno `<script>` inline na tela de usuários (descrição do
-      perfil), que usa apenas `textContent` (nunca `innerHTML`). Seguro
-      para o uso atual, mas uma CSP restritiva exigiria `nonce` ou mover
-      CSS/JS para arquivos externos.
+      com vulnerabilidades conhecidas). **Última revisão: 17/11/2026** —
+      acusava falhas no Laravel, no Symfony e no league/commonmark;
+      `composer update` levou o framework à 13.43 e a auditoria voltou a
+      sair limpa. Em agosto estava limpa: falha nova aparece com o tempo,
+      mesmo sem mexer no código.
+- [ ] `APP_URL` com o endereço real do sistema — é dele que sai a trava de
+      Host. Com o valor errado o sistema responde 400 para todo mundo.
+- [ ] `EMPRESA_TELEFONE` e `EMPRESA_EMAIL` no `.env` (cabeçalho dos PDFs).
+- [ ] (Opcional, hardening extra) Apertar a Content-Security-Policy
+      tirando o `'unsafe-inline'`. Hoje o CSS é servido inline
+      (`partials/styles.blade.php`), há `<script>` inline em várias telas
+      (todos usando `textContent`, nunca `innerHTML`, para dado de usuário)
+      e `onsubmit` de confirmação nos formulários. Uma CSP sem
+      `'unsafe-inline'` exigiria `nonce` ou mover CSS/JS para arquivos.
+
+## 7. Repositório público — o que não pode entrar no Git
+
+O código é público. Então **não entram** em código, teste, seeder,
+migration, comentário, placeholder nem no `PROGRESSO.md`:
+
+- e-mail e telefone de pessoas (os do cabeçalho dos PDFs vêm do `.env`);
+- nomes de clientes, fornecedores e transportadoras (os testes usam nomes
+  fictícios: ALFA, BETA, GAMA, TRANSNORTE…);
+- volumes de estoque e de venda, preços e a posição da empresa.
+
+Esses dados vivem no banco, no `.env` e em `storage/app/private/` (ignorado
+pelo Git — cargas, backups e o `REGISTRO-DE-CARGAS.md`).
+
+**Limite**: o que já foi enviado ao GitHub antes de 17/11/2026 continua no
+histórico do repositório (e-mails de funcionários, nomes de clientes em
+testes antigos). Limpar o arquivo atual não apaga o histórico; para isso é
+preciso reescrevê-lo ou tornar o repositório privado.

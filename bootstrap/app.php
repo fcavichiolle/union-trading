@@ -26,6 +26,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Cabeçalhos de segurança em toda resposta (web + api).
         $middleware->append(SecurityHeaders::class);
+
+        // Só aceita pedido cujo cabeçalho Host seja o do APP_URL (e
+        // subdomínios). Sem isso, quem pede a redefinição de senha com um
+        // Host forjado faz o link do e-mail apontar para o servidor dele.
+        // O Laravel não aplica a trava em ambiente `local` nem nos testes —
+        // no servidor, o APP_URL tem de ser o endereço real do sistema.
+        $middleware->trustHosts();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

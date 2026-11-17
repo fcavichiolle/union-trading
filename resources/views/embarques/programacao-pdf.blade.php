@@ -58,7 +58,7 @@
         <td class="company">
             <div class="nm">UNION TRADING COMÉRCIO IMPORTAÇÃO E EXPORTAÇÃO LTDA</div>
             Cep: 13.990-029 / Espírito Santo do Pinhal - SP, Brasil<br>
-            Phone: +55 00 0000-0000
+            @if (config('empresa.telefone')) Phone: {{ config('empresa.telefone') }} @endif
         </td>
         <td class="meta">
             Gerado em {{ now()->format('d/m/Y H:i') }}<br>
