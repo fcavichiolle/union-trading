@@ -3,10 +3,12 @@
 use App\Http\Controllers\Admin\ArmazemController;
 use App\Http\Controllers\Admin\ClienteController;
 use App\Http\Controllers\Admin\CorretoraController;
+use App\Http\Controllers\Admin\TransportadoraController;
 use App\Http\Controllers\Admin\QualidadeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Contratos\ContratoController;
+use App\Http\Controllers\Contratos\EmbarqueController;
 use App\Http\Controllers\Contratos\FixacaoController;
 use App\Http\Controllers\Mercado\MercadoController;
 use App\Http\Controllers\Auth\ChangePasswordController;
@@ -102,6 +104,12 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::put('/corretoras/{corretora}', [CorretoraController::class, 'update'])->name('corretoras.update');
             Route::delete('/corretoras/{corretora}', [CorretoraController::class, 'destroy'])->name('corretoras.destroy');
 
+            // Transportadoras — nome sugerido no embarque e destinatários da programação
+            Route::get('/transportadoras', [TransportadoraController::class, 'index'])->name('transportadoras.index');
+            Route::post('/transportadoras', [TransportadoraController::class, 'store'])->name('transportadoras.store');
+            Route::put('/transportadoras/{transportadora}', [TransportadoraController::class, 'update'])->name('transportadoras.update');
+            Route::delete('/transportadoras/{transportadora}', [TransportadoraController::class, 'destroy'])->name('transportadoras.destroy');
+
             // Armazéns: deixaram de ser lista fixa no código e viraram
             // cadastro (a entrega aponta para eles).
             Route::get('/armazens', [ArmazemController::class, 'index'])->name('armazens.index');
@@ -152,6 +160,32 @@ Route::middleware(['auth', 'conta.ativa'])->group(function () {
             Route::get('/tela-ny/fixacoes/pdf', [FixacaoController::class, 'pdf'])->name('ny.fixacoes.pdf');
             Route::post('/tela-ny/fixacoes', [FixacaoController::class, 'store'])->name('ny.fixacoes.store');
             Route::delete('/tela-ny/fixacoes/{fixacao}', [FixacaoController::class, 'destroy'])->name('ny.fixacoes.destroy');
+        });
+
+        /*
+        |----------------------------------------------------------------
+        | Embarques — agenda das estufagens e faturamento das vendas
+        |----------------------------------------------------------------
+        | A agenda é leitura para todo perfil (é o que a equipe consulta o
+        | dia inteiro). Lançar, editar, faturar e excluir é de quem opera
+        | contratos.
+        */
+        Route::middleware('role:admin,compras,financeiro,diretoria')->group(function () {
+            // Área de Exportação: os agendamentos (por data de estufagem) e
+            // o controle logístico (por mês de faturamento) são duas vistas
+            // dos mesmos embarques.
+            Route::get('/exportacao/agendamentos', [EmbarqueController::class, 'agenda'])->name('embarques.agenda');
+            Route::get('/exportacao/logistica', [EmbarqueController::class, 'index'])->name('embarques.index');
+        });
+
+        Route::middleware('role:admin,compras')->group(function () {
+            Route::get('/contratos/{contrato}/embarques/novo', [EmbarqueController::class, 'create'])->name('embarques.create');
+            Route::post('/contratos/{contrato}/embarques', [EmbarqueController::class, 'store'])->name('embarques.store');
+            Route::get('/embarques/{embarque}/editar', [EmbarqueController::class, 'edit'])->name('embarques.edit');
+            Route::put('/embarques/{embarque}', [EmbarqueController::class, 'update'])->name('embarques.update');
+            Route::patch('/embarques/{embarque}/faturar', [EmbarqueController::class, 'faturar'])->name('embarques.faturar');
+            Route::get('/embarques/{embarque}/programacao', [EmbarqueController::class, 'programacao'])->name('embarques.programacao');
+            Route::delete('/embarques/{embarque}', [EmbarqueController::class, 'destroy'])->name('embarques.destroy');
         });
 
         Route::middleware('role:admin,compras,financeiro,diretoria')->group(function () {

@@ -89,6 +89,88 @@
         </div>
     </div>
 
+    {{-- Embarques: as parcelas em que o contrato sai. A maioria tem uma só;
+         o saldo mostra o que ainda não tem logística nenhuma. --}}
+    @php
+        $kgAProgramar = $contrato->kgAProgramar();
+        $nk = fn ($v) => number_format((float) $v, 0, ',', '.');
+    @endphp
+    <div class="card" style="margin-top:20px;">
+        <div class="card__header" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <h2>Embarques
+                <span style="font-weight:400; color:var(--muted); font-size:13px;">
+                    — standard: {{ $contrato->standardLabel() ?? 'não definido (fora da posição)' }}
+                </span>
+            </h2>
+            @unless ($contrato->cancelado())
+                <a href="{{ route('embarques.create', $contrato) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px; white-space:nowrap;">+ Novo embarque</a>
+            @endunless
+        </div>
+        <div class="card__body" style="padding:0;">
+            @if ($contrato->embarques->isEmpty())
+                <p style="margin:0; padding:20px 22px; color:var(--muted);">
+                    Nenhum embarque lançado — os {{ $nk($contrato->sacas) }} sc do contrato estão inteiros em "a programar".
+                </p>
+            @else
+                <div class="table-wrap" style="border:0; border-radius:0;">
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th>Ref.</th>
+                                <th>Faturamento</th>
+                                <th>Etapa</th>
+                                <th>Estufagem</th>
+                                <th>Armazém</th>
+                                <th>Navio / booking</th>
+                                <th class="num">Kg</th>
+                                <th class="num">Sacas</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($contrato->embarques->sortBy('mes_faturamento') as $e)
+                                <tr>
+                                    <td><strong>{{ $e->referencia() }}</strong></td>
+                                    <td>{{ $e->mes_faturamento->format('m/Y') }}</td>
+                                    <td>
+                                        {{ $e->statusLabel() }}
+                                        @if ($e->faturado_em)
+                                            <br><span style="color:var(--muted); font-size:11.5px;">em {{ $e->faturado_em->format('d/m/Y') }}</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $e->data_estufagem?->format('d/m/Y') ?? '—' }}</td>
+                                    <td>{{ $e->armazem?->nome ?? '—' }}</td>
+                                    <td>
+                                        {{ $e->navio ?? '—' }}
+                                        @if ($e->booking)
+                                            <br><span style="color:var(--muted); font-size:11.5px;">{{ $e->booking }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="num">{{ $nk($e->quantidade_kg) }}</td>
+                                    <td class="num"><strong>{{ $nk($e->sacas) }}</strong></td>
+                                    <td class="cell-action">
+                                        <a href="{{ route('embarques.edit', $e) }}" class="btn btn-ghost" style="padding:6px 12px; font-size:13px;">Editar</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                {{-- A diferença aparece em vez de ser proibida: container não
+                     pesa exatamente o contratado. --}}
+                <p style="margin:0; padding:12px 22px; font-size:12.5px; color:var(--muted);">
+                    @if (abs($kgAProgramar) < 0.5)
+                        Contrato inteiro distribuído em embarques.
+                    @elseif ($kgAProgramar > 0)
+                        Faltam <strong>{{ $nk($kgAProgramar) }} kg</strong> ({{ $nk($contrato->sacasAProgramar()) }} sc) a programar.
+                    @else
+                        Os embarques somam <strong>{{ $nk(abs($kgAProgramar)) }} kg a mais</strong> que o contrato — confira as quantidades.
+                    @endif
+                </p>
+            @endif
+        </div>
+    </div>
+
     @if ($contrato->fixacoes->isNotEmpty())
         <div class="card" style="margin-top:20px;">
             <div class="card__header"><h2>Fixações (Tela NY)</h2></div>

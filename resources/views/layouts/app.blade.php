@@ -87,6 +87,23 @@
                 </div>
             @endif
 
+            {{-- EXPORTAÇÃO: área própria da logística, separada de Contratos.
+                 O contrato é o negócio fechado; aqui fica o que acontece
+                 depois — agendar a estufagem e acompanhar booking, PSS e
+                 prazos. Leitura para todo perfil (é o que a equipe consulta
+                 o dia inteiro); alterar é de quem opera. --}}
+            <div class="sb-group">
+                <div class="sb-group__label">Exportação</div>
+                <a href="{{ route('embarques.agenda') }}" class="sb-link {{ request()->routeIs('embarques.agenda') ? 'is-active' : '' }}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M8 3v4M16 3v4"></path></svg>
+                    <span>Agendamentos</span>
+                </a>
+                <a href="{{ route('embarques.index') }}" class="sb-link {{ request()->routeIs('embarques.*') && ! request()->routeIs('embarques.agenda') ? 'is-active' : '' }}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h18l-2 3H5Z"></path><path d="M6 17V9h12v8"></path><path d="M9 9V5h6v4"></path><path d="M12 12v2"></path></svg>
+                    <span>Controle logístico</span>
+                </a>
+            </div>
+
             <div class="sb-group">
                 <div class="sb-group__label">Mercado</div>
                 @if ($u->hasRole('admin', 'compras'))
@@ -128,6 +145,10 @@
                     <a href="{{ route('admin.corretoras.index') }}" class="sb-link {{ request()->routeIs('admin.corretoras.*') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5v-13l5-3.5 5 3.5v13"></path><path d="M13.5 20.5h7v-8.5l-3.5-2.5-3.5 2.5"></path><path d="M6.5 11h2M6.5 14.5h2M6.5 18h2M16.5 14.5h1.5M16.5 18h1.5"></path></svg>
                         <span>Corretoras</span>
+                    </a>
+                    <a href="{{ route('admin.transportadoras.index') }}" class="sb-link {{ request()->routeIs('admin.transportadoras.*') ? 'is-active' : '' }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3Z"></path><path d="M14 10h4l3 3v3h-7"></path><circle cx="7" cy="17.5" r="1.8"></circle><circle cx="17" cy="17.5" r="1.8"></circle></svg>
+                        <span>Transportadoras</span>
                     </a>
                     <a href="{{ route('admin.qualidades.index') }}" class="sb-link {{ request()->routeIs('admin.qualidades.*') ? 'is-active' : '' }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 9.7l5.4-.8Z"></path></svg>

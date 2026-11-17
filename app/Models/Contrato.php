@@ -26,7 +26,7 @@ class Contrato extends Model
     protected $fillable = [
         'numero_ut', 'data_contrato',
         'cliente_id', 'cliente_nome', 'cliente_endereco', 'buyer_ref',
-        'qualidade_id', 'qualidade_descricao', 'tipo_cafe', 'certificado',
+        'qualidade_id', 'qualidade_descricao', 'standard', 'tipo_cafe', 'certificado',
         'quantidade_kg', 'tipo_container', 'embalagem',
         'diferencial', 'mes_fixacao', 'fixado', 'preco_fixado', 'preco_fixado_unidade',
         'embarque_mes', 'incoterms', 'porto', 'remarks',
@@ -88,6 +88,60 @@ class Contrato extends Model
     public function fixacoes(): HasMany
     {
         return $this->hasMany(Fixacao::class);
+    }
+
+    /** Parcelas de embarque deste contrato (agenda de estufagens). */
+    public function embarques(): HasMany
+    {
+        return $this->hasMany(Embarque::class);
+    }
+
+    /**
+     * Standards da POSIÇÃO — os baldes em que vendas, estoque e compras são
+     * somados no Long & Short. Não é a descrição comercial da qualidade:
+     * "NY 3/4 SCREEN 14/16 GOOD CUP 7/2/1" e "NY 3/4 SCREEN 14/15/16 S.S.
+     * GOOD CUP" caem os dois em 14/16 GC.
+     *
+     * @return array<string, string> código => rótulo
+     */
+    public static function standards(): array
+    {
+        return [
+            '1718_FC' => '17/18 FC',
+            '1718_GC' => '17/18 GC',
+            '1416_FC' => '14/16 FC',
+            '1416_GC' => '14/16 GC',
+            'GRINDERS_12UP' => 'Grinders 12UP',
+            'GRINDERS_13UP' => 'Grinders 13UP',
+        ];
+    }
+
+    public function standardLabel(): ?string
+    {
+        return $this->standard ? (self::standards()[$this->standard] ?? $this->standard) : null;
+    }
+
+    /** Quilos já distribuídos em embarques (faturados ou não). */
+    public function kgEmEmbarques(): float
+    {
+        return (float) $this->embarques->sum('quantidade_kg');
+    }
+
+    /**
+     * Quilos do contrato que ainda não viraram embarque. Pode ficar
+     * NEGATIVO: container não pesa exatamente o contratado, e o sistema
+     * mostra a diferença em vez de impedir o lançamento (mesma regra das
+     * entregas de compra).
+     */
+    public function kgAProgramar(): float
+    {
+        return round((float) $this->quantidade_kg - $this->kgEmEmbarques(), 2);
+    }
+
+    /** O mesmo saldo, em sacas — é assim que ele entra na posição. */
+    public function sacasAProgramar(): float
+    {
+        return round($this->kgAProgramar() / $this->kgPorSaca(), 2);
     }
 
     public function canceladoPor(): BelongsTo

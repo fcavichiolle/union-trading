@@ -4,7 +4,7 @@
 > O código em si mora nos arquivos do projeto; este resumo guarda o "porquê" das
 > decisões, os problemas já resolvidos e o que ainda falta.
 >
-> Última atualização: setembro/2026.
+> Última atualização: novembro/2026.
 
 ---
 
@@ -387,6 +387,102 @@ gerencial somente leitura. Uso interno por equipes de compras, financeiro e dire
   **level médio ponderado**. Formato espelhado da aba "Resumo FOB → VENDAS À FIXAR POR
   REFERÊNCIA" da planilha de posição da mesa. Contrato sem `mes_fixacao` entra como
   "Sem tela definida". Cálculo em `FixacaoController::posicaoPorTela()`.
+### Embarques — agenda das estufagens e vendas em aberto (nov/2026)
+**Passo 1 de 4 para tirar a posição Long & Short da planilha.** A análise
+completa da planilha de posição (23 abas) está resumida na seção "Roteiro da
+posição" mais abaixo; aqui fica o que foi construído.
+
+- **`embarques`** = a PARCELA do contrato que sai num embarque. Substitui dois
+  controles que repetiam o contrato fora do sistema: a aba `VENDAS-FOB` da
+  planilha de posição e a planilha do Google com a agenda das estufagens. A
+  maioria dos contratos tem um embarque só; alguns são divididos (UT 5973 A,
+  B, C, D). O **mês de faturamento é da parcela**, não do contrato: uma
+  parcela pode rolar para o mês seguinte sem as outras.
+- **`contratos.standard`** = o balde da posição (17/18 FC, 17/18 GC, 14/16 FC,
+  14/16 GC, Grinders 12UP/13UP — `Contrato::standards()`). **Não é a descrição
+  comercial da qualidade.** Opcional: venda fora da posição (black beans,
+  moka) fica sem, e a tela avisa.
+- **Faturar tira a venda da posição no ato.** Era o defeito de origem da
+  planilha: a soma de vendas não olhava o STATUS, então o faturado continuava
+  pesando até alguém apagar a linha à mão (na planilha de 16/11 eram N
+  sc nessa situação). `faturado_em` acompanha o status — voltar a etapa apaga
+  a data — e é ela que o passo 2 vai comparar com a data da foto do Digisul.
+- **Vendas em aberto por mês × standard** (`App\Services\PosicaoVendas`), no
+  topo da agenda: embarques não faturados, no mês de cada um, **mais o saldo
+  do contrato que ainda não virou embarque**, no mês de embarque do contrato.
+  Sem a segunda parte a venda recém-lançada ficaria fora da posição. Sobra
+  de menos de 1 saca é arredondamento de peso e não entra. Nada some em
+  silêncio: contrato sem standard ou sem mês ganha linha/coluna própria e
+  aviso; mês passado ainda aberto vira coluna "Atrasado".
+- **Quantidade não é travada no contrato** (mesma regra das entregas):
+  container não pesa exatamente o contratado; a tela do contrato mostra a
+  diferença.
+- **Área de EXPORTAÇÃO no menu** (pedido da mesa: a logística não é
+  "Contratos" — o contrato é o negócio fechado, a exportação é o que acontece
+  depois). Duas vistas dos mesmos embarques, leitura para todo perfil e
+  alteração só de admin/compras:
+  - **Agendamentos** (`embarques.agenda`, `/exportacao/agendamentos`): os
+    embarques em aberto **por dia de estufagem** — a planilha do Google.
+    Dia vencido ou a 3 dias ganha etiqueta; embarque sem data vai para a
+    lista "a agendar", para não sumir.
+  - **Controle logístico** (`embarques.index`, `/exportacao/logistica`): por
+    mês de faturamento, com PSS, etapa, prazos, navio, o botão Faturar, a
+    grade de vendas em aberto e os contratos com volume a programar.
+- **Carga inicial das vendas** (nov/2026): scripts em `storage/app/private/`
+  (fora do Git, dados reais) — `extrair_vendas.py` lê as duas planilhas e
+  gera um JSON; `importar_vendas.php` simula por padrão e só grava com
+  `APLICAR=1`. Contrato existente não é alterado (só ganha standard e
+  embarques se não tiver).
+- Excluir contrato com embarque é **bloqueado** (a FK é cascata, como nas
+  fixações).
+- **Programação de estufagem** (nov/2026): o e-mail que a logística manda ao
+  armazém e à transportadora a cada embarque, antes montado à mão. Saiu em
+  duas peças, por decisão da mesa:
+  - **PDF** (`embarques.programacao`, paisagem): a tabela de datas (fumig.,
+    stuff, deadlines, phyto, armazém, transportadora, destino, ETD, navio,
+    booking, ICO, qtd, packing, pilha), os avisos fixos da logística, as
+    instruções do embarque em destaque e a segunda tabela, da fumigação
+    (só quando há data de fumigação). **É PDF e não e-mail formatado porque
+    `mailto:` só leva texto puro — e o armazém imprime a programação.**
+  - **E-mail por `mailto:`** (`App\Services\ProgramacaoEstufagem`): assunto
+    no formato da equipe ("PROGRAMAÇÃO ESTUFAGEM: UT … - BOOKING: … -
+    ARMAZEM: …"), um resumo em texto e a assinatura do usuário. O PDF é
+    anexado por quem envia (link não anexa arquivo).
+  - **Destinatários**: `armazens.emails_programacao` + os e-mails da
+    transportadora, achada pelo NOME gravado no embarque. Cópia fixa em
+    `EXPORTACAO_COPIA_FIXA` (`config/exportacao.php`). Sem destinatário o
+    botão de e-mail some e a tela diz o que falta cadastrar.
+  - **Cadastro de transportadoras** (Cadastros → Transportadoras). O
+    embarque guarda o nome como TEXTO (mesma lógica da corretora na
+    fixação); o cadastro sugere o nome e dá os e-mails.
+  - Campos novos no embarque: `ico`, `fumigacao_empresa/_tipo/_tempo`,
+    `permit_import`, `instrucoes`.
+  - Testes: `tests/Feature/ProgramacaoEstufagemTest.php` (13).
+- As etapas (`Embarque::statuses()`) e as situações da PSS são listas no
+  model — foram definidas a partir dos textos livres das duas planilhas e
+  **vale a mesa revisar**.
+- Testes: `tests/Feature/EmbarqueTest.php` (24), com o tempo congelado.
+
+#### Roteiro da posição (decidido em nov/2026)
+1. ~~Embarques~~ (feito, acima). ~~Carga das vendas em aberto~~ **feita em
+   17/11/2026**: 129 contratos e 139 embarques criados a partir da planilha
+   de posição de 16/11; 6 clientes criados com "(endereço a cadastrar)".
+   Posição após a carga: N sc (N da planilha + N das UT 5995,
+   5996 e 5997, que já estavam no banco e não estão na planilha).
+2. **Importação do Digisul.** O Digisul emite a NF-e e dá a baixa, então ele
+   continua sendo a verdade do estoque físico — o sistema IMPORTA a
+   exportação `.xlsx` dele (263 lotes, com padrão, armazém, certificador,
+   guia de serviço e a UTC da compra) em vez de manter um razão próprio, que
+   seria o mesmo retrabalho com outro nome. O padrão do Digisul tem 11
+   valores e vira os baldes por um de/para. **Atenção**: o PHP de linha de
+   comando não tem a extensão `zip`, necessária para ler `.xlsx`.
+3. **Long & Short calculado** = estoque (medido + rendimento estimado do que
+   ainda é bica/reaproveitamento) + compras a receber − vendas em aberto.
+   Na planilha, 60% do lado comprado é estimativa de rendimento. As compras
+   entram no mês certo (a planilha as jogava um mês para frente — confirmado
+   pela mesa como desalinhamento).
+4. **Custo médio e hedge.**
+
 ### Carta de fixação — PRICE FIXING CONFIRMATION (set/2026)
 Depois de cada fixação o cliente manda a carta de confirmação dele (modelo
 analisado: a da Alfa para a UT 5970). Agora a Union emite a sua:
@@ -871,6 +967,16 @@ não submenu.
    macro da planilha não sofria disso porque adicionava um a um via
    `Recipients.Add`. **Nenhum teste pega isso**: a URL fica igualmente
    válida das duas formas — quem reprova é o cliente de e-mail.
+
+18. **O `LOWER()` do SQLite só converte ASCII.** `WHERE LOWER(nome) = ?` com
+   "TRANSAÇUCENA" não casava com "transaçucena" nos testes (no MySQL
+   casaria). Para comparar nome com acento sem diferenciar maiúsculas,
+   compare em PHP com `mb_strtolower` — ver `Transportadora::porNome()`.
+19. **A planilha de posição tinha sacas digitadas à mão que não batiam com os
+   quilos** (UT 6025 e 6026: 21.600 kg com 720 sacas; o certo são 360). O
+   total da planilha estava 720 sacas acima. No sistema as sacas são sempre
+   calculadas dos quilos — mas vale a regra para qualquer carga futura:
+   **conferir a soma de sacas contra kg ÷ 60 antes de confiar no total**.
 
 ## 6. O que falta / próximos passos
 

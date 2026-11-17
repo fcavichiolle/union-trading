@@ -21,6 +21,8 @@ class StoreContratoRequest extends FormRequest
             'cliente_id' => ['required', 'exists:clientes,id'],
             'buyer_ref' => ['nullable', 'string', 'max:80'],
             'qualidade_id' => ['required', 'exists:qualidades,id'],
+            // Balde da posição Long & Short; vazio = contrato fora da posição.
+            'standard' => ['nullable', Rule::in(array_keys(Contrato::standards()))],
             'tipo_cafe' => ['required', Rule::in(['ARABICA', 'CONILON'])],
             'certificado' => ['required', Rule::in(array_keys(Contrato::certificados()))],
             'quantidade_kg' => ['required', 'numeric', 'min:1', 'max:99999999'],

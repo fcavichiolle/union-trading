@@ -174,6 +174,19 @@
                         <div class="hint">Nenhuma qualidade cadastrada — <a href="{{ route('admin.qualidades.index') }}" style="text-decoration:underline;">cadastre uma qualidade</a> primeiro.</div>
                     @endif
                 </div>
+                {{-- Balde da posição Long & Short: não é a descrição comercial
+                     acima. Opcional de propósito — venda fora da posição
+                     (black beans, moka) fica sem, e a tela de embarques avisa. --}}
+                <div class="field {{ $errors->has('standard') ? 'has-error' : '' }}" style="margin-bottom:14px;">
+                    <label for="standard">Standard <span class="hint">(linha da posição Long &amp; Short)</span></label>
+                    <select id="standard" name="standard">
+                        <option value="">— fora da posição —</option>
+                        @foreach (\App\Models\Contrato::standards() as $cod => $rotulo)
+                            <option value="{{ $cod }}" @selected($valor('standard') === $cod)>{{ $rotulo }}</option>
+                        @endforeach
+                    </select>
+                    @error('standard') <div class="field-error">{{ $message }}</div> @enderror
+                </div>
                 <div class="field" style="margin-bottom:14px;">
                     <label for="tipo_cafe">Tipo de café (define o cálculo de lotes)</label>
                     <select id="tipo_cafe" name="tipo_cafe" required>

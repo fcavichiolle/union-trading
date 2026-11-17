@@ -18,7 +18,17 @@ class Armazem extends Model
     // PROGRESSO: a pluralização é feita em inglês).
     protected $table = 'armazens';
 
-    protected $fillable = ['nome', 'cidade', 'estado', 'endereco', 'documento'];
+    protected $fillable = ['nome', 'cidade', 'estado', 'endereco', 'documento', 'emails_programacao'];
+
+    /**
+     * Quem no armazém recebe a programação de estufagem.
+     *
+     * @return array<int, string>
+     */
+    public function emailsProgramacao(): array
+    {
+        return \App\Rules\ListaDeEmails::separar($this->emails_programacao);
+    }
 
     public function entregas(): HasMany
     {

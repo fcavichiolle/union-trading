@@ -72,6 +72,8 @@ class ArmazemController extends Controller
             'endereco' => ['nullable', 'string', 'max:200'],
             // Opcional, como no fornecedor — mas validado quando preenchido.
             'documento' => ['nullable', 'string', new DocumentoValido()],
+            // Destinatários da programação de estufagem (opcional).
+            'emails_programacao' => ['nullable', 'string', 'max:2000', new \App\Rules\ListaDeEmails],
         ], [
             'nome.required' => 'Informe o nome do armazém.',
             'nome.unique' => 'Já existe um armazém com este nome.',

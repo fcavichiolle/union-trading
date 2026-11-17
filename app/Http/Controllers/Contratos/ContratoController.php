@@ -152,6 +152,18 @@ class ContratoController extends Controller
             ]);
         }
 
+        // Mesma lógica das fixações: `embarques.contrato_id` é cascata, então
+        // excluir o contrato levaria a logística (e o registro do que já foi
+        // faturado) junto.
+        $embarques = $contrato->embarques()->count();
+
+        if ($embarques > 0) {
+            return back()->withErrors([
+                'motivo' => "Este contrato tem {$embarques} embarque(s) lançado(s) e não pode ser excluído "
+                    . '— apagá-lo apagaria a agenda e o histórico de faturamento. Exclua os embarques antes, ou use "Cancelar contrato".',
+            ]);
+        }
+
         $ut = $contrato->numero_ut;
         $motivo = $request->string('motivo')->toString();
 
@@ -166,7 +178,7 @@ class ContratoController extends Controller
 
     public function show(Contrato $contrato): View
     {
-        $contrato->load(['fixacoes.criadoPor', 'canceladoPor']);
+        $contrato->load(['fixacoes.criadoPor', 'canceladoPor', 'embarques.armazem']);
 
         return view('contratos.show', compact('contrato'));
     }

@@ -51,6 +51,14 @@
                             </form>
                         @endif
                     </div>
+                    {{-- Linha inteira para os e-mails: é uma lista longa, não
+                         cabe numa coluna. Pertence ao mesmo formulário da linha
+                         (atributo `form`), então o Salvar de cima grava tudo. --}}
+                    <div style="grid-column:1 / -1;">
+                        <input type="text" name="emails_programacao" form="a-{{ $a->id }}" value="{{ $a->emails_programacao }}"
+                               placeholder="E-mails que recebem a programação de estufagem — separe por ponto e vírgula (;)"
+                               style="height:36px; font-size:12.5px; width:100%;">
+                    </div>
                 </div>
             @empty
                 <div style="padding:28px 22px; text-align:center; color:var(--muted);">
