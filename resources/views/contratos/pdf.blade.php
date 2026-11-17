@@ -90,6 +90,6 @@ CEP: 13.990-029 / Espírito Santo do Pinhal - SP, Brasil</td></tr>
     </tr>
 </table>
 
-<div class="foot">Union Trading · contrato gerado eletronicamente</div>
+<div class="foot">Union Trading</div>
 </body>
 </html>
